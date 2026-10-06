@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meowler Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anybody:wght@700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <main class="shell">
+    <header class="brand-block">
+      <p class="eyebrow">nano usb · 500000 · nanopb · pca · vl53 · tcs3200</p>
+      <h1 class="brand">Meowler</h1>
+      <p class="tagline">Direct Nano USB control — high-baud LinkMessage.</p>
+    </header>
+
+    <section class="link-bar" aria-label="Hub connection">
+      <div class="link-left">
+        <span class="dot" id="linkDot" data-state="off"></span>
+        <div class="link-copy">
+          <strong id="linkLabel">Disconnected</strong>
+          <span id="linkDetail">Select the Nano USB port (usually COM3) · 500000 baud</span>
+        </div>
+      </div>
+      <div class="link-controls">
+        <label class="field">
+          <span>Hub port</span>
+          <select id="portSelect"></select>
+        </label>
+        <button type="button" class="btn primary" id="connectBtn">Connect</button>
+        <button type="button" class="btn ghost" id="refreshBtn" title="Refresh ports">↻</button>
+      </div>
+    </section>
+
+    <section class="flags" aria-label="Link health" id="flagRow">
+      <span class="flag" data-k="nano_ok">NANO</span>
+      <span class="flag" data-k="pca_ok">PCA</span>
+      <span class="flag" data-k="tof_ok">TOF</span>
+      <span class="flag" data-k="imu_ok">IMU</span>
+      <span class="flag" data-k="moving">MOVING</span>
+      <span class="flag" data-k="color_cal">CAL</span>
+    </section>
+
+    <div class="grid">
+      <section class="panel drive" aria-label="Drive">
+        <header>
+          <h2>Drive</h2>
+          <p>L298N · WASD / arrows · space = stop</p>
+        </header>
+        <div class="drive-readout">
+          <div><span class="k">L</span><strong id="leftVal">0</strong></div>
+          <div><span class="k">R</span><strong id="rightVal">0</strong></div>
+          <div><span class="k">ENC</span><strong id="encVal">0 / 0</strong></div>
+        </div>
+        <label class="field inline">
+          <span>Speed</span>
+          <input id="speedSlider" type="range" min="120" max="255" value="255" />
+          <output id="speedOut">255</output>
+        </label>
+        <div class="pad" id="drivePad">
+          <button type="button" class="pad-btn" data-dir="fwd">↑</button>
+          <button type="button" class="pad-btn" data-dir="left">←</button>
+          <button type="button" class="pad-btn stop" data-dir="stop">■</button>
+          <button type="button" class="pad-btn" data-dir="right">→</button>
+          <button type="button" class="pad-btn" data-dir="back">↓</button>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn danger" id="eStopBtn">E-STOP</button>
+          <button type="button" class="btn ghost" id="pingBtn">Ping</button>
+        </div>
+      </section>
+
+      <section class="panel arm" aria-label="Arm">
+        <header>
+          <h2>Arm</h2>
+          <p>PCA9685 on Nano · CH0/1/2</p>
+        </header>
+        <article class="axis">
+          <div class="axis-top"><span>Base</span><strong id="baseVal">90°</strong></div>
+          <input id="baseSlider" class="slider" type="range" min="0" max="180" value="90" disabled />
+        </article>
+        <article class="axis">
+          <div class="axis-top"><span>Height</span><strong id="heightVal">90°</strong></div>
+          <input id="heightSlider" class="slider" type="range" min="0" max="180" value="90" disabled />
+        </article>
+        <article class="axis">
+          <div class="axis-top"><span>Grip</span><strong id="gripVal">90°</strong></div>
+          <input id="gripSlider" class="slider" type="range" min="0" max="180" value="90" disabled />
+        </article>
+        <div class="btn-row">
+          <button type="button" class="btn primary" id="armSendBtn" disabled>Move</button>
+          <button type="button" class="btn ghost" id="centerBtn" disabled>Center</button>
+          <button type="button" class="btn ghost" id="demoBtn" disabled>Demo</button>
+        </div>
+      </section>
+
+      <section class="panel sense" aria-label="Sensors">
+        <header>
+          <h2>Sense</h2>
+          <p>Color · distance · attitude</p>
+        </header>
+        <div class="color-block">
+          <div class="swatch" id="swatch"></div>
+          <div>
+            <strong id="colorName">NONE</strong>
+            <span id="colorConf">conf 0</span>
+            <span class="mono" id="rgbUs">R— G— B— C—</span>
+          </div>
+        </div>
+        <div class="metric">
+          <span>Distance</span>
+          <strong id="distVal">— mm</strong>
+        </div>
+        <div class="metric">
+          <span>Yaw / Pitch / Roll</span>
+          <strong id="yprVal" class="mono">—</strong>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn ghost" id="calBtn" disabled>Cal color</button>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel logs" aria-label="Debug log">
+      <header>
+        <h2>Log</h2>
+        <p id="seqLine">seq —</p>
+      </header>
+      <ul id="logList" class="log-list"></ul>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

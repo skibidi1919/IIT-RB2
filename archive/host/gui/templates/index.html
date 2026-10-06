@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meowler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anybody:wght@700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <main class="shell">
+    <header class="brand-block">
+      <p class="eyebrow">robot arm · pca9685 · vl53l0x · bno085</p>
+      <h1 class="brand">Meowler</h1>
+      <p class="tagline">Three-axis bench control with ToF + IMU.</p>
+    </header>
+
+    <section class="link-bar" aria-label="Serial connection">
+      <div class="link-left">
+        <span class="dot" id="linkDot" data-state="off"></span>
+        <div class="link-copy">
+          <strong id="linkLabel">Disconnected</strong>
+          <span id="linkDetail">Select the Nano serial port</span>
+        </div>
+      </div>
+      <div class="link-controls">
+        <label class="field">
+          <span>Port</span>
+          <select id="portSelect"></select>
+        </label>
+        <button type="button" class="btn primary" id="connectBtn">Connect</button>
+        <button type="button" class="btn ghost" id="refreshBtn" title="Refresh ports">↻</button>
+      </div>
+    </section>
+
+    <section class="axes" aria-label="Servo axes">
+      <article class="axis" data-axis="base">
+        <header>
+          <span class="ch">CH0</span>
+          <h2>Base</h2>
+          <p>Left / right</p>
+        </header>
+        <div class="readout"><span id="baseVal">90</span><small>°</small></div>
+        <input id="baseSlider" class="slider" type="range" min="0" max="180" value="90" disabled />
+        <div class="ticks"><span>0</span><span>90</span><span>180</span></div>
+      </article>
+
+      <article class="axis" data-axis="height">
+        <header>
+          <span class="ch">CH1</span>
+          <h2>Height</h2>
+          <p>Up / down</p>
+        </header>
+        <div class="readout"><span id="heightVal">90</span><small>°</small></div>
+        <input id="heightSlider" class="slider" type="range" min="0" max="180" value="90" disabled />
+        <div class="ticks"><span>0</span><span>90</span><span>180</span></div>
+      </article>
+
+      <article class="axis" data-axis="grip">
+        <header>
+          <span class="ch">CH2</span>
+          <h2>Grip</h2>
+          <p>Open / close</p>
+        </header>
+        <div class="readout"><span id="gripVal">90</span><small>°</small></div>
+        <input id="gripSlider" class="slider" type="range" min="0" max="180" value="90" disabled />
+        <div class="ticks"><span>0</span><span>90</span><span>180</span></div>
+      </article>
+    </section>
+
+    <section class="sensors" aria-label="Sensors">
+      <article class="tof" aria-label="Distance sensor">
+        <header>
+          <span class="ch">TOF</span>
+          <h2>Distance</h2>
+          <p>VL53L0X</p>
+        </header>
+        <div class="readout tof-readout">
+          <span id="distVal">—</span><small id="distUnit">mm</small>
+        </div>
+        <p class="tof-status" id="tofStatus">Sensor offline</p>
+      </article>
+
+      <article class="imu" aria-label="Orientation IMU">
+        <header>
+          <span class="ch">IMU</span>
+          <h2>Orientation</h2>
+          <p>BNO085</p>
+        </header>
+        <div class="imu-grid">
+          <div><span class="imu-label">Yaw</span><span class="imu-val" id="yawVal">—</span></div>
+          <div><span class="imu-label">Pitch</span><span class="imu-val" id="pitchVal">—</span></div>
+          <div><span class="imu-label">Roll</span><span class="imu-val" id="rollVal">—</span></div>
+        </div>
+        <p class="tof-status" id="imuStatus">Sensor offline</p>
+      </article>
+    </section>
+
+    <section class="actions" aria-label="Quick actions">
+      <button type="button" class="btn action" id="centerBtn" disabled>Center</button>
+      <button type="button" class="btn action" id="openBtn" disabled>Open grip</button>
+      <button type="button" class="btn action" id="closeBtn" disabled>Close grip</button>
+      <button type="button" class="btn action accent" id="demoBtn" disabled>Run demo</button>
+    </section>
+
+    <footer class="log" aria-live="polite">
+      <span class="log-label">Board</span>
+      <code id="logLine">waiting…</code>
+    </footer>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

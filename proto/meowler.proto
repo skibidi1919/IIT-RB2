@@ -1,0 +1,160 @@
+syntax = "proto3";
+package meowler;
+
+// Framing on the wire (both directions):
+//   uint32le length | protobuf payload
+// TCP port 3333. ESP32 is the server; clients connect in.
+
+message Drive {
+  int32 left = 1;   // -255..255
+  int32 right = 2;  // -255..255
+}
+
+message Arm {
+  int32 base = 1;    // 0..180
+  int32 height = 2;  // 0..180
+  int32 grip = 3;    // 0..180
+  bool set_base = 4;
+  bool set_height = 5;
+  bool set_grip = 6;
+}
+
+// PCA CH4 — SG90 360° continuous (UM conveyor belt)
+message Conveyor {
+  int32 speed = 1;  // -255..255 · 0 = stop
+}
+
+// TCS3200 calibration / teach-in (RED·YELLOW·GREEN only)
+message ColorCal {
+  // 0=white-balance  1=teach RED  2=teach YELLOW  3=teach GREEN
+  // 4=clear taught centroids  5=factory reset gains+centroids
+  uint32 mode = 1;
+}
+
+// Host → robot: start/stop onboard capture. Robot streams RecEvent back.
+message RecCtrl {
+  uint32 action = 1;  // 1=start  2=stop
+  string name = 2;
+}
+
+// Robot → host: one packed timeline event (same opcodes as binary .rpm).
+// op: 0=begin  1=drive  2=arm  3=stop  4=center  5=zero  6=conveyor  7=motor_test  255=end
+message RecEvent {
+  uint32 t_ms = 1;
+  uint32 op = 2;
+  int32 a = 3;       // drive.left / arm.base / conveyor.speed
+  int32 b = 4;       // drive.right / arm.height
+  int32 c = 5;       // arm.grip
+  uint32 mask = 6;   // arm field mask: 1=base 2=height 4=grip
+  uint32 count = 7;  // event count on begin/end
+  string name = 8;
+}
+
+// ---- Protobuf WiFi OTA (dual ota_0 / ota_1) ----
+// Host: OtaCmd begin → chunk* → finish → apply
+// Robot: streams OtaStatus; on apply reboots into new partition (otadata rollback if bad)
+message OtaBegin {
+  uint32 raw_size = 1;     // .bin bytes (raw, no compression)
+  uint32 raw_crc32 = 2;    // CRC-32 of the .bin
+  uint32 packed_size = 3;  // same as raw_size
+  uint32 codec = 4;        // must be 0 (raw)
+  string version = 5;      // optional label
+}
+
+message OtaChunk {
+  uint32 offset = 1;       // byte offset into packed stream
+  bytes data = 2;          // up to 512 bytes
+}
+
+message OtaCmd {
+  // 1=begin  2=chunk  3=finish  4=abort  5=apply(reboot new slot)
+  // 6=query  7=boot ota_0  8=boot ota_1
+  // Running app accepts OTA into the inactive slot (no chainload).
+  uint32 action = 1;
+  OtaBegin begin = 2;
+  OtaChunk chunk = 3;
+}
+
+message OtaStatus {
+  // 0=idle  1=receiving  2=ready  3=applying  4=error  5=rebooting
+  uint32 state = 1;
+  uint32 received = 2;     // packed bytes received
+  uint32 packed_size = 3;
+  uint32 written = 4;      // uncompressed bytes written to OTA slot
+  uint32 error = 5;        // 0=ok else fault code
+  string detail = 6;
+}
+
+message ClientToRobot {
+  oneof op {
+    Drive drive = 1;
+    Arm arm = 2;
+    bool stop = 3;
+    bool center = 4;
+    bool zero = 5;
+    bool motor_test = 6;
+    bool get_telem = 7;
+    Conveyor conveyor = 8;
+    ColorCal color_cal = 9;
+    RecCtrl rec = 10;
+    OtaCmd ota = 11;
+  }
+}
+
+message Telemetry {
+  uint32 distance_mm = 1;
+  int32 cmd_l = 2;
+  int32 cmd_r = 3;
+  int32 base = 4;
+  int32 height = 5;
+  int32 grip = 6;
+  bool pca_ok = 7;
+  bool tof_ok = 8;
+  bool imu_ok = 9;
+  bool wifi_ok = 10;
+  int32 enc_l = 11;
+  int32 enc_r = 12;
+  int32 wheel_l_mm = 13;
+  int32 wheel_r_mm = 14;
+  int32 tof_disp_mm = 15;
+  int32 yaw_cdeg = 16;
+  int32 pitch_cdeg = 17;
+  int32 roll_cdeg = 18;
+  uint32 color = 19;       // 0 UNKNOWN  1 RED  2 YELLOW  3 GREEN
+  uint32 color_conf = 20;  // internal confidence 0..99 (not a colour class)
+  // Fields 21–27 reserved / unused in UI — keep wire-compatible, always 0
+  uint32 color_r = 21;
+  uint32 color_g = 22;
+  uint32 color_b = 23;
+  uint32 color_rp = 24;
+  uint32 color_gp = 25;
+  uint32 color_bp = 26;
+  uint32 color_cp = 27;
+  int32 conveyor = 28;     // -255..255 · PCA CH4 SG90-360
+}
+
+message Hello {
+  uint32 ip = 1;    // IPv4 as uint32 (network byte order)
+  uint32 port = 2;
+  bool pca_ok = 3;
+  bool tof_ok = 4;
+  bool imu_ok = 5;
+}
+
+// Framed on Serial (and optionally TCP) — same uint32le | payload as TCP.
+message Log {
+  // 0=debug  1=info  2=warn  3=error
+  uint32 level = 1;
+  string text = 2;
+}
+
+message RobotToClient {
+  oneof msg {
+    Hello hello = 1;
+    Telemetry telem = 2;
+    uint32 ack = 3;  // 0 = ok
+    Log log = 4;
+    RecEvent rec = 5;
+    OtaStatus ota = 6;
+  }
+}

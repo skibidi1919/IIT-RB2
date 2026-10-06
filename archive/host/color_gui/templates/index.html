@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meowler Color</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="brand-block">
+      <p class="eyebrow">tcs3200 · esp32 · com4</p>
+      <h1 class="brand">Chroma</h1>
+      <p class="tagline">Watch zone 5–20 cm — locks red, yellow, or green.</p>
+    </header>
+
+    <section class="link-bar" aria-label="Serial connection">
+      <div class="link-left">
+        <span class="dot" id="linkDot" data-state="off"></span>
+        <div class="link-copy">
+          <strong id="linkLabel">Disconnected</strong>
+          <span id="linkDetail">Select the ESP32 serial port</span>
+        </div>
+      </div>
+      <div class="link-controls">
+        <label class="field">
+          <span>Port</span>
+          <select id="portSelect"></select>
+        </label>
+        <button type="button" class="btn primary" id="connectBtn">Connect</button>
+        <button type="button" class="btn ghost" id="refreshBtn" title="Refresh">↻</button>
+      </div>
+    </section>
+
+    <section class="stage" aria-label="Color readout">
+      <div class="swatch" id="swatch" style="--swatch:#2a2a2a"></div>
+      <div class="meta">
+        <p class="guess" id="guess">—</p>
+        <p class="conf" id="conf">locked colour</p>
+        <p class="hex" id="hex">#000000</p>
+        <div class="bars">
+          <div class="bar">
+            <span>R</span>
+            <div class="track"><i id="barR"></i></div>
+            <strong id="valR">0</strong>
+          </div>
+          <div class="bar">
+            <span>G</span>
+            <div class="track"><i id="barG"></i></div>
+            <strong id="valG">0</strong>
+          </div>
+          <div class="bar">
+            <span>B</span>
+            <div class="track"><i id="barB"></i></div>
+            <strong id="valB">0</strong>
+          </div>
+          <div class="bar">
+            <span>C</span>
+            <div class="track"><i id="barC"></i></div>
+            <strong id="valC">0</strong>
+          </div>
+        </div>
+        <p class="hint">Hold the target 5–20 cm from the sensor. Lower pulse µs = stronger channel.</p>
+      </div>
+    </section>
+
+    <footer class="log" aria-live="polite">
+      <span class="log-label">Board</span>
+      <code id="logLine">waiting…</code>
+    </footer>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

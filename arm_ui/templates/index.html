@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meowler Control Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e1114;
+      --panel: #161b20;
+      --panel2: #1c2329;
+      --ink: #d7e0e7;
+      --muted: #7d8b96;
+      --line: #2a333c;
+      --ok: #3ecf8e;
+      --bad: #e35d6a;
+      --warn: #e6b35a;
+      --accent: #4aa3ff;
+      --drive: #3ecf8e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, #12171c 0%, var(--bg) 40%),
+        repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(255,255,255,0.015) 24px);
+    }
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem 1rem 2rem;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1rem;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.75rem;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .linkbar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    select, button, input[type="range"], input[type="text"], input[type="number"] { font: inherit; }
+    select, button, input[type="text"], input[type="number"] {
+      border: 1px solid var(--line);
+      background: var(--panel2);
+      color: var(--ink);
+      padding: 0.45rem 0.7rem;
+      border-radius: 2px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78rem;
+    }
+    input[type="text"] { width: 11rem; }
+    input[type="number"] { width: 5rem; }
+    .color-raw {
+      display: grid;
+      gap: 0.65rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .color-raw .row {
+      display: grid;
+      grid-template-columns: 7rem 1fr;
+      gap: 0.75rem;
+      align-items: baseline;
+      border-bottom: 1px solid var(--line);
+      padding: 0.35rem 0;
+    }
+    .color-raw .row span { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.06em; }
+    .color-raw .row strong { font-size: 1.15rem; font-weight: 700; }
+    .color-raw .hint { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.75rem; }
+    .barrow {
+      display: grid;
+      grid-template-columns: 18px 1fr 40px;
+      gap: 0.45rem;
+      align-items: center;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.75rem;
+    }
+    .barrow .track {
+      height: 0.5rem;
+      background: #0c1014;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .barrow .track > i { display: block; height: 100%; width: 0%; transition: width 0.12s ease; }
+    .barrow.r .track > i { background: #e35d6a; }
+    .barrow.g .track > i { background: #3ecf8e; }
+    .barrow.y .track > i { background: #e6b35a; }
+    .barrow.c .track > i { background: #8a96a0; }
+    .color-dec {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.45rem 0 0.7rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .color-dec span { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .color-dec strong { font-size: 1.85rem; font-weight: 700; letter-spacing: 0.08em; }
+    .color-dec.red strong { color: #e35d6a; }
+    .color-dec.yellow strong { color: #e6b35a; }
+    .color-dec.green strong { color: #3ecf8e; }
+    .color-dec.wait strong { color: var(--muted); }
+    button { cursor: pointer; font-weight: 600; }
+    button.primary { background: var(--accent); color: #061018; border-color: transparent; }
+    button.danger { background: var(--bad); color: #14080a; border-color: transparent; }
+    button.ok { background: var(--drive); color: #06140e; border-color: transparent; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pill {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--line);
+      color: var(--muted);
+    }
+    .pill.on { color: var(--ok); border-color: rgba(62,207,142,0.4); }
+    .pill.off { color: var(--bad); border-color: rgba(227,93,106,0.4); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 1fr;
+      gap: 0.75rem;
+    }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      min-height: 280px;
+    }
+    .panel > h2 {
+      margin: 0;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: "IBM Plex Mono", monospace;
+      background: var(--panel2);
+    }
+    .panel .body { padding: 0.75rem; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-bottom: 0.75rem;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      background: var(--panel2);
+      padding: 0.55rem 0.65rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.2rem;
+    }
+    .metric strong { font-size: 1.05rem; font-weight: 700; }
+    .metric.wide { grid-column: 1 / -1; }
+
+    .pad {
+      display: grid;
+      grid-template-columns: repeat(3, 58px);
+      gap: 0.4rem;
+      justify-content: center;
+      margin: 0.5rem 0 0.75rem;
+    }
+    .pad button { width: 58px; height: 48px; padding: 0; }
+    .pad .ghost { visibility: hidden; }
+
+    label.slider {
+      display: grid;
+      grid-template-columns: 64px 1fr 42px;
+      gap: 0.55rem;
+      align-items: center;
+      margin: 0.55rem 0;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .val { font-family: "IBM Plex Mono", monospace; text-align: right; color: var(--muted); font-size: 0.8rem; }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+    .logs {
+      margin-top: 0.75rem;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      max-height: 150px;
+      overflow: auto;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding: 0.65rem 0.75rem;
+      white-space: pre-wrap;
+    }
+    .hint { color: var(--warn); font-size: 0.75rem; margin: 0.4rem 0 0; font-family: "IBM Plex Mono", monospace; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>Meowler // Control Panel</h1>
+      <div class="linkbar">
+        <input id="host" type="text" value="192.168.137.222" placeholder="192.168.137.222" title="ESP32 static IP (exact)" autocomplete="off" spellcheck="false" />
+        <input id="netPort" type="number" value="3333" min="1" max="65535" title="TCP port" />
+        <button class="primary" id="connectBtn" type="button">Connect WiFi</button>
+        <button id="disconnectBtn" type="button" disabled>Disconnect</button>
+        <span class="pill off" id="status">OFFLINE</span>
+        <span class="pill off" id="flagWifi">WIFI</span>
+        <span class="pill off" id="flagPca">PCA</span>
+        <span class="pill off" id="flagTof">TOF</span>
+        <span class="pill off" id="flagImu">IMU</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Drive</h2>
+        <div class="body">
+          <div class="pad">
+            <button class="ghost" type="button" tabindex="-1">·</button>
+            <button id="fwdBtn" type="button" disabled>▲</button>
+            <button class="ghost" type="button" tabindex="-1">·</button>
+            <button id="leftBtn" type="button" disabled>◀</button>
+            <button class="danger" id="stopBtn" type="button" disabled>■</button>
+            <button id="rightBtn" type="button" disabled>▶</button>
+            <button class="ghost" type="button" tabindex="-1">·</button>
+            <button id="backBtn" type="button" disabled>▼</button>
+            <button class="ghost" type="button" tabindex="-1">·</button>
+          </div>
+          <label class="slider">Speed
+            <input id="speed" type="range" min="40" max="255" value="180" disabled />
+            <span class="val" id="speedVal">180</span>
+          </label>
+          <div class="actions">
+            <button class="ok" id="motorTestBtn" type="button" disabled>Motor test</button>
+            <button id="zeroBtn" type="button" disabled>Zero odom</button>
+          </div>
+          <p class="hint">arrows = drive · hold <strong>A</strong> + arrows = arm (L/R base, U/D height) · ESP32 streams .rpm</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Odometry / Sense</h2>
+        <div class="body">
+          <div class="metrics">
+            <div class="metric"><span>TOF RANGE</span><strong id="dist">—</strong> mm</div>
+            <div class="metric"><span>TOF Δ DISP</span><strong id="tofDisp">—</strong> mm</div>
+            <div class="metric"><span>ENC L / R</span><strong id="enc">—</strong></div>
+            <div class="metric"><span>WHEEL L / R</span><strong id="wheel">—</strong> mm</div>
+            <div class="metric wide"><span>IMU YAW / PITCH / ROLL</span><strong id="imu">—</strong>°</div>
+            <div class="metric"><span>CMD L</span><strong id="leftVal">0</strong></div>
+            <div class="metric"><span>CMD R</span><strong id="rightVal">0</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Arm</h2>
+        <div class="body">
+          <label class="slider">Base
+            <input id="base" type="range" min="0" max="180" value="90" disabled />
+            <span class="val" id="baseVal">90</span>
+          </label>
+          <label class="slider">Height
+            <input id="height" type="range" min="0" max="180" value="90" disabled />
+            <span class="val" id="heightVal">90</span>
+          </label>
+          <label class="slider">Grip
+            <input id="grip" type="range" min="0" max="180" value="90" disabled />
+            <span class="val" id="gripVal">90</span>
+          </label>
+          <div class="actions">
+            <button class="primary" id="sendBtn" type="button" disabled>Send</button>
+            <button id="centerBtn" type="button" disabled>Center</button>
+            <button id="openGripBtn" type="button" disabled>Open</button>
+            <button id="closeGripBtn" type="button" disabled>Close</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Conveyor · PCA CH4 SG90-360</h2>
+        <div class="body">
+          <label class="slider">Speed
+            <input id="convSpeed" type="range" min="40" max="255" value="160" disabled />
+            <span class="val" id="convSpeedVal">160</span>
+          </label>
+          <div class="actions">
+            <button class="ok" id="convFwdBtn" type="button" disabled>Forward</button>
+            <button class="danger" id="convStopBtn" type="button" disabled>Stop</button>
+            <button id="convRevBtn" type="button" disabled>Reverse</button>
+          </div>
+          <p class="hint">CMD <strong id="convCmd">0</strong> · continuous servo · Stop = PWM off CH4</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top:0.75rem;min-height:auto">
+      <h2>Record / Replay · .rpm</h2>
+      <div class="body">
+        <div class="actions">
+          <input id="recName" type="text" placeholder="move-name" style="flex:1;min-width:8rem" autocomplete="off" spellcheck="false" />
+          <button class="ok" id="recStartBtn" type="button">Record</button>
+          <button class="danger" id="recStopBtn" type="button" disabled>Stop rec</button>
+        </div>
+        <div class="actions">
+          <select id="rpmSelect" style="flex:1;min-width:8rem"></select>
+          <button class="primary" id="replayBtn" type="button" disabled>Replay</button>
+          <button id="replayStopBtn" type="button" disabled>Stop play</button>
+        </div>
+        <p class="hint" id="recHint">idle · ESP32 streams binary .rpm over TCP</p>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:0.75rem;min-height:auto">
+      <h2>Mission script · .ms (host DSL — no reflash)</h2>
+      <div class="body">
+        <div class="actions">
+          <select id="msSelect" style="flex:1;min-width:8rem"></select>
+          <button type="button" id="msLoadBtn">Load</button>
+          <input id="msName" type="text" placeholder="triage" style="width:8rem" autocomplete="off" spellcheck="false" />
+          <button type="button" id="msSaveBtn">Save</button>
+        </div>
+        <textarea id="msSrc" rows="12" spellcheck="false" style="width:100%;margin-top:0.5rem;font-family:IBM Plex Mono,monospace;font-size:0.8rem;background:#0d1520;color:var(--ink);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:0.6rem;resize:vertical"></textarea>
+        <div class="actions" style="margin-top:0.5rem">
+          <button class="primary" id="msRunBtn" type="button" disabled>Run mission</button>
+          <button class="danger" id="msStopBtn" type="button" disabled>Stop</button>
+          <button type="button" id="otaBoot0Btn" disabled title="Reboot into ota_0">OTA→slot0</button>
+          <button type="button" id="otaBoot1Btn" disabled title="Reboot into ota_1">OTA→slot1</button>
+        </div>
+        <p class="hint" id="msHint">drive / arm / conveyor / wait / wait_color / play NAME.rpm / if_color … end · WiFi OTA upload: ota-flash.bat</p>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:0.75rem;min-height:auto">
+      <h2>Color · R / Y / G</h2>
+      <div class="body">
+        <div class="color-raw">
+          <div class="color-dec wait" id="colorDec"><span>Final</span><strong id="colorName">—</strong><span id="colorConf" style="margin-left:auto;font-size:0.85rem">conf —</span></div>
+          <div class="row"><span>PULSE µs</span><strong id="rawUs">R — / G — / C —</strong></div>
+          <div class="row"><span>Δ% vs amb</span><strong id="rawPct">R — / G — / Y —</strong></div>
+          <div class="row"><span>gp / rp</span><strong id="rawRatio">—</strong></div>
+          <div class="barrow r"><span>R</span><div class="track"><i id="barR"></i></div><strong id="valR">0</strong></div>
+          <div class="barrow g"><span>G</span><div class="track"><i id="barG"></i></div><strong id="valG">0</strong></div>
+          <div class="barrow y"><span>Y</span><div class="track"><i id="barY"></i></div><strong id="valY">0</strong></div>
+          <div class="barrow c"><span>C</span><div class="track"><i id="barC"></i></div><strong id="valC">0</strong></div>
+          <p class="hint">Bars = chroma scores (NodeMCU-style). Needs a real object (no ambient false RED). Locks majority; switches on clear overtake; clears at conf ≤10.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="logs" id="logs">waiting…</div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let connected = false;
+    let armTimer = null;
+    let driveTimer = null;
+    let hold = null;
+
+    async function api(path, opts) {
+      const r = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
+      return r.json();
+    }
+
+    /** Exact host from the box — strip scheme/path; honor host:port */
+    function readEndpoint() {
+      let h = ($("host").value || "").trim();
+      let p = Number($("netPort").value) || 3333;
+      if (!h) h = "192.168.137.222";
+      if (h.includes("://")) h = h.split("://", 2)[1];
+      h = h.split("/", 1)[0].trim();
+      if (!h.startsWith("[") && (h.match(/:/g) || []).length === 1) {
+        const [left, right] = h.split(":");
+        if (/^\d+$/.test(right)) { h = left.trim(); p = Number(right); }
+      }
+      h = h.replace(/\.$/, "").trim();
+      $("host").value = h;
+      $("netPort").value = String(p);
+      try {
+        localStorage.setItem("meowler_host", h);
+        localStorage.setItem("meowler_port", String(p));
+      } catch (_) {}
+      return { host: h, port: p };
+    }
+
+    (function restoreEndpoint() {
+      try {
+        const h = localStorage.getItem("meowler_host");
+        const p = localStorage.getItem("meowler_port");
+        if (h) $("host").value = h;
+        if (p) $("netPort").value = p;
+      } catch (_) {}
+    })();
+
+    function setPill(id, on) {
+      const el = $(id);
+      el.className = "pill " + (on ? "on" : "off");
+    }
+
+    function setEnabled(on) {
+      connected = on;
+      const ids = ["base","height","grip","speed","sendBtn","centerBtn","openGripBtn","closeGripBtn",
+        "disconnectBtn","fwdBtn","backBtn","leftBtn","rightBtn","stopBtn","motorTestBtn","zeroBtn",
+        "convSpeed","convFwdBtn","convStopBtn","convRevBtn",
+        "recStartBtn","replayBtn","msRunBtn","otaBoot0Btn","otaBoot1Btn"];
+      ids.forEach((id) => { $(id).disabled = !on; });
+      $("connectBtn").disabled = on;
+      $("status").textContent = on ? "ONLINE" : "OFFLINE";
+      setPill("status", on);
+    }
+
+    function deg(cdeg) { return (Number(cdeg || 0) / 100).toFixed(1); }
+
+    function paintColor(s) {
+      const rp = Number(s.color_rp) || 0, gp = Number(s.color_gp) || 0;
+      const cp = Number(s.color_cp) || 0;
+      const r = Number(s.color_r) || 0, g = Number(s.color_g) || 0;
+      const y = Number(s.color_b) || 0; /* firmware: yellow Δ%, not blue */
+      $("rawUs").textContent = `R ${rp} / G ${gp} / C ${cp}`;
+      $("rawPct").textContent = `R ${r} / G ${g} / Y ${y}`;
+      $("rawRatio").textContent = rp ? (gp / rp).toFixed(3) : "—";
+      $("barR").style.width = Math.max(2, Math.min(100, r)) + "%";
+      $("barG").style.width = Math.max(2, Math.min(100, g)) + "%";
+      $("barY").style.width = Math.max(2, Math.min(100, y)) + "%";
+      const maxRG = Math.max(1, rp, gp);
+      const fillC = cp ? Math.max(4, Math.min(100, Math.round((1 - cp / (maxRG * 1.4)) * 100))) : 0;
+      $("barC").style.width = fillC + "%";
+      $("valR").textContent = String(r);
+      $("valG").textContent = String(g);
+      $("valY").textContent = String(y);
+      $("valC").textContent = String(cp);
+      const code = Number(s.color) || 0;
+      const names = ["—", "RED", "YELLOW", "GREEN"];
+      const cls = ["wait", "red", "yellow", "green"];
+      $("colorName").textContent = names[code] || "—";
+      $("colorDec").className = "color-dec " + (cls[code] || "wait");
+      $("colorConf").textContent = "conf " + (Number(s.color_conf) || 0);
+    }
+
+    async function poll() {
+      try {
+        const s = await api("/api/state");
+        if (s.connected !== connected) setEnabled(!!s.connected);
+        const tofLive = !!s.tof_ok || (Number(s.distance_mm) > 0);
+        setPill("flagWifi", !!(s.connected && (s.wifi_ok || String(s.mode || "").includes("tcp"))));
+        setPill("flagPca", !!s.pca_ok);
+        setPill("flagTof", tofLive);
+        setPill("flagImu", !!s.imu_ok);
+        paintColor(s);
+        if (!s.connected) {
+          $("logs").textContent = (s.logs || []).join("\n") || (s.error || "offline — Connect WiFi");
+          return;
+        }
+        $("dist").textContent = s.distance_mm ?? 0;
+        $("tofDisp").textContent = s.tof_disp_mm ?? 0;
+        $("enc").textContent = `${s.enc_l ?? 0} / ${s.enc_r ?? 0}`;
+        $("wheel").textContent = `${s.wheel_l_mm ?? 0} / ${s.wheel_r_mm ?? 0}`;
+        $("imu").textContent = `${deg(s.yaw_cdeg)} / ${deg(s.pitch_cdeg)} / ${deg(s.roll_cdeg)}`;
+        $("leftVal").textContent = s.left ?? 0;
+        $("rightVal").textContent = s.right ?? 0;
+        $("convCmd").textContent = String(s.conveyor ?? 0);
+        if (!armMod() && document.activeElement !== $("base") && document.activeElement !== $("height") && document.activeElement !== $("grip")) {
+          if (s.base != null) { $("base").value = String(s.base); $("baseVal").textContent = String(s.base); }
+          if (s.height != null) { $("height").value = String(s.height); $("heightVal").textContent = String(s.height); }
+          if (s.grip != null) { $("grip").value = String(s.grip); $("gripVal").textContent = String(s.grip); }
+        }
+        const link = s.host || "";
+        $("logs").textContent = [
+          `[${s.mode || "?"} ${link}] ${s.color_name || "—"} conf=${s.color_conf|0} R/G/C=${s.color_rp|0}/${s.color_gp|0}/${s.color_cp|0} Δ% R=${s.color_r|0} G=${s.color_g|0} Y=${s.color_b|0}`,
+          ...(s.logs || []),
+        ].join("\n") || "—";
+      } catch (err) {
+        $("logs").textContent = "poll error: " + err;
+      }
+    }
+
+    function bindSlider(id, valId) {
+      const el = $(id);
+      const send = () => {
+        if (!connected) return;
+        clearTimeout(armTimer);
+        /* Fire ASAP while dragging — was waiting for mouseup + 80–160 ms */
+        armTimer = setTimeout(() => {
+          const body = {};
+          body[id] = Number(el.value);
+          api("/api/arm", { method: "POST", body: JSON.stringify(body) });
+        }, 0);
+      };
+      el.addEventListener("input", () => {
+        $(valId).textContent = el.value;
+        send();
+      });
+      el.addEventListener("change", send);
+    }
+
+    function drive(left, right) {
+      if (!connected) return;
+      api("/api/drive", { method: "POST", body: JSON.stringify({ left, right }) });
+    }
+
+    function startHold(dir) {
+      const spd = Number($("speed").value);
+      const map = {
+        fwd: [spd, spd],
+        back: [-spd, -spd],
+        left: [-spd, spd],
+        right: [spd, -spd],
+      };
+      const [l, r] = map[dir];
+      hold = dir;
+      drive(l, r);
+      clearInterval(driveTimer);
+      driveTimer = setInterval(() => { if (hold) drive(l, r); }, 120);
+    }
+
+    function endHold() {
+      hold = null;
+      clearInterval(driveTimer);
+      driveTimer = null;
+      drive(0, 0);
+    }
+
+    function setConveyor(speed) {
+      if (!connected) return;
+      api("/api/conveyor", { method: "POST", body: JSON.stringify({ speed }) });
+      $("convCmd").textContent = String(speed);
+    }
+
+    function bindHold(id, dir) {
+      const el = $(id);
+      el.addEventListener("pointerdown", (ev) => { ev.preventDefault(); el.setPointerCapture(ev.pointerId); startHold(dir); });
+      el.addEventListener("pointerup", endHold);
+      el.addEventListener("pointercancel", endHold);
+      el.addEventListener("lostpointercapture", endHold);
+    }
+
+    $("connectBtn").onclick = async () => {
+      const ep = readEndpoint();
+      const res = await api("/api/connect", {
+        method: "POST",
+        body: JSON.stringify({ mode: "tcp", host: ep.host, port: ep.port }),
+      });
+      if (!res.ok) {
+        alert((res.error || "connect failed") + ` — tried ${res.host || ep.host}:${res.port || ep.port}`);
+      } else {
+        $("host").value = res.host || ep.host;
+        $("netPort").value = String(res.port || ep.port);
+      }
+      await poll();
+    };
+    $("host").addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") { ev.preventDefault(); $("connectBtn").click(); }
+    });
+    $("netPort").addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") { ev.preventDefault(); $("connectBtn").click(); }
+    });
+    $("disconnectBtn").onclick = async () => { await api("/api/disconnect", { method: "POST", body: "{}" }); await poll(); };
+    $("sendBtn").onclick = () => api("/api/arm", {
+      method: "POST",
+      body: JSON.stringify({ base: Number($("base").value), height: Number($("height").value), grip: Number($("grip").value) }),
+    });
+    $("centerBtn").onclick = () => api("/api/center", { method: "POST", body: "{}" });
+    $("openGripBtn").onclick = () => {
+      $("grip").value = 40; $("gripVal").textContent = "40";
+      api("/api/arm", { method: "POST", body: JSON.stringify({ grip: 40 }) });
+    };
+    $("closeGripBtn").onclick = () => {
+      $("grip").value = 140; $("gripVal").textContent = "140";
+      api("/api/arm", { method: "POST", body: JSON.stringify({ grip: 140 }) });
+    };
+    $("stopBtn").onclick = () => {
+      endHold();
+      api("/api/stop", { method: "POST", body: "{}" });
+      $("convCmd").textContent = "0";
+    };
+    $("motorTestBtn").onclick = () => api("/api/motor_test", { method: "POST", body: "{}" });
+    $("zeroBtn").onclick = () => api("/api/zero", { method: "POST", body: "{}" });
+    $("speed").addEventListener("input", () => { $("speedVal").textContent = $("speed").value; });
+    $("convSpeed").addEventListener("input", () => { $("convSpeedVal").textContent = $("convSpeed").value; });
+    $("convFwdBtn").onclick = () => setConveyor(Number($("convSpeed").value));
+    $("convStopBtn").onclick = () => setConveyor(0);
+    $("convRevBtn").onclick = () => setConveyor(-Number($("convSpeed").value));
+
+    bindSlider("base", "baseVal");
+    bindSlider("height", "heightVal");
+    bindSlider("grip", "gripVal");
+    let keysHeld = new Set();
+    let keyTimer = null;
+
+    function typingInField() {
+      const t = document.activeElement;
+      if (!t) return false;
+      const tag = (t.tagName || "").toLowerCase();
+      return tag === "input" || tag === "textarea" || tag === "select";
+    }
+
+    function armMod() {
+      return keysHeld.has("a") || keysHeld.has("A");
+    }
+
+    function arrowsHeld() {
+      return keysHeld.has("ArrowUp") || keysHeld.has("ArrowDown") ||
+             keysHeld.has("ArrowLeft") || keysHeld.has("ArrowRight");
+    }
+
+    function clampDeg(v) { return Math.max(0, Math.min(180, Math.round(v))); }
+
+    function driveFromKeys() {
+      if (!connected) return;
+      const spd = Number($("speed").value);
+      let l = 0, r = 0;
+      const f = keysHeld.has("ArrowUp");
+      const b = keysHeld.has("ArrowDown");
+      const L = keysHeld.has("ArrowLeft");
+      const R = keysHeld.has("ArrowRight");
+      if (f && !b) { l = spd; r = spd; }
+      else if (b && !f) { l = -spd; r = -spd; }
+      if (L && !R) { l -= spd; r += spd; }
+      else if (R && !L) { l += spd; r -= spd; }
+      l = Math.max(-255, Math.min(255, l));
+      r = Math.max(-255, Math.min(255, r));
+      drive(l, r);
+    }
+
+    function armFromKeys() {
+      if (!connected) return;
+      const step = 5;
+      const body = {};
+      if (keysHeld.has("ArrowLeft") && !keysHeld.has("ArrowRight")) {
+        body.base = clampDeg(Number($("base").value) - step);
+        $("base").value = String(body.base);
+        $("baseVal").textContent = String(body.base);
+      } else if (keysHeld.has("ArrowRight") && !keysHeld.has("ArrowLeft")) {
+        body.base = clampDeg(Number($("base").value) + step);
+        $("base").value = String(body.base);
+        $("baseVal").textContent = String(body.base);
+      }
+      if (keysHeld.has("ArrowUp") && !keysHeld.has("ArrowDown")) {
+        body.height = clampDeg(Number($("height").value) + step);
+        $("height").value = String(body.height);
+        $("heightVal").textContent = String(body.height);
+      } else if (keysHeld.has("ArrowDown") && !keysHeld.has("ArrowUp")) {
+        body.height = clampDeg(Number($("height").value) - step);
+        $("height").value = String(body.height);
+        $("heightVal").textContent = String(body.height);
+      }
+      if (body.base == null && body.height == null) return;
+      api("/api/arm", { method: "POST", body: JSON.stringify(body) });
+    }
+
+    function applyKeys() {
+      if (!connected) return;
+      if (armMod()) {
+        if (arrowsHeld()) armFromKeys();
+      } else if (arrowsHeld()) {
+        driveFromKeys();
+      }
+    }
+
+    function startKeyRepeat() {
+      applyKeys();
+      clearInterval(keyTimer);
+      keyTimer = setInterval(applyKeys, armMod() ? 40 : 90);
+    }
+
+    function stopKeyRepeat() {
+      clearInterval(keyTimer);
+      keyTimer = null;
+    }
+
+    function onKeyDown(ev) {
+      if (typingInField()) return;
+      const k = ev.key;
+      if (k === " ") {
+        ev.preventDefault();
+        endHold();
+        keysHeld.clear();
+        stopKeyRepeat();
+        drive(0, 0);
+        api("/api/stop", { method: "POST", body: "{}" });
+        return;
+      }
+      if (k === "a" || k === "A") {
+        ev.preventDefault();
+        if (keysHeld.has(k) && ev.repeat) return;
+        keysHeld.add(k);
+        drive(0, 0);
+        startKeyRepeat();
+        return;
+      }
+      if (!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(k)) return;
+      ev.preventDefault();
+      if (!connected) return;
+      keysHeld.add(k);
+      startKeyRepeat();
+    }
+
+    function onKeyUp(ev) {
+      const k = ev.key;
+      if (k === "a" || k === "A") {
+        ev.preventDefault();
+        keysHeld.delete("a");
+        keysHeld.delete("A");
+        if (arrowsHeld() && connected) {
+          startKeyRepeat();
+        } else {
+          stopKeyRepeat();
+        }
+        return;
+      }
+      if (!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(k)) return;
+      ev.preventDefault();
+      keysHeld.delete(k);
+      if (arrowsHeld()) {
+        applyKeys();
+      } else {
+        stopKeyRepeat();
+        if (!armMod()) drive(0, 0);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", () => {
+      keysHeld.clear();
+      stopKeyRepeat();
+      if (connected) drive(0, 0);
+    });
+
+    async function refreshRpmList() {
+      try {
+        const s = await api("/api/record/list");
+        const sel = $("rpmSelect");
+        const cur = sel.value;
+        sel.innerHTML = "";
+        (s.files || []).forEach((f) => {
+          const o = document.createElement("option");
+          o.value = f.name;
+          o.textContent = `${f.name} (${f.events})`;
+          sel.appendChild(o);
+        });
+        if (cur) sel.value = cur;
+      } catch (_) {}
+    }
+
+    async function refreshRecHint() {
+      try {
+        const s = await api("/api/record/state");
+        $("recStopBtn").disabled = !s.recording;
+        $("recStartBtn").disabled = !!s.recording || !!s.replaying || !connected;
+        $("replayBtn").disabled = !!s.recording || !!s.replaying || !connected || !$("rpmSelect").value;
+        $("replayStopBtn").disabled = !s.replaying;
+        if (s.recording) $("recHint").textContent = `RECORDING ${s.name}.rpm · ${s.events} cmds · ESP32 stream`;
+        else if (s.replaying) $("recHint").textContent = "REPLAYING…";
+        else $("recHint").textContent = `idle · ${(s.files || []).length} .rpm streamed from ESP32`;
+      } catch (_) {}
+    }
+
+    $("recStartBtn").onclick = async () => {
+      const name = ($("recName").value || "").trim();
+      const res = await api("/api/record/start", { method: "POST", body: JSON.stringify({ name }) });
+      if (!res.ok) { alert(res.error || "record failed"); return; }
+      $("recName").value = res.name;
+      await refreshRpmList();
+      await refreshRecHint();
+    };
+    $("recStopBtn").onclick = async () => {
+      const res = await api("/api/record/stop", { method: "POST", body: "{}" });
+      if (res.ok) await refreshRpmList();
+      await refreshRecHint();
+    };
+    $("replayBtn").onclick = async () => {
+      const name = $("rpmSelect").value;
+      const res = await api("/api/replay", { method: "POST", body: JSON.stringify({ name }) });
+      if (!res.ok) alert(res.error || "replay failed");
+      await refreshRecHint();
+    };
+    $("replayStopBtn").onclick = async () => {
+      await api("/api/replay/stop", { method: "POST", body: "{}" });
+      await refreshRecHint();
+    };
+
+    async function refreshMsList() {
+      try {
+        const s = await api("/api/mission/list");
+        const sel = $("msSelect");
+        const cur = sel.value;
+        sel.innerHTML = "";
+        (s.files || []).forEach((f) => {
+          const o = document.createElement("option");
+          o.value = f.name;
+          o.textContent = f.name;
+          sel.appendChild(o);
+        });
+        if (cur) sel.value = cur;
+      } catch (_) {}
+    }
+
+    async function refreshMsState() {
+      try {
+        const s = await api("/api/mission/state");
+        $("msRunBtn").disabled = !!s.running || !connected;
+        $("msStopBtn").disabled = !s.running;
+        if (s.running) $("msHint").textContent = `RUNNING · line ~${s.line}`;
+        else if (s.error) $("msHint").textContent = `err: ${s.error}`;
+        else $("msHint").textContent = "drive / arm / conveyor / wait / wait_color / play · OTA: ota-flash.bat";
+      } catch (_) {}
+    }
+
+    $("msLoadBtn").onclick = async () => {
+      const name = $("msSelect").value;
+      if (!name) return;
+      const r = await api("/api/mission/get?name=" + encodeURIComponent(name));
+      if (!r.ok) { alert(r.error || "load failed"); return; }
+      $("msName").value = r.name;
+      $("msSrc").value = r.src || "";
+    };
+    $("msSaveBtn").onclick = async () => {
+      const name = ($("msName").value || "").trim();
+      const src = $("msSrc").value || "";
+      const r = await api("/api/mission/save", { method: "POST", body: JSON.stringify({ name, src }) });
+      if (!r.ok) { alert(r.error || "save failed"); return; }
+      await refreshMsList();
+      $("msSelect").value = r.name;
+    };
+    $("msRunBtn").onclick = async () => {
+      const src = $("msSrc").value || "";
+      const name = ($("msName").value || "").trim();
+      const r = await api("/api/mission/run", { method: "POST", body: JSON.stringify({ src, name }) });
+      if (!r.ok) alert(r.error || "run failed");
+      await refreshMsState();
+    };
+    $("msStopBtn").onclick = async () => {
+      await api("/api/mission/stop", { method: "POST", body: "{}" });
+      await refreshMsState();
+    };
+    $("otaBoot0Btn").onclick = async () => {
+      if (!confirm("Reboot robot into ota_0?")) return;
+      await api("/api/ota", { method: "POST", body: JSON.stringify({ action: 7 }) });
+    };
+    $("otaBoot1Btn").onclick = async () => {
+      if (!confirm("Reboot robot into ota_1?")) return;
+      await api("/api/ota", { method: "POST", body: JSON.stringify({ action: 8 }) });
+    };
+
+    bindHold("fwdBtn", "fwd");
+    bindHold("backBtn", "back");
+    bindHold("leftBtn", "left");
+    bindHold("rightBtn", "right");
+    setInterval(poll, 100);
+    poll();
+    setInterval(refreshRecHint, 400);
+    setInterval(refreshMsState, 400);
+    refreshRpmList();
+    refreshMsList();
+    refreshMsState();
+    api("/api/mission/get?name=triage").then((r) => {
+      if (r.ok && !$("msSrc").value) {
+        $("msName").value = "triage";
+        $("msSrc").value = r.src || "";
+      }
+    }).catch(() => {});
+  </script>
+</body>
+</html>

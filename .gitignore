@@ -1,0 +1,46 @@
+# Build / flash
+build/
+**/build/
+*.bin
+!**/boot_app0.bin
+.arduino/
+.arduinoIDE/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+**/.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+uv.lock
+
+# Secrets / local
+.env
+**/secrets.py
+!**/secrets.py.example
+*.pem
+*.key
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs / temp
+*.log
+_read_*.txt
+**/__pycache__/
+
+# MicroPython local firmware downloads
+esp_mpy/firmware/
+esp_mpy/vendor/
+
+# Large / generated
+**/*.map
+**/esp_ui.ino.map

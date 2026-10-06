@@ -1,0 +1,7 @@
+# nanopb options for meowler.proto
+meowler.Log.text max_size:120
+meowler.RecCtrl.name max_size:32
+meowler.RecEvent.name max_size:32
+meowler.OtaBegin.version max_size:24
+meowler.OtaChunk.data max_size:4096
+meowler.OtaStatus.detail max_size:48

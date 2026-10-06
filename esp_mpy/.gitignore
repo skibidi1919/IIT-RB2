@@ -1,0 +1,5 @@
+firmware/*.bin
+app/secrets.py
+vendor/
+__pycache__/
+*.pyc

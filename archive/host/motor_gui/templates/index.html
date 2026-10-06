@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meowler Motors</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="brand-block">
+      <p class="eyebrow">n20 · l298n · nano</p>
+      <h1 class="brand">Drive</h1>
+      <p class="tagline">Bench test for four geared motors — speed and direction.</p>
+    </header>
+
+    <section class="link-bar" aria-label="Serial connection">
+      <div class="link-left">
+        <span class="dot" id="linkDot" data-state="off"></span>
+        <div class="link-copy">
+          <strong id="linkLabel">Disconnected</strong>
+          <span id="linkDetail">Select the Nano serial port</span>
+        </div>
+      </div>
+      <div class="link-controls">
+        <label class="field">
+          <span>Port</span>
+          <select id="portSelect"></select>
+        </label>
+        <button type="button" class="btn primary" id="connectBtn">Connect</button>
+        <button type="button" class="btn ghost" id="refreshBtn" title="Refresh ports">↻</button>
+      </div>
+    </section>
+
+    <section class="bulk" aria-label="All motors">
+      <label class="speed-field">
+        <span>Global speed</span>
+        <input id="globalSpeed" class="slider" type="range" min="0" max="255" value="180" />
+        <strong id="globalSpeedVal">180</strong>
+      </label>
+      <div class="bulk-actions">
+        <button type="button" class="btn action" id="allFwd" disabled>All forward</button>
+        <button type="button" class="btn action" id="allRev" disabled>All reverse</button>
+        <button type="button" class="btn action danger" id="allStop" disabled>Stop all</button>
+      </div>
+    </section>
+
+    <section class="motors" id="motors" aria-label="Motors"></section>
+
+    <footer class="log" aria-live="polite">
+      <span class="log-label">Board</span>
+      <code id="logLine">waiting…</code>
+    </footer>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

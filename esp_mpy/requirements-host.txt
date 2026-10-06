@@ -1,0 +1,4 @@
+# Host-side tools for flashing MicroPython and deploying app/
+esptool>=4.7
+mpremote>=1.24
+pyserial>=3.5

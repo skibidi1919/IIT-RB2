@@ -1,0 +1,54 @@
+# Freenove ESP32-S3-WROOM N16R8 — Meowler pinout (matches esp_ui)
+# GPIO14 = onboard FLASH LED — never use for I2C.
+
+# I2C Wire: PCA9685 @0x40 + VL53L0X @0x29
+I2C_SDA = 21
+I2C_SCL = 47
+I2C_FREQ = 100_000
+PCA_ADDR = 0x40
+TOF_ADDR = 0x29
+
+# PCA9685 channels @ 150 Hz
+CH_BASE = 0
+CH_HEIGHT = 1
+CH_GRIP = 2
+CH_CONVEYOR = 4  # SG90-360 continuous (NOT CH15)
+
+PCA_FREQ_HZ = 150
+SERVO_US_MIN = 500
+SERVO_US_MAX = 2500
+CONV_US_MIN = 1000
+CONV_US_STOP = 1500
+CONV_US_MAX = 2000
+
+# L298N drive (3.3 V logic; pull ENA/ENB jumpers)
+# M1 OUT3/4
+PIN_ENB = 10
+PIN_IN3 = 13
+PIN_IN4 = 8
+# M2 OUT1/2
+PIN_ENA = 9
+PIN_IN1 = 11
+PIN_IN2 = 12
+
+# Quadrature encoders
+PIN_M1_C1 = 4
+PIN_M1_C2 = 5
+PIN_M2_C1 = 6
+PIN_M2_C2 = 7
+
+# TCS3200 (S0=5V S1=GND → 20%)
+PIN_TCS_S2 = 15
+PIN_TCS_S3 = 16
+PIN_TCS_OUT = 17
+PIN_TCS_LED = 18
+
+PIN_FLASH_LED = 14  # do not repurpose
+
+# Network
+TCP_PORT = 3333
+WIFI_HOST_OCTET = 222
+HOSTNAME = "meowler"
+
+WHEEL_DIAM_MM = 43.0
+STEPS_PER_REV = 600.0
