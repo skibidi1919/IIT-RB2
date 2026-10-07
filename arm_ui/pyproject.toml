@@ -18,4 +18,17 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["meowler_pb"]
-py-modules = ["app", "serial_pb_log", "mission", "ota_upload"]
+py-modules = [
+  "app",
+  "serial_pb_log",
+  "ota_upload",
+  "rpm_format",
+  "color_host",
+  "safety",
+  "robot_log",
+  "mock_robot",
+  "hardware_ready",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]

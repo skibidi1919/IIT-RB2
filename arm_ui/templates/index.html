@@ -3,389 +3,1382 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Meowler Control Panel</title>
+  <title>Meowler Control</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0e1114;
-      --panel: #161b20;
-      --panel2: #1c2329;
-      --ink: #d7e0e7;
-      --muted: #7d8b96;
-      --line: #2a333c;
-      --ok: #3ecf8e;
-      --bad: #e35d6a;
-      --warn: #e6b35a;
-      --accent: #4aa3ff;
-      --drive: #3ecf8e;
+      --bg: #0a1214;
+      --panel: rgba(16, 28, 32, 0.88);
+      --panel-2: #152428;
+      --ink: #eef6f4;
+      --muted: #8aa3a0;
+      --faint: #5a736f;
+      --line: rgba(120, 200, 180, 0.08);
+      --line-strong: rgba(120, 200, 180, 0.16);
+      --accent: #e6a35c;
+      --accent-ink: #1a1206;
+      --ok: #3dd68c;
+      --bad: #ff5a5a;
+      --warn: #e8b04a;
+      --info: #4ec4d4;
+      --red: #ff5a5a;
+      --yel: #e8b04a;
+      --grn: #3dd68c;
+      --r: 8px;
+      --font: "Syne", sans-serif;
+      --mono: "JetBrains Mono", monospace;
+      --top-h: 3.7rem;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
     }
     * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: "IBM Plex Sans", sans-serif;
       color: var(--ink);
+      font-family: var(--font);
+      font-weight: 500;
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
       background:
-        linear-gradient(180deg, #12171c 0%, var(--bg) 40%),
-        repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(255,255,255,0.015) 24px);
+        radial-gradient(900px 480px at 8% -10%, rgba(78, 196, 212, 0.16), transparent 55%),
+        radial-gradient(700px 420px at 92% 0%, rgba(230, 163, 92, 0.12), transparent 50%),
+        radial-gradient(600px 500px at 50% 110%, rgba(61, 214, 140, 0.08), transparent 45%),
+        linear-gradient(165deg, #071014 0%, #0c181c 45%, #0a1214 100%);
+      animation: bg-drift 18s var(--ease) infinite alternate;
     }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      opacity: 0.35;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    }
+    @keyframes bg-drift {
+      from { transform: scale(1) translateY(0); }
+      to { transform: scale(1.04) translateY(-1.2%); }
+    }
+    body.estop-on::before {
+      background:
+        radial-gradient(800px 400px at 50% -10%, rgba(255, 90, 90, 0.22), transparent 55%),
+        linear-gradient(165deg, #1a0a0a 0%, #120808 100%);
+    }
+    body.estop-on .shell {
+      outline: 2px solid rgba(255, 90, 90, 0.45);
+      outline-offset: -2px;
+    }
+    body.link-live .brand em { animation: brand-glow 2.4s ease-in-out infinite; }
+    body.reconnecting .brand em { animation: brand-seek 1s ease-in-out infinite; color: var(--warn); }
+    @keyframes brand-glow {
+      0%, 100% { text-shadow: 0 0 0 transparent; }
+      50% { text-shadow: 0 0 18px rgba(230, 163, 92, 0.45); }
+    }
+    @keyframes brand-seek {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+
     .shell {
-      max-width: 1100px;
+      max-width: 1320px;
       margin: 0 auto;
-      padding: 1rem 1rem 2rem;
+      padding: 0 1rem 1.25rem;
+      min-height: 100%;
     }
-    header {
-      display: flex;
-      flex-wrap: wrap;
+
+    /* —— Sticky operator chrome —— */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       gap: 0.75rem 1rem;
       align-items: center;
-      justify-content: space-between;
-      border: 1px solid var(--line);
-      background: var(--panel);
-      padding: 0.75rem 1rem;
-      margin-bottom: 0.75rem;
+      min-height: var(--top-h);
+      margin: 0 -1rem;
+      padding: 0.55rem 1rem;
+      background: rgba(14, 17, 22, 0.94);
+      border-bottom: 1px solid var(--line-strong);
+      backdrop-filter: blur(8px);
     }
-    header h1 {
+    @media (max-width: 900px) {
+      .topbar { grid-template-columns: 1fr auto; }
+      .topbar .brand-block { grid-column: 1 / -1; }
+    }
+
+    .brand-block { display: flex; align-items: baseline; gap: 0.65rem; min-width: 0; }
+    .brand {
       margin: 0;
-      font-size: 1rem;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .brand em { font-style: normal; color: var(--accent); }
+    .brand-sub {
+      font-family: var(--mono);
+      font-size: 0.62rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      font-family: "IBM Plex Mono", monospace;
+      color: var(--faint);
+      white-space: nowrap;
     }
-    .linkbar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-    select, button, input[type="range"], input[type="text"], input[type="number"] { font: inherit; }
-    select, button, input[type="text"], input[type="number"] {
+
+    .status-cluster {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem 0.55rem;
+      min-width: 0;
+    }
+    .op-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: var(--r);
+      border: 1px solid var(--line-strong);
+      background: var(--panel);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .op-chip .dot {
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      background: var(--faint);
+      flex-shrink: 0;
+    }
+    .op-chip[data-mode="DISCONNECTED"] { color: #d08080; border-color: rgba(239,85,85,0.35); }
+    .op-chip[data-mode="DISCONNECTED"] .dot { background: var(--bad); }
+    .op-chip[data-mode="CONNECTED"],
+    .op-chip[data-mode="MANUAL MODE"] { color: var(--ok); border-color: rgba(62,207,142,0.35); }
+    .op-chip[data-mode="CONNECTED"] .dot,
+    .op-chip[data-mode="MANUAL MODE"] .dot { background: var(--ok); }
+    .op-chip[data-mode="RECORDING"] { color: #ffb4b4; border-color: rgba(239,85,85,0.5); background: rgba(239,85,85,0.12); }
+    .op-chip[data-mode="RECORDING"] .dot { background: var(--bad); animation: blink 1s step-end infinite; }
+    .op-chip[data-mode="READY FOR REPLAY"] { color: var(--accent); border-color: rgba(212,161,90,0.45); }
+    .op-chip[data-mode="READY FOR REPLAY"] .dot { background: var(--accent); }
+    .op-chip[data-mode="REPLAYING"] { color: var(--info); border-color: rgba(94,182,232,0.45); background: rgba(94,182,232,0.1); }
+    .op-chip[data-mode="REPLAYING"] .dot { background: var(--info); animation: blink 1s step-end infinite; }
+    .op-chip[data-mode="PAUSED"] { color: var(--warn); border-color: rgba(224,168,74,0.45); }
+    .op-chip[data-mode="PAUSED"] .dot { background: var(--warn); }
+    .op-chip[data-mode="ERROR"],
+    .op-chip[data-mode="EMERGENCY STOP"] {
+      color: #fff;
+      background: #b02020;
+      border-color: #ef5555;
+    }
+    .op-chip[data-mode="ERROR"] .dot,
+    .op-chip[data-mode="EMERGENCY STOP"] .dot { background: #fff; animation: blink 0.7s step-end infinite; }
+
+    @keyframes blink {
+      50% { opacity: 0.25; }
+    }
+
+    .meta-chip {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      max-width: 28rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+    .btn-estop {
+      min-width: 6.5rem;
+      min-height: 2.55rem;
+      padding: 0.45rem 0.85rem;
+      border: 2px solid #ff6b6b;
+      border-radius: var(--r);
+      background: #c42222;
+      color: #fff;
+      font-family: var(--font);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 0 0 rgba(239, 85, 85, 0.4);
+    }
+    .btn-estop:hover { background: #e03030; }
+    .btn-estop:active { transform: translateY(1px); }
+    body.estop-on .btn-estop {
+      animation: estop-pulse 1.1s ease-in-out infinite;
+    }
+    @keyframes estop-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 85, 85, 0.35); }
+      50% { box-shadow: 0 0 0 6px rgba(239, 85, 85, 0); }
+    }
+    .btn-estop-clear {
+      font-size: 0.72rem;
+      padding: 0.45rem 0.65rem;
+    }
+
+    /* —— Alert banner —— */
+    .alert {
+      display: none;
+      margin: 0.75rem 0 0;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--r);
+      border: 1px solid rgba(239, 85, 85, 0.4);
+      background: rgba(239, 85, 85, 0.12);
+      color: #ffc0c0;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      line-height: 1.4;
+    }
+    .alert.show { display: block; }
+    .alert.warn {
+      border-color: rgba(224, 168, 74, 0.4);
+      background: rgba(224, 168, 74, 0.1);
+      color: #f0d09a;
+    }
+
+    /* —— Link / reconnect —— */
+    .link-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+      margin: 0.85rem 0 0.55rem;
+      padding: 0.65rem 0.75rem;
+      background: var(--panel);
       border: 1px solid var(--line);
-      background: var(--panel2);
+      border-radius: var(--r);
+      backdrop-filter: blur(12px);
+      animation: rise-in 0.55s var(--ease) both;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    body.link-live .link-row {
+      border-color: rgba(61, 214, 140, 0.28);
+      box-shadow: 0 0 0 1px rgba(61, 214, 140, 0.08), 0 12px 40px rgba(0, 0, 0, 0.25);
+    }
+    body.reconnecting .link-row {
+      border-color: rgba(232, 176, 74, 0.45);
+      box-shadow: 0 0 24px rgba(232, 176, 74, 0.12);
+    }
+    .link-fields {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--r);
+      background: rgba(0, 0, 0, 0.35);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .link-fields:focus-within { border-color: rgba(230, 163, 92, 0.55); }
+    .link-fields input {
+      border: 0;
+      background: transparent;
       color: var(--ink);
-      padding: 0.45rem 0.7rem;
-      border-radius: 2px;
-      font-family: "IBM Plex Mono", monospace;
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      padding: 0.45rem 0.55rem;
+      outline: none;
+      min-width: 0;
+    }
+    #host { width: 9.8rem; }
+    #netPort {
+      width: 3.8rem;
+      border-left: 1px solid var(--line);
+    }
+    .sticky-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.55rem;
+      border-radius: var(--r);
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.25);
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .sticky-toggle input { accent-color: var(--accent); width: 0.9rem; height: 0.9rem; }
+    .sticky-toggle.on {
+      color: var(--accent);
+      border-color: rgba(230, 163, 92, 0.4);
+      background: rgba(230, 163, 92, 0.1);
+    }
+    .hw-flags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-left: auto;
+    }
+    .pill {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      padding: 0.28rem 0.48rem;
+      border-radius: 4px;
+      border: 1px solid var(--line);
+      color: var(--faint);
+      text-transform: uppercase;
+      transition: color 0.25s, border-color 0.25s, background 0.25s, transform 0.2s;
+    }
+    .pill.on {
+      color: var(--ok);
+      border-color: rgba(61, 214, 140, 0.45);
+      background: rgba(61, 214, 140, 0.1);
+      animation: pill-pop 0.35s var(--ease);
+    }
+    .pill.off {
+      color: #b07070;
+      border-color: rgba(255, 90, 90, 0.22);
+    }
+    .pill.pulse {
+      animation: pill-pulse 1.1s ease-in-out infinite;
+    }
+    @keyframes pill-pop {
+      from { transform: scale(0.92); opacity: 0.5; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes pill-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(232, 176, 74, 0.35); }
+      50% { box-shadow: 0 0 0 5px rgba(232, 176, 74, 0); }
+    }
+    .latency {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--faint);
+      min-width: 2.8rem;
+      text-align: right;
+      transition: color 0.2s;
+    }
+    .latency.hot { color: var(--ok); }
+
+    .reconnect-banner {
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0 0 0.85rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: var(--r);
+      border: 1px solid rgba(232, 176, 74, 0.4);
+      background: linear-gradient(105deg, rgba(232, 176, 74, 0.14), rgba(78, 196, 212, 0.08));
+      overflow: hidden;
+      position: relative;
+      animation: rise-in 0.4s var(--ease);
+    }
+    .reconnect-banner.show { display: flex; flex-wrap: wrap; }
+    .reconnect-banner .rb-title {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warn);
+    }
+    .reconnect-banner .rb-note {
+      flex: 1;
+      min-width: 12rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .reconnect-banner .rb-bar {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 2px;
+      background: rgba(232, 176, 74, 0.15);
+    }
+    .reconnect-banner .rb-bar > i {
+      display: block;
+      height: 100%;
+      width: 35%;
+      background: linear-gradient(90deg, transparent, var(--warn), transparent);
+      animation: seek-bar 1.4s linear infinite;
+    }
+    @keyframes seek-bar {
+      from { transform: translateX(-120%); }
+      to { transform: translateX(320%); }
+    }
+    @keyframes rise-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* —— Buttons —— */
+    button, select, input[type="text"], input[type="number"] {
+      font: inherit;
+      border: 1px solid var(--line-strong);
+      background: var(--panel-2);
+      color: var(--ink);
+      padding: 0.42rem 0.68rem;
+      border-radius: var(--r);
       font-size: 0.78rem;
     }
-    input[type="text"] { width: 11rem; }
-    input[type="number"] { width: 5rem; }
-    .color-raw {
-      display: grid;
-      gap: 0.65rem;
-      font-family: "IBM Plex Mono", monospace;
+    select, input[type="text"], input[type="number"] {
+      font-family: var(--mono);
+      font-size: 0.74rem;
     }
-    .color-raw .row {
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.18s var(--ease), border-color 0.18s, opacity 0.18s, transform 0.18s var(--ease), box-shadow 0.18s;
+    }
+    button:hover:not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.28);
+      background: #1e3338;
+      transform: translateY(-1px);
+    }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    button.primary {
+      background: linear-gradient(135deg, #efb46a, var(--accent));
+      color: var(--accent-ink);
+      border-color: transparent;
+      box-shadow: 0 4px 16px rgba(230, 163, 92, 0.22);
+    }
+    button.primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #f0c07a, #e6a35c);
+      box-shadow: 0 6px 22px rgba(230, 163, 92, 0.32);
+    }
+    button.ghost-accent {
+      border-color: rgba(78, 196, 212, 0.35);
+      color: var(--info);
+      background: rgba(78, 196, 212, 0.08);
+    }
+    button.danger {
+      background: rgba(239, 85, 85, 0.14);
+      color: #ffb0b0;
+      border-color: rgba(239, 85, 85, 0.4);
+    }
+    button.danger:hover:not(:disabled) { background: rgba(239, 85, 85, 0.25); }
+    button.ok {
+      background: rgba(62, 207, 142, 0.12);
+      color: #8eecc0;
+      border-color: rgba(62, 207, 142, 0.35);
+    }
+    button.warn {
+      background: rgba(224, 168, 74, 0.14);
+      color: #f0d09a;
+      border-color: rgba(224, 168, 74, 0.4);
+    }
+    button:disabled {
+      opacity: 0.28;
+      cursor: not-allowed;
+      filter: grayscale(0.2);
+    }
+    button.loading {
+      position: relative;
+      color: transparent !important;
+      pointer-events: none;
+    }
+    button.loading::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 0.9rem;
+      height: 0.9rem;
+      border: 2px solid rgba(255,255,255,0.25);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* —— Layout grids —— */
+    .workspace {
       display: grid;
-      grid-template-columns: 7rem 1fr;
+      grid-template-columns: 1fr 1.15fr 1fr;
       gap: 0.75rem;
-      align-items: baseline;
-      border-bottom: 1px solid var(--line);
-      padding: 0.35rem 0;
     }
-    .color-raw .row span { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.06em; }
-    .color-raw .row strong { font-size: 1.15rem; font-weight: 700; }
-    .color-raw .hint { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.75rem; }
-    .barrow {
+    .row-2 {
       display: grid;
-      grid-template-columns: 18px 1fr 40px;
-      gap: 0.45rem;
-      align-items: center;
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 0.75rem;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
     }
-    .barrow .track {
-      height: 0.5rem;
-      background: #0c1014;
+    @media (max-width: 1020px) {
+      .workspace, .row-2 { grid-template-columns: 1fr; }
+    }
+
+    .sec {
+      background: var(--panel);
       border: 1px solid var(--line);
-      overflow: hidden;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      backdrop-filter: blur(10px);
+      animation: rise-in 0.6s var(--ease) both;
+      transition: border-color 0.25s, transform 0.25s var(--ease), box-shadow 0.25s;
     }
-    .barrow .track > i { display: block; height: 100%; width: 0%; transition: width 0.12s ease; }
-    .barrow.r .track > i { background: #e35d6a; }
-    .barrow.g .track > i { background: #3ecf8e; }
-    .barrow.y .track > i { background: #e6b35a; }
-    .barrow.c .track > i { background: #8a96a0; }
-    .color-dec {
+    .sec:nth-child(1) { animation-delay: 0.05s; }
+    .sec:nth-child(2) { animation-delay: 0.12s; }
+    .sec:nth-child(3) { animation-delay: 0.18s; }
+    .sec:hover {
+      border-color: rgba(120, 200, 180, 0.22);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+    }
+    .workspace .sec:hover { transform: translateY(-2px); }
+    .sec > header {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
-      gap: 0.75rem;
-      padding: 0.45rem 0 0.7rem;
+      gap: 0.5rem;
+      padding: 0.55rem 0.8rem;
       border-bottom: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.22);
     }
-    .color-dec span { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
-    .color-dec strong { font-size: 1.85rem; font-weight: 700; letter-spacing: 0.08em; }
-    .color-dec.red strong { color: #e35d6a; }
-    .color-dec.yellow strong { color: #e6b35a; }
-    .color-dec.green strong { color: #3ecf8e; }
-    .color-dec.wait strong { color: var(--muted); }
-    button { cursor: pointer; font-weight: 600; }
-    button.primary { background: var(--accent); color: #061018; border-color: transparent; }
-    button.danger { background: var(--bad); color: #14080a; border-color: transparent; }
-    button.ok { background: var(--drive); color: #06140e; border-color: transparent; }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
-    .pill {
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 0.72rem;
-      padding: 0.25rem 0.5rem;
-      border: 1px solid var(--line);
-      color: var(--muted);
-    }
-    .pill.on { color: var(--ok); border-color: rgba(62,207,142,0.4); }
-    .pill.off { color: var(--bad); border-color: rgba(227,93,106,0.4); }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1.1fr 1fr 1fr;
-      gap: 0.75rem;
-    }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-
-    .panel {
-      border: 1px solid var(--line);
-      background: var(--panel);
-      min-height: 280px;
-    }
-    .panel > h2 {
+    .sec > header h2 {
       margin: 0;
-      padding: 0.55rem 0.75rem;
-      border-bottom: 1px solid var(--line);
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--muted);
-      font-family: "IBM Plex Mono", monospace;
-      background: var(--panel2);
     }
-    .panel .body { padding: 0.75rem; }
+    .sec > header .meta {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--faint);
+    }
+    .sec .body { padding: 0.8rem; flex: 1; }
+
+    /* Drive pad */
+    .pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.35rem;
+      max-width: 188px;
+      margin: 0 auto 0.75rem;
+    }
+    .pad button {
+      aspect-ratio: 1.1;
+      padding: 0;
+      font-size: 1.1rem;
+      background: rgba(0, 0, 0, 0.35);
+      border-color: var(--line-strong);
+    }
+    .pad button:hover:not(:disabled) {
+      background: var(--panel-2);
+      box-shadow: 0 0 0 1px rgba(78, 196, 212, 0.25);
+    }
+    .pad button:active:not(:disabled) {
+      transform: scale(0.96);
+    }
+    .pad .ghost { visibility: hidden; pointer-events: none; }
+    .pad #stopBtn {
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    label.slider {
+      display: grid;
+      grid-template-columns: 3.2rem 1fr 2.1rem;
+      gap: 0.45rem;
+      align-items: center;
+      margin: 0.4rem 0;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      height: 0.3rem;
+    }
+    input[type="range"]:disabled { opacity: 0.35; }
+    .val {
+      font-family: var(--mono);
+      text-align: right;
+      color: var(--ink);
+      font-size: 0.74rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.55rem;
+    }
+    .hint {
+      color: var(--faint);
+      font-size: 0.68rem;
+      margin: 0.55rem 0 0;
+      font-family: var(--mono);
+      line-height: 1.4;
+    }
+
+    /* Sensors */
+    .readout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
+      margin-bottom: 0.7rem;
+    }
+    .readout {
+      padding: 0.45rem 0.55rem;
+      background: rgba(0, 0, 0, 0.22);
+      border-left: 2px solid var(--line-strong);
+      border-radius: 0 3px 3px 0;
+      min-width: 0;
+    }
+    .readout.span2 { grid-column: 1 / -1; }
+    .readout .k {
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 0.15rem;
+    }
+    .readout .v {
+      font-family: var(--mono);
+      font-size: 1.35rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      color: var(--info);
+    }
+    .readout .v.dead { color: var(--faint); }
+    .readout .v.sm { font-size: 0.9rem; color: var(--ink); }
+    .readout .sub {
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      color: var(--faint);
+      margin-top: 0.2rem;
+    }
+    .tof-bar, .progress {
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      margin-top: 0.45rem;
+    }
+    .tof-bar > i, .progress > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--info);
+      transition: width 0.1s linear;
+    }
+    .progress > i { background: linear-gradient(90deg, #3a7ea8, var(--info)); }
 
     .metrics {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.45rem;
-      margin-bottom: 0.75rem;
+      gap: 0.4rem;
     }
     .metric {
-      border: 1px solid var(--line);
-      background: var(--panel2);
-      padding: 0.55rem 0.65rem;
-      font-family: "IBM Plex Mono", monospace;
+      padding: 0.4rem 0.5rem;
+      border-left: 2px solid var(--line);
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 0 3px 3px 0;
     }
     .metric span {
       display: block;
-      color: var(--muted);
-      font-size: 0.65rem;
-      letter-spacing: 0.06em;
-      margin-bottom: 0.2rem;
+      color: var(--faint);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: var(--mono);
+      margin-bottom: 0.15rem;
     }
-    .metric strong { font-size: 1.05rem; font-weight: 700; }
+    .metric strong {
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
     .metric.wide { grid-column: 1 / -1; }
 
-    .pad {
+    .face {
       display: grid;
-      grid-template-columns: repeat(3, 58px);
-      gap: 0.4rem;
-      justify-content: center;
-      margin: 0.5rem 0 0.75rem;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+      max-width: 108px;
+      margin: 0.45rem 0 0;
     }
-    .pad button { width: 58px; height: 48px; padding: 0; }
-    .pad .ghost { visibility: hidden; }
-
-    label.slider {
+    .face b {
+      aspect-ratio: 1;
       display: grid;
-      grid-template-columns: 64px 1fr 42px;
-      gap: 0.55rem;
+      place-items: center;
+      font-family: var(--mono);
+      font-size: 0.56rem;
+      color: var(--faint);
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 2px;
+      font-weight: 500;
+    }
+    .face b.on {
+      color: var(--accent-ink);
+      background: var(--accent);
+    }
+    .face .blank { visibility: hidden; }
+
+    /* Color */
+    .color-dec {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
-      margin: 0.55rem 0;
-      font-size: 0.82rem;
-      font-weight: 600;
-    }
-    input[type="range"] { width: 100%; accent-color: var(--accent); }
-    .val { font-family: "IBM Plex Mono", monospace; text-align: right; color: var(--muted); font-size: 0.8rem; }
-
-    .actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
-    .logs {
-      margin-top: 0.75rem;
+      gap: 0.6rem;
+      padding: 0.5rem 0.6rem;
+      margin-bottom: 0.55rem;
+      border-radius: var(--r);
+      background: rgba(0, 0, 0, 0.25);
       border: 1px solid var(--line);
-      background: var(--panel);
-      max-height: 150px;
-      overflow: auto;
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 0.72rem;
+    }
+    .color-dec .lbl {
+      color: var(--faint);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: var(--mono);
+    }
+    .color-dec strong {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      font-family: var(--mono);
+      justify-self: center;
+    }
+    .color-dec .conf {
+      font-family: var(--mono);
+      font-size: 0.64rem;
       color: var(--muted);
-      padding: 0.65rem 0.75rem;
+      text-align: right;
+    }
+    .color-dec.red { border-color: rgba(239,85,85,0.45); }
+    .color-dec.red strong { color: var(--red); }
+    .color-dec.yellow { border-color: rgba(224,168,74,0.45); }
+    .color-dec.yellow strong { color: var(--yel); }
+    .color-dec.green { border-color: rgba(62,207,142,0.45); }
+    .color-dec.green strong { color: var(--grn); }
+    .color-dec.wait strong { color: var(--faint); }
+
+    .barrow {
+      display: grid;
+      grid-template-columns: 14px 1fr 28px;
+      gap: 0.4rem;
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      margin: 0.28rem 0;
+      color: var(--muted);
+    }
+    .barrow .track {
+      height: 0.26rem;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .barrow .track > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      transition: width 0.12s ease;
+    }
+    .barrow.r .track > i { background: var(--red); }
+    .barrow.y .track > i { background: var(--yel); }
+    .barrow.g .track > i { background: var(--grn); }
+    .barrow.c .track > i { background: #6a7484; }
+    .barrow strong {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .split-arm { display: grid; gap: 0.7rem; }
+    .split-arm .divider {
+      height: 1px;
+      background: var(--line);
+    }
+
+    /* Mission / record */
+    .mission-block {
+      padding: 0.65rem;
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      background: rgba(0, 0, 0, 0.18);
+      margin-bottom: 0.55rem;
+    }
+    .mission-block:last-of-type { margin-bottom: 0; }
+    .mission-block h3 {
+      margin: 0 0 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--faint);
+      font-weight: 500;
+    }
+    .mission-block.record h3 { color: #d08080; }
+    .mission-block.replay h3 { color: #7ab8d8; }
+    .mission-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.35rem;
+      margin-top: 0.55rem;
+    }
+    .stat {
+      padding: 0.35rem 0.4rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+      text-align: center;
+    }
+    .stat .k {
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+    .stat .v {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      margin-top: 0.1rem;
+    }
+    #recName, #rpmSelect { flex: 1; min-width: 7rem; }
+
+    /* Logs */
+    .log-sec { margin-top: 0.75rem; }
+    .log-sec .body { padding: 0; }
+    .logs {
+      max-height: 160px;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      padding: 0.65rem 0.8rem;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      background: rgba(0, 0, 0, 0.35);
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.62);
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      width: min(420px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      padding: 1.1rem 1.15rem;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+    }
+    .modal.danger-modal { border-color: rgba(239, 85, 85, 0.45); }
+    .modal h3 {
+      margin: 0 0 0.45rem;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .modal p {
+      margin: 0 0 1rem;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.45;
       white-space: pre-wrap;
     }
-    .hint { color: var(--warn); font-size: 0.75rem; margin: 0.4rem 0 0; font-family: "IBM Plex Mono", monospace; }
+    .modal .actions { margin-top: 0; justify-content: flex-end; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 1.1rem;
+      right: 1.1rem;
+      z-index: 110;
+      max-width: min(380px, calc(100vw - 2rem));
+      padding: 0.75rem 0.95rem;
+      border-radius: 10px;
+      border: 1px solid rgba(78, 196, 212, 0.35);
+      background: linear-gradient(145deg, rgba(18, 36, 40, 0.96), rgba(12, 22, 26, 0.96));
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      line-height: 1.45;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(14px) scale(0.96);
+      transition: opacity 0.28s var(--ease), transform 0.28s var(--ease);
+      backdrop-filter: blur(10px);
+    }
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+    }
+
+    .kbd {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      padding: 0.1rem 0.28rem;
+      border: 1px solid var(--line-strong);
+      border-radius: 2px;
+      color: var(--faint);
+    }
+
+    .link-kind {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 0.3rem 0.55rem;
+      border-radius: 3px;
+      border: 1px solid var(--line-strong);
+      text-transform: uppercase;
+    }
+    .link-kind[data-kind="DISCONNECTED"] { color: #c87878; }
+    .link-kind[data-kind="SIMULATED"] { color: var(--info); border-color: rgba(94,182,232,0.4); }
+    .link-kind[data-kind="DRY_RUN"] { color: var(--warn); border-color: rgba(224,168,74,0.45); background: rgba(224,168,74,0.08); }
+    .link-kind[data-kind="REAL_HARDWARE"] { color: var(--ok); border-color: rgba(62,207,142,0.45); background: rgba(62,207,142,0.08); }
+
+    .origin-banner {
+      margin: 0.65rem 0 0;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--r);
+      border: 1px solid rgba(224, 168, 74, 0.35);
+      background: rgba(224, 168, 74, 0.08);
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: #e8c888;
+      line-height: 1.4;
+    }
+    .preflight-list {
+      display: grid;
+      gap: 0.28rem;
+      margin-top: 0.45rem;
+      max-height: 180px;
+      overflow: auto;
+    }
+    .pf-row {
+      display: grid;
+      grid-template-columns: 4.2rem 1fr;
+      gap: 0.4rem;
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      padding: 0.28rem 0.35rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 3px;
+    }
+    .pf-row .st { font-weight: 600; letter-spacing: 0.04em; }
+    .pf-row .st.PASS { color: var(--ok); }
+    .pf-row .st.FAIL { color: var(--bad); }
+    .pf-row .st.WARNING { color: var(--warn); }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+    .toggle-row label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div class="shell">
-    <header>
-      <h1>Meowler // Control Panel</h1>
-      <div class="linkbar">
-        <input id="host" type="text" value="192.168.137.222" placeholder="192.168.137.222" title="ESP32 static IP (exact)" autocomplete="off" spellcheck="false" />
-        <input id="netPort" type="number" value="3333" min="1" max="65535" title="TCP port" />
-        <button class="primary" id="connectBtn" type="button">Connect WiFi</button>
-        <button id="disconnectBtn" type="button" disabled>Disconnect</button>
-        <span class="pill off" id="status">OFFLINE</span>
-        <span class="pill off" id="flagWifi">WIFI</span>
-        <span class="pill off" id="flagPca">PCA</span>
-        <span class="pill off" id="flagTof">TOF</span>
-        <span class="pill off" id="flagImu">IMU</span>
+    <header class="topbar">
+      <div class="brand-block">
+        <h1 class="brand">MEOW<em>LER</em></h1>
+        <span class="brand-sub">RFGYC control</span>
+      </div>
+      <div class="status-cluster" id="modeBar" data-mode="DISCONNECTED">
+        <div class="op-chip" id="opChip" data-mode="DISCONNECTED">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="opMode">DISCONNECTED</span>
+        </div>
+        <span class="link-kind" id="linkKind" data-kind="DISCONNECTED">DISCONNECTED</span>
+        <span class="meta-chip" id="modeMeta">Connect to begin</span>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="btn-estop-clear" id="estopClearBtn" disabled title="Clear emergency stop">Clear E-Stop</button>
+        <button type="button" class="btn-estop" id="estopBtn" title="Emergency stop (Ctrl+Enter)">E-Stop</button>
       </div>
     </header>
 
-    <div class="grid">
-      <section class="panel">
-        <h2>Drive</h2>
+    <div class="alert" id="modeWarn" role="alert"></div>
+    <div class="origin-banner" id="originBanner">
+      ORIGIN: Arm joints can be restored from the recording. Physical field pose (x/y/heading) <strong>cannot</strong> be verified by software — place the robot on the INITIAL mark before replay.
+    </div>
+
+    <div class="link-row" id="linkRow">
+      <div class="link-fields">
+        <input id="host" type="text" value="192.168.137.222" placeholder="robot IP" title="ESP32 IP (hotspot .222 or SoftAP 192.168.4.1)" autocomplete="off" spellcheck="false" />
+        <input id="netPort" type="number" value="3333" min="1" max="65535" title="TCP port" />
+      </div>
+      <button class="primary" id="connectBtn" type="button">Connect</button>
+      <button class="ghost-accent" id="reconnectBtn" type="button" title="Force reconnect now">Reconnect</button>
+      <button id="discoverBtn" type="button" title="Scan LAN for :3333">Find</button>
+      <button id="disconnectBtn" type="button" disabled>Disconnect</button>
+      <label class="sticky-toggle on" id="stickyToggle" title="Keep trying after Wi‑Fi drops">
+        <input type="checkbox" id="stickyChk" checked />
+        <span>Sticky</span>
+      </label>
+      <span class="latency" id="latHint" title="UI poll latency">—</span>
+      <div class="hw-flags">
+        <span class="pill off" id="status">Offline</span>
+        <span class="pill off" id="flagReconnect" title="Sticky auto-reconnect">Hold</span>
+        <span class="pill off" id="flagWifi">Wifi</span>
+        <span class="pill off" id="flagPca">Pca</span>
+        <span class="pill off" id="flagTof">Tof</span>
+        <span class="pill off" id="flagImu">Imu</span>
+      </div>
+    </div>
+    <div class="reconnect-banner" id="reconnectBanner" aria-live="polite">
+      <span class="rb-title">Reconnecting</span>
+      <span class="rb-note" id="reconnectNote">Scanning for robot…</span>
+      <button type="button" class="ghost-accent" id="reconnectNowBtn">Retry now</button>
+      <div class="rb-bar" aria-hidden="true"><i></i></div>
+    </div>
+
+    <div class="workspace">
+      <section class="sec">
+        <header>
+          <h2>Drive</h2>
+          <span class="meta"><span class="kbd">↑↓←→</span> · <span class="kbd">A</span>+arrows arm · <span class="kbd">Esc</span> stop</span>
+        </header>
         <div class="body">
           <div class="pad">
-            <button class="ghost" type="button" tabindex="-1">·</button>
-            <button id="fwdBtn" type="button" disabled>▲</button>
-            <button class="ghost" type="button" tabindex="-1">·</button>
-            <button id="leftBtn" type="button" disabled>◀</button>
-            <button class="danger" id="stopBtn" type="button" disabled>■</button>
-            <button id="rightBtn" type="button" disabled>▶</button>
-            <button class="ghost" type="button" tabindex="-1">·</button>
-            <button id="backBtn" type="button" disabled>▼</button>
-            <button class="ghost" type="button" tabindex="-1">·</button>
+            <button class="ghost" type="button" tabindex="-1" aria-hidden="true">·</button>
+            <button id="fwdBtn" type="button" disabled title="Forward">↑</button>
+            <button class="ghost" type="button" tabindex="-1" aria-hidden="true">·</button>
+            <button id="leftBtn" type="button" disabled title="Left">←</button>
+            <button class="danger" id="stopBtn" type="button" disabled title="Stop motors">Stop</button>
+            <button id="rightBtn" type="button" disabled title="Right">→</button>
+            <button class="ghost" type="button" tabindex="-1" aria-hidden="true">·</button>
+            <button id="backBtn" type="button" disabled title="Back">↓</button>
+            <button class="ghost" type="button" tabindex="-1" aria-hidden="true">·</button>
           </div>
           <label class="slider">Speed
             <input id="speed" type="range" min="40" max="255" value="180" disabled />
             <span class="val" id="speedVal">180</span>
           </label>
           <div class="actions">
-            <button class="ok" id="motorTestBtn" type="button" disabled>Motor test</button>
+            <button class="warn" id="motorTestBtn" type="button" disabled title="Runs a brief motor sequence">Motor test</button>
             <button id="zeroBtn" type="button" disabled>Zero odom</button>
           </div>
-          <p class="hint">arrows = drive · hold <strong>A</strong> + arrows = arm (L/R base, U/D height) · ESP32 streams .rpm</p>
         </div>
       </section>
 
-      <section class="panel">
-        <h2>Odometry / Sense</h2>
+      <section class="sec">
+        <header>
+          <h2>Sensors</h2>
+          <span class="meta">tof · imu · odom · color</span>
+        </header>
         <div class="body">
+          <div class="readout-grid">
+            <div class="readout span2">
+              <span class="k">Range mm</span>
+              <div class="v dead" id="dist">—</div>
+              <div class="sub">Δ <span id="tofDisp">—</span> mm · cmd <span id="leftVal">0</span>/<span id="rightVal">0</span></div>
+              <div class="tof-bar"><i id="tofBar"></i></div>
+            </div>
+          </div>
           <div class="metrics">
-            <div class="metric"><span>TOF RANGE</span><strong id="dist">—</strong> mm</div>
-            <div class="metric"><span>TOF Δ DISP</span><strong id="tofDisp">—</strong> mm</div>
-            <div class="metric"><span>ENC L / R</span><strong id="enc">—</strong></div>
-            <div class="metric"><span>WHEEL L / R</span><strong id="wheel">—</strong> mm</div>
-            <div class="metric wide"><span>IMU YAW / PITCH / ROLL</span><strong id="imu">—</strong>°</div>
-            <div class="metric"><span>CMD L</span><strong id="leftVal">0</strong></div>
-            <div class="metric"><span>CMD R</span><strong id="rightVal">0</strong></div>
+            <div class="metric"><span>Enc L / R</span><strong id="enc">—</strong></div>
+            <div class="metric"><span>Wheel mm</span><strong id="wheel">—</strong></div>
+            <div class="metric wide">
+              <span>Facing</span>
+              <strong id="imu">—</strong>
+              <div class="face" id="imuFace" aria-hidden="true">
+                <b class="blank"></b><b data-d="UP">U</b><b class="blank"></b>
+                <b data-d="LEFT">L</b><b class="blank"></b><b data-d="RIGHT">R</b>
+                <b class="blank"></b><b data-d="DOWN">D</b><b class="blank"></b>
+              </div>
+            </div>
           </div>
+          <div style="height:1px;background:var(--line);margin:0.75rem 0 0.65rem"></div>
+          <div class="color-dec wait" id="colorDec">
+            <span class="lbl">Color</span>
+            <strong id="colorName">—</strong>
+            <span class="conf" id="colorConf">—</span>
+          </div>
+          <div class="barrow r"><span>R</span><div class="track"><i id="barR"></i></div><strong id="valR">0</strong></div>
+          <div class="barrow y"><span>Y</span><div class="track"><i id="barY"></i></div><strong id="valY">0</strong></div>
+          <div class="barrow g"><span>G</span><div class="track"><i id="barG"></i></div><strong id="valG">0</strong></div>
+          <div class="barrow c"><span>C</span><div class="track"><i id="barC"></i></div><strong id="valC">0</strong></div>
         </div>
       </section>
 
-      <section class="panel">
-        <h2>Arm</h2>
-        <div class="body">
-          <label class="slider">Base
-            <input id="base" type="range" min="0" max="180" value="90" disabled />
-            <span class="val" id="baseVal">90</span>
-          </label>
-          <label class="slider">Height
-            <input id="height" type="range" min="0" max="180" value="90" disabled />
-            <span class="val" id="heightVal">90</span>
-          </label>
-          <label class="slider">Grip
-            <input id="grip" type="range" min="0" max="180" value="90" disabled />
-            <span class="val" id="gripVal">90</span>
-          </label>
-          <div class="actions">
-            <button class="primary" id="sendBtn" type="button" disabled>Send</button>
-            <button id="centerBtn" type="button" disabled>Center</button>
-            <button id="openGripBtn" type="button" disabled>Open</button>
-            <button id="closeGripBtn" type="button" disabled>Close</button>
+      <section class="sec">
+        <header>
+          <h2>Arm · Belt</h2>
+          <span class="meta">pca ch0–2 · ch4</span>
+        </header>
+        <div class="body split-arm">
+          <div>
+            <label class="slider">Base
+              <input id="base" type="range" min="0" max="180" value="90" disabled />
+              <span class="val" id="baseVal">90</span>
+            </label>
+            <label class="slider">Height
+              <input id="height" type="range" min="0" max="180" value="90" disabled />
+              <span class="val" id="heightVal">90</span>
+            </label>
+            <label class="slider">Grip
+              <input id="grip" type="range" min="0" max="180" value="90" disabled />
+              <span class="val" id="gripVal">90</span>
+            </label>
+            <div class="actions">
+              <button class="primary" id="sendBtn" type="button" disabled>Send</button>
+              <button id="centerBtn" type="button" disabled>Center</button>
+              <button id="openGripBtn" type="button" disabled>Open</button>
+              <button id="closeGripBtn" type="button" disabled>Close</button>
+            </div>
           </div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>Conveyor · PCA CH4 SG90-360</h2>
-        <div class="body">
-          <label class="slider">Speed
-            <input id="convSpeed" type="range" min="40" max="255" value="160" disabled />
-            <span class="val" id="convSpeedVal">160</span>
-          </label>
-          <div class="actions">
-            <button class="ok" id="convFwdBtn" type="button" disabled>Forward</button>
-            <button class="danger" id="convStopBtn" type="button" disabled>Stop</button>
-            <button id="convRevBtn" type="button" disabled>Reverse</button>
+          <div class="divider"></div>
+          <div>
+            <label class="slider">Belt
+              <input id="convSpeed" type="range" min="40" max="255" value="160" disabled />
+              <span class="val" id="convSpeedVal">160</span>
+            </label>
+            <div class="actions">
+              <button class="ok" id="convFwdBtn" type="button" disabled>Forward</button>
+              <button class="danger" id="convStopBtn" type="button" disabled>Stop</button>
+              <button id="convRevBtn" type="button" disabled>Reverse</button>
+            </div>
+            <p class="hint">CMD <strong id="convCmd">0</strong></p>
           </div>
-          <p class="hint">CMD <strong id="convCmd">0</strong> · continuous servo · Stop = PWM off CH4</p>
         </div>
       </section>
     </div>
 
-    <section class="panel" style="margin-top:0.75rem;min-height:auto">
-      <h2>Record / Replay · .rpm</h2>
-      <div class="body">
-        <div class="actions">
-          <input id="recName" type="text" placeholder="move-name" style="flex:1;min-width:8rem" autocomplete="off" spellcheck="false" />
-          <button class="ok" id="recStartBtn" type="button">Record</button>
-          <button class="danger" id="recStopBtn" type="button" disabled>Stop rec</button>
+    <div class="row-2">
+      <section class="sec">
+        <header>
+          <h2>Mission</h2>
+          <span class="meta">record · replay · .rpm</span>
+        </header>
+        <div class="body">
+          <div class="mission-block record">
+            <h3>Record</h3>
+            <div class="actions" style="margin-top:0">
+              <input id="recName" type="text" placeholder="move-name" autocomplete="off" spellcheck="false" />
+              <button class="ok" id="recStartBtn" type="button">Record</button>
+              <button class="danger" id="recStopBtn" type="button" disabled>Stop rec</button>
+            </div>
+            <div class="mission-stats">
+              <div class="stat"><span class="k">File</span><span class="v" id="statFile">—</span></div>
+              <div class="stat"><span class="k">Events</span><span class="v" id="statEvents">0</span></div>
+              <div class="stat"><span class="k">Duration</span><span class="v" id="statDur">0.0s</span></div>
+            </div>
+          </div>
+          <div class="mission-block replay">
+            <h3>Replay</h3>
+            <div class="actions" style="margin-top:0">
+              <select id="rpmSelect"></select>
+              <button id="preflightBtn" type="button">Pre-flight</button>
+              <button class="warn" id="replayBtn" type="button" disabled title="Requires preflight + origin ack">Replay</button>
+              <button id="replayPauseBtn" type="button" disabled>Pause</button>
+              <button class="danger" id="replayStopBtn" type="button" disabled>Abort</button>
+            </div>
+            <p class="hint" id="recHint">Pre-flight required · physical origin not verified by software</p>
+            <div class="progress" title="Replay progress"><i id="replayBar"></i></div>
+            <div class="preflight-list" id="preflightList"></div>
+          </div>
+          <div class="actions">
+            <button type="button" id="otaBoot0Btn" disabled class="warn">Boot OTA0</button>
+            <button type="button" id="otaBoot1Btn" disabled class="warn">Boot OTA1</button>
+          </div>
         </div>
-        <div class="actions">
-          <select id="rpmSelect" style="flex:1;min-width:8rem"></select>
-          <button class="primary" id="replayBtn" type="button" disabled>Replay</button>
-          <button id="replayStopBtn" type="button" disabled>Stop play</button>
-        </div>
-        <p class="hint" id="recHint">idle · ESP32 streams binary .rpm over TCP</p>
-      </div>
-    </section>
+      </section>
 
-    <section class="panel" style="margin-top:0.75rem;min-height:auto">
-      <h2>Mission script · .ms (host DSL — no reflash)</h2>
-      <div class="body">
-        <div class="actions">
-          <select id="msSelect" style="flex:1;min-width:8rem"></select>
-          <button type="button" id="msLoadBtn">Load</button>
-          <input id="msName" type="text" placeholder="triage" style="width:8rem" autocomplete="off" spellcheck="false" />
-          <button type="button" id="msSaveBtn">Save</button>
+      <section class="sec log-sec">
+        <header>
+          <h2>Event log</h2>
+          <span class="meta" id="logMeta">live</span>
+        </header>
+        <div class="body">
+          <div class="logs" id="logs">waiting…</div>
         </div>
-        <textarea id="msSrc" rows="12" spellcheck="false" style="width:100%;margin-top:0.5rem;font-family:IBM Plex Mono,monospace;font-size:0.8rem;background:#0d1520;color:var(--ink);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:0.6rem;resize:vertical"></textarea>
-        <div class="actions" style="margin-top:0.5rem">
-          <button class="primary" id="msRunBtn" type="button" disabled>Run mission</button>
-          <button class="danger" id="msStopBtn" type="button" disabled>Stop</button>
-          <button type="button" id="otaBoot0Btn" disabled title="Reboot into ota_0">OTA→slot0</button>
-          <button type="button" id="otaBoot1Btn" disabled title="Reboot into ota_1">OTA→slot1</button>
-        </div>
-        <p class="hint" id="msHint">drive / arm / conveyor / wait / wait_color / play NAME.rpm / if_color … end · WiFi OTA upload: ota-flash.bat</p>
-      </div>
-    </section>
+      </section>
+    </div>
 
-    <section class="panel" style="margin-top:0.75rem;min-height:auto">
-      <h2>Color · R / Y / G</h2>
-      <div class="body">
-        <div class="color-raw">
-          <div class="color-dec wait" id="colorDec"><span>Final</span><strong id="colorName">—</strong><span id="colorConf" style="margin-left:auto;font-size:0.85rem">conf —</span></div>
-          <div class="row"><span>PULSE µs</span><strong id="rawUs">R — / G — / C —</strong></div>
-          <div class="row"><span>Δ% vs amb</span><strong id="rawPct">R — / G — / Y —</strong></div>
-          <div class="row"><span>gp / rp</span><strong id="rawRatio">—</strong></div>
-          <div class="barrow r"><span>R</span><div class="track"><i id="barR"></i></div><strong id="valR">0</strong></div>
-          <div class="barrow g"><span>G</span><div class="track"><i id="barG"></i></div><strong id="valG">0</strong></div>
-          <div class="barrow y"><span>Y</span><div class="track"><i id="barY"></i></div><strong id="valY">0</strong></div>
-          <div class="barrow c"><span>C</span><div class="track"><i id="barC"></i></div><strong id="valC">0</strong></div>
-          <p class="hint">Bars = chroma scores (NodeMCU-style). Needs a real object (no ambient false RED). Locks majority; switches on clear overtake; clears at conf ≤10.</p>
+    <div class="row-2" style="margin-top:0.75rem">
+      <section class="sec">
+        <header>
+          <h2>Hardware test</h2>
+          <span class="meta">capped pulses · safe defaults</span>
+        </header>
+        <div class="body">
+          <div class="toggle-row">
+            <label><input type="checkbox" id="dryRunChk" checked /> Dry-run (no motor TX)</label>
+            <button class="warn" type="button" id="armMotorsBtn">Arm motors…</button>
+            <span class="hint" id="hwKindHint" style="margin:0">link: —</span>
+          </div>
+          <div class="actions">
+            <button type="button" id="hwConnBtn">Test link</button>
+            <button type="button" id="hwColorBtn">Test color</button>
+            <button type="button" id="hwFwdBtn">Fwd pulse</button>
+            <button type="button" id="hwBackBtn">Back pulse</button>
+            <button type="button" id="hwLeftBtn">Left pulse</button>
+            <button type="button" id="hwRightBtn">Right pulse</button>
+            <button class="danger" type="button" id="hwStopBtn">Stop</button>
+            <button class="estop" type="button" id="hwEstopBtn" style="min-width:auto;min-height:auto;padding:0.42rem 0.65rem;font-size:0.72rem">E-Stop</button>
+          </div>
+          <p class="hint" id="hwTestHint">Pulses ≤120 speed · ≤800ms · dry-run ON until you arm</p>
         </div>
-      </div>
-    </section>
-
-    <div class="logs" id="logs">waiting…</div>
+      </section>
+      <section class="sec">
+        <header>
+          <h2>Readiness</h2>
+          <span class="meta">what software can verify</span>
+        </header>
+        <div class="body">
+          <p class="hint" id="readyHint">Connect to load readiness.</p>
+          <div class="actions">
+            <button type="button" id="readyBtn">Refresh readiness</button>
+          </div>
+          <pre class="logs" id="readyBox" style="max-height:140px;margin-top:0.55rem">—</pre>
+        </div>
+      </section>
+    </div>
   </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal" id="modalBox">
+      <h3 id="modalTitle">Confirm</h3>
+      <p id="modalBody"></p>
+      <div class="actions">
+        <button type="button" id="modalCancel">Cancel</button>
+        <button type="button" class="danger" id="modalOk">Confirm</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
 
   <script>
     const $ = (id) => document.getElementById(id);
     let connected = false;
     let armTimer = null;
+    let armLocalUntil = 0;
+    let armPending = null;
+    let armFlushTimer = null;
     let driveTimer = null;
     let hold = null;
+    let pollBusy = false;
+    let lastPollAt = 0;
+    let lastDist = null;
+    let toastTimer = null;
+    let modalResolve = null;
+    let stickyWanted = true;
+    let clientNudgeAt = 0;
+    let pollFailStreak = 0;
+    let wasConnected = false;
 
-    async function api(path, opts) {
-      const r = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
-      return r.json();
+    function api(path, opts) {
+      return fetch(path, { headers: { "Content-Type": "application/json" }, ...opts })
+        .then(async (r) => {
+          let data = null;
+          try { data = await r.json(); } catch (_) { data = { ok: false, error: "bad response" }; }
+          if (!r.ok && data && data.error == null) data.error = r.statusText || "request failed";
+          return data;
+        });
+    }
+    function apiFire(path, body) {
+      fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body || {}),
+      }).catch(() => {});
     }
 
-    /** Exact host from the box — strip scheme/path; honor host:port */
+    function showToast(msg, ms = 4200) {
+      const el = $("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), ms);
+    }
+
+    function confirmDialog(title, body, { danger = false, okLabel = "Confirm" } = {}) {
+      return new Promise((resolve) => {
+        modalResolve = resolve;
+        $("modalTitle").textContent = title;
+        $("modalBody").textContent = body;
+        $("modalOk").textContent = okLabel;
+        $("modalBox").classList.toggle("danger-modal", !!danger);
+        $("modalOk").className = danger ? "danger" : "primary";
+        $("modalBackdrop").classList.add("show");
+        $("modalOk").focus();
+      });
+    }
+    function closeModal(ok) {
+      $("modalBackdrop").classList.remove("show");
+      if (modalResolve) {
+        const r = modalResolve;
+        modalResolve = null;
+        r(!!ok);
+      }
+    }
+    $("modalCancel").onclick = () => closeModal(false);
+    $("modalOk").onclick = () => closeModal(true);
+    $("modalBackdrop").addEventListener("click", (ev) => {
+      if (ev.target === $("modalBackdrop")) closeModal(false);
+    });
+    window.addEventListener("keydown", (ev) => {
+      if (!$("modalBackdrop").classList.contains("show")) return;
+      if (ev.key === "Escape") { ev.preventDefault(); closeModal(false); }
+      if (ev.key === "Enter" && !ev.ctrlKey && !ev.metaKey) {
+        ev.preventDefault();
+        closeModal(true);
+      }
+    });
+
+    function setLoading(btn, on) {
+      if (!btn) return;
+      btn.classList.toggle("loading", !!on);
+      btn.disabled = !!on || btn.dataset.forceDisabled === "1";
+    }
+
     function readEndpoint() {
       let h = ($("host").value || "").trim();
       let p = Number($("netPort").value) || 3333;
@@ -406,134 +1399,415 @@
       return { host: h, port: p };
     }
 
-    (function restoreEndpoint() {
+    function isStaleRobotHost(h, lan) {
+      if (!h) return true;
+      if (h === "192.168.29.222" && lan && lan !== h) return true;
+      /* Hotspot DHCP leftovers — firmware binds static *.222 */
+      if (/^192\.168\.137\.\d+$/.test(h) && !h.endsWith(".222")) return true;
+      if (h.endsWith(".222") && lan && lan !== h && lan.startsWith("192.168.")) return true;
+      return false;
+    }
+
+    (async function restoreEndpoint() {
+      let stored = "";
       try {
-        const h = localStorage.getItem("meowler_host");
+        stored = localStorage.getItem("meowler_host") || "";
         const p = localStorage.getItem("meowler_port");
-        if (h) $("host").value = h;
+        const st = localStorage.getItem("meowler_sticky");
+        if (stored) $("host").value = stored;
         if (p) $("netPort").value = p;
+        stickyWanted = st !== "0";
+        if ($("stickyChk")) {
+          $("stickyChk").checked = stickyWanted;
+          $("stickyToggle").classList.toggle("on", stickyWanted);
+        }
       } catch (_) {}
+      try {
+        const d = await api("/api/ports");
+        const lan = d.default_host || "192.168.137.222";
+        if (d.default_port) $("netPort").value = String(d.default_port);
+        if (!stored || isStaleRobotHost(stored, lan)) {
+          $("host").value = lan;
+          try { localStorage.setItem("meowler_host", lan); } catch (_) {}
+        }
+      } catch (_) {
+        if (!($("host").value || "").trim() || isStaleRobotHost(($("host").value || "").trim(), "192.168.137.222")) {
+          $("host").value = "192.168.137.222";
+        }
+      }
     })();
 
     function setPill(id, on) {
       const el = $(id);
-      el.className = "pill " + (on ? "on" : "off");
+      if (!el) return;
+      el.classList.toggle("on", !!on);
+      el.classList.toggle("off", !on);
     }
 
     function setEnabled(on) {
       connected = on;
-      const ids = ["base","height","grip","speed","sendBtn","centerBtn","openGripBtn","closeGripBtn",
-        "disconnectBtn","fwdBtn","backBtn","leftBtn","rightBtn","stopBtn","motorTestBtn","zeroBtn",
-        "convSpeed","convFwdBtn","convStopBtn","convRevBtn",
-        "recStartBtn","replayBtn","msRunBtn","otaBoot0Btn","otaBoot1Btn"];
-      ids.forEach((id) => { $(id).disabled = !on; });
-      $("connectBtn").disabled = on;
-      $("status").textContent = on ? "ONLINE" : "OFFLINE";
+      $("status").textContent = on ? "Online" : "Offline";
       setPill("status", on);
+      $("disconnectBtn").disabled = !on;
+      ["fwdBtn","backBtn","leftBtn","rightBtn","stopBtn","speed","motorTestBtn","zeroBtn",
+        "base","height","grip","sendBtn","centerBtn","openGripBtn","closeGripBtn",
+        "convSpeed","convFwdBtn","convStopBtn","convRevBtn",
+        "recStartBtn","replayBtn","otaBoot0Btn","otaBoot1Btn"
+      ].forEach((id) => {
+        const el = $(id);
+        if (el) el.disabled = !on;
+      });
     }
 
-    function deg(cdeg) { return (Number(cdeg || 0) / 100).toFixed(1); }
+    let imuRef = null;
+    let imuOkStreak = 0;
+    function angDelta(a, b) { return ((a - b + 540) % 360) - 180; }
+    function paintFace(dir) {
+      const face = $("imuFace");
+      if (!face) return;
+      face.querySelectorAll("b[data-d]").forEach((b) => {
+        b.classList.toggle("on", b.getAttribute("data-d") === dir);
+      });
+    }
+    function facingDir(s) {
+      const yaw = (Number(s.yaw_cdeg) || 0) / 100;
+      const pitch = (Number(s.pitch_cdeg) || 0) / 100;
+      const roll = (Number(s.roll_cdeg) || 0) / 100;
+      if (!imuRef) {
+        imuOkStreak++;
+        if (imuOkStreak < 4) { paintFace(null); return "…"; }
+        imuRef = { yaw, pitch, roll };
+      }
+      const dy = angDelta(yaw, imuRef.yaw);
+      const dr = angDelta(roll, imuRef.roll);
+      const turn = Math.abs(dr) > Math.abs(dy) * 1.15 ? dr : dy;
+      let a = ((turn % 360) + 360) % 360;
+      let dir = "UP";
+      if (a >= 315 || a < 45) dir = "UP";
+      else if (a < 135) dir = "RIGHT";
+      else if (a < 225) dir = "DOWN";
+      else dir = "LEFT";
+      paintFace(dir);
+      return dir;
+    }
 
     function paintColor(s) {
-      const rp = Number(s.color_rp) || 0, gp = Number(s.color_gp) || 0;
-      const cp = Number(s.color_cp) || 0;
       const r = Number(s.color_r) || 0, g = Number(s.color_g) || 0;
-      const y = Number(s.color_b) || 0; /* firmware: yellow Δ%, not blue */
-      $("rawUs").textContent = `R ${rp} / G ${gp} / C ${cp}`;
-      $("rawPct").textContent = `R ${r} / G ${g} / Y ${y}`;
-      $("rawRatio").textContent = rp ? (gp / rp).toFixed(3) : "—";
-      $("barR").style.width = Math.max(2, Math.min(100, r)) + "%";
-      $("barG").style.width = Math.max(2, Math.min(100, g)) + "%";
-      $("barY").style.width = Math.max(2, Math.min(100, y)) + "%";
-      const maxRG = Math.max(1, rp, gp);
-      const fillC = cp ? Math.max(4, Math.min(100, Math.round((1 - cp / (maxRG * 1.4)) * 100))) : 0;
-      $("barC").style.width = fillC + "%";
+      const y = Number(s.color_b) || 0;
+      const cp = Number(s.color_cp) || 0;
+      const fill = (v) => Math.max(0, Math.min(100, v));
+      $("barR").style.width = fill(r) + "%";
+      $("barG").style.width = fill(g) + "%";
+      $("barY").style.width = fill(y) + "%";
+      $("barC").style.width = fill(Math.min(100, cp / 40)) + "%";
       $("valR").textContent = String(r);
       $("valG").textContent = String(g);
       $("valY").textContent = String(y);
       $("valC").textContent = String(cp);
       const code = Number(s.color) || 0;
-      const names = ["—", "RED", "YELLOW", "GREEN"];
+      const names = ["UNKNOWN", "RED", "YELLOW", "GREEN"];
       const cls = ["wait", "red", "yellow", "green"];
-      $("colorName").textContent = names[code] || "—";
-      $("colorDec").className = "color-dec " + (cls[code] || "wait");
-      $("colorConf").textContent = "conf " + (Number(s.color_conf) || 0);
+      const stable = !!s.color_stable;
+      const rawName = (s.color_name || names[code] || "UNKNOWN");
+      $("colorName").textContent = stable ? rawName : (code ? "~" + names[code] : "UNKNOWN");
+      $("colorDec").className = "color-dec " + (stable ? (cls[code] || "wait") : "wait");
+      $("colorConf").textContent = (Number(s.color_conf) || 0) + "% · " + (stable ? "locked" : "uncertain");
+    }
+
+    function paintTof(s) {
+      const d = Number(s.distance_mm);
+      const ok = !!s.tof_ok;
+      const el = $("dist");
+      if (!ok && !(d > 0)) {
+        el.textContent = "—";
+        el.classList.add("dead");
+        $("tofBar").style.width = "0%";
+        $("tofDisp").textContent = "—";
+        return;
+      }
+      if (d > 0) lastDist = d;
+      const show = d > 0 ? d : (lastDist ?? 0);
+      el.textContent = String(show);
+      el.classList.toggle("dead", !(show > 0));
+      $("tofDisp").textContent = String(s.tof_disp_mm ?? 0);
+      const pct = Math.max(0, Math.min(100, (show / 1200) * 100));
+      $("tofBar").style.width = pct.toFixed(1) + "%";
+    }
+
+    function paintMode(s) {
+      const mode = s.op_mode || (s.connected ? "MANUAL MODE" : "DISCONNECTED");
+      $("modeBar").dataset.mode = mode;
+      $("opChip").dataset.mode = mode;
+      $("opMode").textContent = mode;
+      const kind = s.link_kind || "DISCONNECTED";
+      $("linkKind").dataset.kind = kind;
+      $("linkKind").textContent = kind.replace("_", " ");
+      if ($("dryRunChk")) $("dryRunChk").checked = !!s.dry_run;
+      if ($("hwKindHint")) $("hwKindHint").textContent = `link: ${kind}` + (s.dry_run ? " · motors suppressed" : " · motors armed");
+      document.body.classList.toggle("estop-on", mode === "EMERGENCY STOP" || !!s.estop);
+
+      const dur = Number(s.record_duration_ms) || 0;
+      const durS = (dur / 1000).toFixed(1);
+      let meta = "Connect to begin";
+      if (s.recording) meta = `Recording ${s.record_name || ""} · ${s.record_events|0} evt · ${durS}s`;
+      else if (s.replaying) meta = `Replay ${s.replay_name || ""} · ${s.replay_index|0}/${s.replay_total|0}`;
+      else if (s.ready_replay) meta = `Ready for replay · ${s.record_name || $("rpmSelect").value || "—"}`;
+      else if (s.auto_reconnect) meta = `Reconnecting ${s.host || ""} · try #${s.reconnect_attempts || 0}`;
+      else if (s.connected) meta = `${s.host || ""} · ${s.sticky_link ? "sticky" : "session"}`;
+      $("modeMeta").textContent = meta;
+
+      const reconnecting = !!(s.auto_reconnect && !s.connected);
+      document.body.classList.toggle("link-live", !!s.connected);
+      document.body.classList.toggle("reconnecting", reconnecting);
+      const ban = $("reconnectBanner");
+      if (ban) {
+        ban.classList.toggle("show", reconnecting || (!!stickyWanted && !s.connected && !!s.sticky_link));
+        if ($("reconnectNote")) {
+          $("reconnectNote").textContent = reconnecting
+            ? (s.reconnect_note || "Scanning LAN for :3333…")
+            : (s.sticky_link ? "Sticky armed — waiting for robot" : "Offline");
+        }
+      }
+      if ($("stickyChk")) {
+        const want = stickyWanted || !!s.sticky_link;
+        $("stickyChk").checked = want;
+        $("stickyToggle").classList.toggle("on", want);
+      }
+
+      const warn = s.error || s.warning || "";
+      const alert = $("modeWarn");
+      if (warn) {
+        alert.textContent = warn;
+        alert.classList.add("show");
+        alert.classList.toggle("warn", !s.error && !!s.warning);
+      } else {
+        alert.classList.remove("show");
+        alert.textContent = "";
+      }
+
+      $("estopClearBtn").disabled = !s.estop;
+      $("replayBar").style.width = Math.round((Number(s.replay_progress) || 0) * 100) + "%";
+
+      if (s.recording || s.record_name) {
+        $("statFile").textContent = s.record_name || "—";
+        $("statEvents").textContent = String(s.record_events|0);
+        $("statDur").textContent = durS + "s";
+      }
     }
 
     async function poll() {
+      if (pollBusy) return;
+      pollBusy = true;
+      const t0 = performance.now();
       try {
         const s = await api("/api/state");
+        if (!s) throw new Error("no state");
+        pollFailStreak = 0;
         if (s.connected !== connected) setEnabled(!!s.connected);
+        paintMode(s);
         const tofLive = !!s.tof_ok || (Number(s.distance_mm) > 0);
+        const holding = !!(s.sticky_link || s.auto_reconnect || (stickyWanted && s.connected));
+        setPill("flagReconnect", holding);
+        if ($("flagReconnect")) {
+          $("flagReconnect").textContent = s.auto_reconnect ? "Retry" : (holding ? "Hold" : "Off");
+          $("flagReconnect").classList.toggle("pulse", !!s.auto_reconnect);
+          $("flagReconnect").title = s.auto_reconnect
+            ? (`Reconnecting: ${s.reconnect_note || ""}`)
+            : (holding ? "Sticky link armed — auto-reconnect on drop" : "Enable Sticky to hold the link");
+        }
+        if (wasConnected && !s.connected && stickyWanted) {
+          showToast("Link lost — reconnecting…", 2800);
+        }
+        wasConnected = !!s.connected;
+        maybeNudgeReconnect(s);
         setPill("flagWifi", !!(s.connected && (s.wifi_ok || String(s.mode || "").includes("tcp"))));
         setPill("flagPca", !!s.pca_ok);
         setPill("flagTof", tofLive);
         setPill("flagImu", !!s.imu_ok);
         paintColor(s);
+        paintTof(s);
         if (!s.connected) {
-          $("logs").textContent = (s.logs || []).join("\n") || (s.error || "offline — Connect WiFi");
+          const offline = s.auto_reconnect
+            ? (`Reconnecting… ${s.reconnect_note || ""}`).trim()
+            : (s.error || "Offline — press Connect");
+          $("logs").textContent = (s.logs || []).join("\n") || offline;
+          paintFace(null);
           return;
         }
-        $("dist").textContent = s.distance_mm ?? 0;
-        $("tofDisp").textContent = s.tof_disp_mm ?? 0;
         $("enc").textContent = `${s.enc_l ?? 0} / ${s.enc_r ?? 0}`;
         $("wheel").textContent = `${s.wheel_l_mm ?? 0} / ${s.wheel_r_mm ?? 0}`;
-        $("imu").textContent = `${deg(s.yaw_cdeg)} / ${deg(s.pitch_cdeg)} / ${deg(s.roll_cdeg)}`;
+        if (s.imu_ok) $("imu").textContent = facingDir(s);
+        else { imuRef = null; imuOkStreak = 0; $("imu").textContent = "—"; paintFace(null); }
         $("leftVal").textContent = s.left ?? 0;
         $("rightVal").textContent = s.right ?? 0;
         $("convCmd").textContent = String(s.conveyor ?? 0);
-        if (!armMod() && document.activeElement !== $("base") && document.activeElement !== $("height") && document.activeElement !== $("grip")) {
+        /* Don't yank sliders backward while operator is commanding (telem lag) */
+        const armFocused = document.activeElement === $("base") || document.activeElement === $("height") || document.activeElement === $("grip");
+        if (!armMod() && !armFocused && performance.now() > armLocalUntil) {
           if (s.base != null) { $("base").value = String(s.base); $("baseVal").textContent = String(s.base); }
           if (s.height != null) { $("height").value = String(s.height); $("heightVal").textContent = String(s.height); }
           if (s.grip != null) { $("grip").value = String(s.grip); $("gripVal").textContent = String(s.grip); }
         }
-        const link = s.host || "";
-        $("logs").textContent = [
-          `[${s.mode || "?"} ${link}] ${s.color_name || "—"} conf=${s.color_conf|0} R/G/C=${s.color_rp|0}/${s.color_gp|0}/${s.color_cp|0} Δ% R=${s.color_r|0} G=${s.color_g|0} Y=${s.color_b|0}`,
-          ...(s.logs || []),
-        ].join("\n") || "—";
+        const ms = Math.round(performance.now() - t0);
+        const el = $("latHint");
+        el.textContent = ms + "ms";
+        el.classList.toggle("hot", ms < 40);
+        if ((performance.now() - lastPollAt) > 350) {
+          const lines = s.logs || [];
+          $("logs").textContent = lines.slice(0, 20).join("\n") || "…";
+          $("logMeta").textContent = lines.length ? lines.length + " entries" : "live";
+          lastPollAt = performance.now();
+        }
       } catch (err) {
+        pollFailStreak += 1;
         $("logs").textContent = "poll error: " + err;
+        $("modeWarn").textContent = "UI lost contact with control server";
+        $("modeWarn").classList.add("show");
+        document.body.classList.add("reconnecting");
+        if (stickyWanted && pollFailStreak >= 3) {
+          const ban = $("reconnectBanner");
+          if (ban) {
+            ban.classList.add("show");
+            if ($("reconnectNote")) $("reconnectNote").textContent = "Control server unreachable — retrying…";
+          }
+        }
+      } finally {
+        pollBusy = false;
       }
     }
 
+    async function doConnect({ discover = true } = {}) {
+      const ep = readEndpoint();
+      setLoading($("connectBtn"), true);
+      try {
+        if (stickyWanted) {
+          await api("/api/sticky", {
+            method: "POST",
+            body: JSON.stringify({ enabled: true, host: ep.host, port: ep.port }),
+          });
+        }
+        const res = await api("/api/connect", {
+          method: "POST",
+          body: JSON.stringify({ mode: "tcp", host: ep.host, port: ep.port, auto_discover: !!discover }),
+        });
+        if (!res || !res.ok) {
+          let msg = (res && res.error) || `Connect failed - ${ep.host}:${ep.port}`;
+          if (res && res.host && res.host !== ep.host) $("host").value = res.host;
+          showToast(msg);
+          if (stickyWanted) {
+            document.body.classList.add("reconnecting");
+            $("reconnectBanner").classList.add("show");
+          }
+        } else {
+          $("host").value = res.host || ep.host;
+          $("netPort").value = String(res.port || ep.port);
+          try {
+            localStorage.setItem("meowler_host", $("host").value);
+            localStorage.setItem("meowler_port", $("netPort").value);
+          } catch (_) {}
+          showToast(res.discovered ? `Connected via scan → ${res.host}:${res.port}` : `Connected ${res.host}:${res.port}`, 2600);
+          imuRef = null; imuOkStreak = 0;
+        }
+      } catch (e) {
+        showToast("Connect error: " + e);
+      } finally {
+        setLoading($("connectBtn"), false);
+      }
+      await poll();
+    }
+
+    async function doReconnect() {
+      const ep = readEndpoint();
+      setLoading($("reconnectBtn"), true);
+      setLoading($("reconnectNowBtn"), true);
+      try {
+        stickyWanted = true;
+        try { localStorage.setItem("meowler_sticky", "1"); } catch (_) {}
+        const res = await api("/api/reconnect", {
+          method: "POST",
+          body: JSON.stringify({ host: ep.host, port: ep.port }),
+        });
+        if (res && res.ok) {
+          $("host").value = res.host || ep.host;
+          showToast(`Reconnected ${res.host}:${res.port || ep.port}`, 2200);
+        } else {
+          showToast((res && res.error) || "Reconnect queued — keep Sticky on");
+          $("reconnectBanner").classList.add("show");
+        }
+      } catch (e) {
+        showToast("Reconnect error: " + e);
+      } finally {
+        setLoading($("reconnectBtn"), false);
+        setLoading($("reconnectNowBtn"), false);
+      }
+      await poll();
+    }
+
+    function maybeNudgeReconnect(s) {
+      if (!stickyWanted || s.connected) return;
+      const now = performance.now();
+      if (now - clientNudgeAt < 4000) return;
+      if (s.auto_reconnect) return; // server keepalive already working
+      clientNudgeAt = now;
+      const ep = readEndpoint();
+      api("/api/reconnect", {
+        method: "POST",
+        body: JSON.stringify({ host: ep.host, port: ep.port }),
+      }).then(() => {}).catch(() => {});
+    }
+
+    function flushArm() {
+      armFlushTimer = null;
+      if (!connected || !armPending) return;
+      const body = armPending;
+      armPending = null;
+      armLocalUntil = performance.now() + 450;
+      apiFire("/api/arm", body);
+    }
+    function queueArm(partial) {
+      if (!connected) return;
+      armPending = Object.assign(armPending || {}, partial);
+      armLocalUntil = performance.now() + 450;
+      /* Height: flush ASAP (gravity axis). Others coalesce ~16ms. */
+      const delay = (partial.height != null && partial.base == null && partial.grip == null) ? 0 : 16;
+      if (!armFlushTimer) armFlushTimer = setTimeout(flushArm, delay);
+      else if (delay === 0) {
+        clearTimeout(armFlushTimer);
+        armFlushTimer = setTimeout(flushArm, 0);
+      }
+    }
     function bindSlider(id, valId) {
       const el = $(id);
-      const send = () => {
-        if (!connected) return;
-        clearTimeout(armTimer);
-        /* Fire ASAP while dragging — was waiting for mouseup + 80–160 ms */
-        armTimer = setTimeout(() => {
-          const body = {};
-          body[id] = Number(el.value);
-          api("/api/arm", { method: "POST", body: JSON.stringify(body) });
-        }, 0);
-      };
       el.addEventListener("input", () => {
         $(valId).textContent = el.value;
-        send();
+        const body = {};
+        body[id] = Number(el.value);
+        queueArm(body);
       });
-      el.addEventListener("change", send);
+      el.addEventListener("change", () => {
+        const body = {};
+        body[id] = Number(el.value);
+        armPending = Object.assign(armPending || {}, body);
+        flushArm();
+      });
     }
 
     function drive(left, right) {
       if (!connected) return;
-      api("/api/drive", { method: "POST", body: JSON.stringify({ left, right }) });
+      apiFire("/api/drive", { left, right });
     }
 
     function startHold(dir) {
       const spd = Number($("speed").value);
       const map = {
-        fwd: [spd, spd],
-        back: [-spd, -spd],
-        left: [-spd, spd],
-        right: [spd, -spd],
+        fwd: [spd, spd], back: [-spd, -spd],
+        left: [-spd, spd], right: [spd, -spd],
       };
       const [l, r] = map[dir];
       hold = dir;
       drive(l, r);
       clearInterval(driveTimer);
-      driveTimer = setInterval(() => { if (hold) drive(l, r); }, 120);
+      driveTimer = setInterval(() => { if (hold) drive(l, r); }, 45);
     }
 
     function endHold() {
@@ -545,7 +1819,7 @@
 
     function setConveyor(speed) {
       if (!connected) return;
-      api("/api/conveyor", { method: "POST", body: JSON.stringify({ speed }) });
+      apiFire("/api/conveyor", { speed });
       $("convCmd").textContent = String(speed);
     }
 
@@ -557,198 +1831,172 @@
       el.addEventListener("lostpointercapture", endHold);
     }
 
-    $("connectBtn").onclick = async () => {
+    $("connectBtn").onclick = () => doConnect({ discover: true });
+    $("reconnectBtn").onclick = () => doReconnect();
+    $("reconnectNowBtn").onclick = () => doReconnect();
+    $("stickyChk").onchange = async () => {
+      stickyWanted = !!$("stickyChk").checked;
+      $("stickyToggle").classList.toggle("on", stickyWanted);
+      try { localStorage.setItem("meowler_sticky", stickyWanted ? "1" : "0"); } catch (_) {}
       const ep = readEndpoint();
-      const res = await api("/api/connect", {
+      const res = await api("/api/sticky", {
         method: "POST",
-        body: JSON.stringify({ mode: "tcp", host: ep.host, port: ep.port }),
+        body: JSON.stringify({ enabled: stickyWanted, host: ep.host, port: ep.port }),
       });
-      if (!res.ok) {
-        alert((res.error || "connect failed") + ` — tried ${res.host || ep.host}:${res.port || ep.port}`);
-      } else {
-        $("host").value = res.host || ep.host;
-        $("netPort").value = String(res.port || ep.port);
+      if (stickyWanted && res && res.ok && !connected) {
+        showToast("Sticky on — will keep reconnecting");
+        doReconnect();
+      } else if (!stickyWanted) {
+        showToast("Sticky off — no auto-reconnect");
+        $("reconnectBanner").classList.remove("show");
+        document.body.classList.remove("reconnecting");
       }
       await poll();
     };
-    $("host").addEventListener("keydown", (ev) => {
-      if (ev.key === "Enter") { ev.preventDefault(); $("connectBtn").click(); }
-    });
-    $("netPort").addEventListener("keydown", (ev) => {
-      if (ev.key === "Enter") { ev.preventDefault(); $("connectBtn").click(); }
-    });
-    $("disconnectBtn").onclick = async () => { await api("/api/disconnect", { method: "POST", body: "{}" }); await poll(); };
-    $("sendBtn").onclick = () => api("/api/arm", {
-      method: "POST",
-      body: JSON.stringify({ base: Number($("base").value), height: Number($("height").value), grip: Number($("grip").value) }),
-    });
-    $("centerBtn").onclick = () => api("/api/center", { method: "POST", body: "{}" });
-    $("openGripBtn").onclick = () => {
-      $("grip").value = 40; $("gripVal").textContent = "40";
-      api("/api/arm", { method: "POST", body: JSON.stringify({ grip: 40 }) });
+    $("discoverBtn").onclick = async () => {
+      setLoading($("discoverBtn"), true);
+      try {
+        const d = await api("/api/discover?port=" + encodeURIComponent($("netPort").value || "3333"));
+        if (d && d.hosts && d.hosts.length) {
+          $("host").value = d.hosts[0].host;
+          $("netPort").value = String(d.hosts[0].port || 3333);
+          try {
+            localStorage.setItem("meowler_host", $("host").value);
+            localStorage.setItem("meowler_port", $("netPort").value);
+          } catch (_) {}
+          showToast(`Found ${d.hosts.map((h) => h.host).join(", ")}`);
+        } else {
+          const sug = (d && d.default_host) || "192.168.137.222";
+          $("host").value = sug;
+          showToast("No robot on :3333 — power ESP / join DarshIshaan (2.4 GHz) or SoftAP Meowler");
+        }
+      } catch (e) {
+        showToast("Find failed: " + e);
+      } finally {
+        setLoading($("discoverBtn"), false);
+      }
     };
-    $("closeGripBtn").onclick = () => {
-      $("grip").value = 140; $("gripVal").textContent = "140";
-      api("/api/arm", { method: "POST", body: JSON.stringify({ grip: 140 }) });
+    $("host").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); $("connectBtn").click(); } });
+    $("netPort").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); $("connectBtn").click(); } });
+    $("disconnectBtn").onclick = async () => {
+      stickyWanted = false;
+      try { localStorage.setItem("meowler_sticky", "0"); } catch (_) {}
+      if ($("stickyChk")) { $("stickyChk").checked = false; $("stickyToggle").classList.remove("on"); }
+      await api("/api/sticky", { method: "POST", body: JSON.stringify({ enabled: false }) });
+      await api("/api/disconnect", { method: "POST", body: "{}" });
+      $("reconnectBanner").classList.remove("show");
+      document.body.classList.remove("reconnecting", "link-live");
+      showToast("Disconnected — sticky off");
+      await poll();
     };
-    $("stopBtn").onclick = () => {
-      endHold();
-      api("/api/stop", { method: "POST", body: "{}" });
-      $("convCmd").textContent = "0";
+    $("sendBtn").onclick = () => {
+      armPending = { base: Number($("base").value), height: Number($("height").value), grip: Number($("grip").value) };
+      flushArm();
     };
-    $("motorTestBtn").onclick = () => api("/api/motor_test", { method: "POST", body: "{}" });
-    $("zeroBtn").onclick = () => api("/api/zero", { method: "POST", body: "{}" });
-    $("speed").addEventListener("input", () => { $("speedVal").textContent = $("speed").value; });
-    $("convSpeed").addEventListener("input", () => { $("convSpeedVal").textContent = $("convSpeed").value; });
+    $("centerBtn").onclick = () => apiFire("/api/center", {});
+    $("openGripBtn").onclick = () => { $("grip").value = 40; $("gripVal").textContent = "40"; armPending = { grip: 40 }; flushArm(); };
+    $("closeGripBtn").onclick = () => { $("grip").value = 140; $("gripVal").textContent = "140"; armPending = { grip: 140 }; flushArm(); };
+    $("stopBtn").onclick = () => { endHold(); apiFire("/api/stop", {}); $("convCmd").textContent = "0"; };
+    $("motorTestBtn").onclick = async () => {
+      const ok = await confirmDialog(
+        "Run motor test?",
+        "Brief wheel motion will run on the robot.",
+        { danger: true, okLabel: "Run test" }
+      );
+      if (ok) apiFire("/api/motor_test", {});
+    };
+    $("zeroBtn").onclick = () => apiFire("/api/zero", {});
+    $("speed").oninput = () => { $("speedVal").textContent = $("speed").value; };
+    $("convSpeed").oninput = () => { $("convSpeedVal").textContent = $("convSpeed").value; };
     $("convFwdBtn").onclick = () => setConveyor(Number($("convSpeed").value));
-    $("convStopBtn").onclick = () => setConveyor(0);
     $("convRevBtn").onclick = () => setConveyor(-Number($("convSpeed").value));
+    $("convStopBtn").onclick = () => setConveyor(0);
 
     bindSlider("base", "baseVal");
     bindSlider("height", "heightVal");
     bindSlider("grip", "gripVal");
-    let keysHeld = new Set();
+    bindHold("fwdBtn", "fwd");
+    bindHold("backBtn", "back");
+    bindHold("leftBtn", "left");
+    bindHold("rightBtn", "right");
+
+    const keysHeld = new Set();
     let keyTimer = null;
-
-    function typingInField() {
-      const t = document.activeElement;
-      if (!t) return false;
-      const tag = (t.tagName || "").toLowerCase();
-      return tag === "input" || tag === "textarea" || tag === "select";
-    }
-
-    function armMod() {
-      return keysHeld.has("a") || keysHeld.has("A");
-    }
-
+    function armMod() { return keysHeld.has("a") || keysHeld.has("A"); }
     function arrowsHeld() {
-      return keysHeld.has("ArrowUp") || keysHeld.has("ArrowDown") ||
-             keysHeld.has("ArrowLeft") || keysHeld.has("ArrowRight");
+      return ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].some((k) => keysHeld.has(k));
     }
-
-    function clampDeg(v) { return Math.max(0, Math.min(180, Math.round(v))); }
-
-    function driveFromKeys() {
+    function applyKeys() {
       if (!connected) return;
+      if (armMod()) {
+        const b = Number($("base").value), h = Number($("height").value);
+        let nb = b, nh = h;
+        if (keysHeld.has("ArrowLeft")) nb = Math.max(0, b - 4);
+        if (keysHeld.has("ArrowRight")) nb = Math.min(180, b + 4);
+        if (keysHeld.has("ArrowUp")) nh = Math.min(180, h + 4);
+        if (keysHeld.has("ArrowDown")) nh = Math.max(0, h - 4);
+        if (nb !== b || nh !== h) {
+          $("base").value = String(nb); $("baseVal").textContent = String(nb);
+          $("height").value = String(nh); $("heightVal").textContent = String(nh);
+          queueArm({ base: nb, height: nh });
+        }
+        return;
+      }
       const spd = Number($("speed").value);
       let l = 0, r = 0;
-      const f = keysHeld.has("ArrowUp");
-      const b = keysHeld.has("ArrowDown");
-      const L = keysHeld.has("ArrowLeft");
-      const R = keysHeld.has("ArrowRight");
-      if (f && !b) { l = spd; r = spd; }
-      else if (b && !f) { l = -spd; r = -spd; }
-      if (L && !R) { l -= spd; r += spd; }
-      else if (R && !L) { l += spd; r -= spd; }
+      if (keysHeld.has("ArrowUp")) { l += spd; r += spd; }
+      if (keysHeld.has("ArrowDown")) { l -= spd; r -= spd; }
+      if (keysHeld.has("ArrowLeft")) { l -= spd; r += spd; }
+      if (keysHeld.has("ArrowRight")) { l += spd; r -= spd; }
       l = Math.max(-255, Math.min(255, l));
       r = Math.max(-255, Math.min(255, r));
       drive(l, r);
     }
-
-    function armFromKeys() {
-      if (!connected) return;
-      const step = 5;
-      const body = {};
-      if (keysHeld.has("ArrowLeft") && !keysHeld.has("ArrowRight")) {
-        body.base = clampDeg(Number($("base").value) - step);
-        $("base").value = String(body.base);
-        $("baseVal").textContent = String(body.base);
-      } else if (keysHeld.has("ArrowRight") && !keysHeld.has("ArrowLeft")) {
-        body.base = clampDeg(Number($("base").value) + step);
-        $("base").value = String(body.base);
-        $("baseVal").textContent = String(body.base);
-      }
-      if (keysHeld.has("ArrowUp") && !keysHeld.has("ArrowDown")) {
-        body.height = clampDeg(Number($("height").value) + step);
-        $("height").value = String(body.height);
-        $("heightVal").textContent = String(body.height);
-      } else if (keysHeld.has("ArrowDown") && !keysHeld.has("ArrowUp")) {
-        body.height = clampDeg(Number($("height").value) - step);
-        $("height").value = String(body.height);
-        $("heightVal").textContent = String(body.height);
-      }
-      if (body.base == null && body.height == null) return;
-      api("/api/arm", { method: "POST", body: JSON.stringify(body) });
-    }
-
-    function applyKeys() {
-      if (!connected) return;
-      if (armMod()) {
-        if (arrowsHeld()) armFromKeys();
-      } else if (arrowsHeld()) {
-        driveFromKeys();
-      }
-    }
-
     function startKeyRepeat() {
-      applyKeys();
       clearInterval(keyTimer);
-      keyTimer = setInterval(applyKeys, armMod() ? 40 : 90);
+      applyKeys();
+      keyTimer = setInterval(applyKeys, armMod() ? 30 : 60);
     }
-
     function stopKeyRepeat() {
       clearInterval(keyTimer);
       keyTimer = null;
     }
-
     function onKeyDown(ev) {
-      if (typingInField()) return;
+      if ($("modalBackdrop").classList.contains("show")) return;
       const k = ev.key;
-      if (k === " ") {
+      if (k === "a" || k === "A") { keysHeld.add(k); if (arrowsHeld()) startKeyRepeat(); return; }
+      if (k === " " || k === "Escape") {
         ev.preventDefault();
-        endHold();
         keysHeld.clear();
         stopKeyRepeat();
-        drive(0, 0);
-        api("/api/stop", { method: "POST", body: "{}" });
-        return;
-      }
-      if (k === "a" || k === "A") {
-        ev.preventDefault();
-        if (keysHeld.has(k) && ev.repeat) return;
-        keysHeld.add(k);
-        drive(0, 0);
-        startKeyRepeat();
+        endHold();
+        apiFire("/api/stop", {});
         return;
       }
       if (!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(k)) return;
       ev.preventDefault();
-      if (!connected) return;
-      keysHeld.add(k);
-      startKeyRepeat();
+      if (!keysHeld.has(k)) {
+        keysHeld.add(k);
+        startKeyRepeat();
+      }
     }
-
     function onKeyUp(ev) {
       const k = ev.key;
       if (k === "a" || k === "A") {
-        ev.preventDefault();
-        keysHeld.delete("a");
-        keysHeld.delete("A");
-        if (arrowsHeld() && connected) {
-          startKeyRepeat();
-        } else {
-          stopKeyRepeat();
-        }
+        keysHeld.delete("a"); keysHeld.delete("A");
+        if (arrowsHeld() && connected) startKeyRepeat();
+        else stopKeyRepeat();
         return;
       }
       if (!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(k)) return;
       ev.preventDefault();
       keysHeld.delete(k);
-      if (arrowsHeld()) {
-        applyKeys();
-      } else {
-        stopKeyRepeat();
-        if (!armMod()) drive(0, 0);
-      }
+      if (arrowsHeld()) applyKeys();
+      else { stopKeyRepeat(); if (!armMod()) drive(0, 0); }
     }
-
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", () => {
-      keysHeld.clear();
-      stopKeyRepeat();
-      if (connected) drive(0, 0);
-    });
+    window.addEventListener("blur", () => { keysHeld.clear(); stopKeyRepeat(); if (connected) drive(0, 0); });
 
     async function refreshRpmList() {
       try {
@@ -759,13 +2007,12 @@
         (s.files || []).forEach((f) => {
           const o = document.createElement("option");
           o.value = f.name;
-          o.textContent = `${f.name} (${f.events})`;
+          o.textContent = `${f.name}  ·  ${f.events} evt`;
           sel.appendChild(o);
         });
         if (cur) sel.value = cur;
       } catch (_) {}
     }
-
     async function refreshRecHint() {
       try {
         const s = await api("/api/record/state");
@@ -773,116 +2020,212 @@
         $("recStartBtn").disabled = !!s.recording || !!s.replaying || !connected;
         $("replayBtn").disabled = !!s.recording || !!s.replaying || !connected || !$("rpmSelect").value;
         $("replayStopBtn").disabled = !s.replaying;
-        if (s.recording) $("recHint").textContent = `RECORDING ${s.name}.rpm · ${s.events} cmds · ESP32 stream`;
-        else if (s.replaying) $("recHint").textContent = "REPLAYING…";
-        else $("recHint").textContent = `idle · ${(s.files || []).length} .rpm streamed from ESP32`;
+        $("replayPauseBtn").disabled = !s.replaying;
+        $("replayPauseBtn").textContent = s.paused ? "Resume" : "Pause";
+        const dur = ((Number(s.duration_ms) || 0) / 1000).toFixed(1);
+        if (s.recording) {
+          $("recHint").textContent = `Recording in progress · ${s.events} events · ${dur}s`;
+          $("statFile").textContent = s.name || "—";
+          $("statEvents").textContent = String(s.events || 0);
+          $("statDur").textContent = dur + "s";
+        } else if (s.replaying) {
+          $("recHint").textContent = s.paused ? "Paused — motors held" : "Replaying — origin restored first";
+        } else {
+          $("recHint").textContent = `${(s.files || []).length} recording(s) · confirm before replay`;
+        }
       } catch (_) {}
     }
 
+    $("estopBtn").onclick = async () => {
+      endHold();
+      setLoading($("estopBtn"), true);
+      try {
+        await api("/api/estop", { method: "POST", body: "{}" });
+      } finally {
+        setLoading($("estopBtn"), false);
+        $("estopBtn").disabled = false;
+      }
+      await poll();
+    };
+    $("estopClearBtn").onclick = async () => {
+      const ok = await confirmDialog(
+        "Clear emergency stop?",
+        "Motors will accept commands again. Confirm the field is clear.",
+        { danger: true, okLabel: "Clear E-Stop" }
+      );
+      if (!ok) return;
+      const res = await api("/api/estop/clear", { method: "POST", body: "{}" });
+      if (!res || !res.ok) showToast((res && res.error) || "Clear failed");
+      await poll();
+    };
     $("recStartBtn").onclick = async () => {
       const name = ($("recName").value || "").trim();
-      const res = await api("/api/record/start", { method: "POST", body: JSON.stringify({ name }) });
-      if (!res.ok) { alert(res.error || "record failed"); return; }
-      $("recName").value = res.name;
-      await refreshRpmList();
-      await refreshRecHint();
+      setLoading($("recStartBtn"), true);
+      try {
+        const res = await api("/api/record/start", { method: "POST", body: JSON.stringify({ name }) });
+        if (!res || !res.ok) { showToast((res && res.error) || "Record failed"); return; }
+        $("recName").value = res.name;
+        $("statFile").textContent = res.name;
+      } finally {
+        setLoading($("recStartBtn"), false);
+      }
+      await refreshRpmList(); await refreshRecHint();
     };
     $("recStopBtn").onclick = async () => {
-      const res = await api("/api/record/stop", { method: "POST", body: "{}" });
-      if (res.ok) await refreshRpmList();
-      await refreshRecHint();
+      setLoading($("recStopBtn"), true);
+      try {
+        await api("/api/record/stop", { method: "POST", body: "{}" });
+      } finally {
+        setLoading($("recStopBtn"), false);
+      }
+      await refreshRpmList(); await refreshRecHint();
     };
+    async function runPreflight() {
+      const name = $("rpmSelect").value || "";
+      const res = await api("/api/preflight?name=" + encodeURIComponent(name));
+      const box = $("preflightList");
+      if (!box) return res;
+      box.innerHTML = "";
+      (res.checks || []).forEach((c) => {
+        const row = document.createElement("div");
+        row.className = "pf-row";
+        row.innerHTML = `<span class="st ${c.status}">${c.status}</span><span>${c.label}: ${c.detail}</span>`;
+        box.appendChild(row);
+      });
+      if (res.origin_limitation) {
+        const note = document.createElement("div");
+        note.className = "pf-row";
+        note.innerHTML = `<span class="st WARNING">NOTE</span><span>${res.origin_limitation}</span>`;
+        box.appendChild(note);
+      }
+      $("recHint").textContent = res.ok_to_replay
+        ? "Pre-flight OK — still place robot on INITIAL mark before replay"
+        : "Pre-flight FAILED — fix critical items before replay";
+      return res;
+    }
+    $("preflightBtn").onclick = () => runPreflight();
+
     $("replayBtn").onclick = async () => {
       const name = $("rpmSelect").value;
-      const res = await api("/api/replay", { method: "POST", body: JSON.stringify({ name }) });
-      if (!res.ok) alert(res.error || "replay failed");
+      if (!name) return;
+      const pf = await runPreflight();
+      if (!pf.ok_to_replay) {
+        showToast("Pre-flight failed — replay blocked");
+        return;
+      }
+      const kind = $("linkKind").textContent || "";
+      const dry = $("dryRunChk") && $("dryRunChk").checked;
+      const ok = await confirmDialog(
+        dry ? "Start DRY-RUN replay?" : "Start REAL replay?",
+        `${name}.rpm\nLink: ${kind}\n\n` +
+        "Place robot on INITIAL field mark.\n" +
+        "Software cannot verify physical pose — only arm joint origin.\n" +
+        (dry ? "Dry-run: motors will NOT move." : "MOTORS WILL MOVE."),
+        { danger: !dry, okLabel: dry ? "Dry-run replay" : "Start replay" }
+      );
+      if (!ok) return;
+      setLoading($("replayBtn"), true);
+      try {
+        const res = await api("/api/replay", {
+          method: "POST",
+          body: JSON.stringify({
+            name,
+            confirm: true,
+            origin_ack: true,
+            allow_sim: true,
+          }),
+        });
+        if (!res || !res.ok) showToast((res && res.error) || "Replay failed");
+      } finally {
+        setLoading($("replayBtn"), false);
+      }
+      await refreshRecHint();
+    };
+
+    async function hwTest(action, extra) {
+      const res = await api("/api/hw_test", {
+        method: "POST",
+        body: JSON.stringify({ action, ...(extra || {}) }),
+      });
+      $("hwTestHint").textContent = res.note || res.error || JSON.stringify(res).slice(0, 120);
+      if (!res.ok) showToast(res.error || "hw test failed");
+      return res;
+    }
+    $("hwConnBtn").onclick = () => hwTest("connection");
+    $("hwColorBtn").onclick = () => hwTest("color");
+    $("hwFwdBtn").onclick = () => hwTest("forward");
+    $("hwBackBtn").onclick = () => hwTest("backward");
+    $("hwLeftBtn").onclick = () => hwTest("left");
+    $("hwRightBtn").onclick = () => hwTest("right");
+    $("hwStopBtn").onclick = () => hwTest("stop");
+    $("hwEstopBtn").onclick = () => hwTest("estop");
+    $("dryRunChk").onchange = async () => {
+      if ($("dryRunChk").checked) {
+        await api("/api/dry_run", { method: "POST", body: JSON.stringify({ enabled: true }) });
+        await poll();
+        return;
+      }
+      // unchecking → arm motors
+      $("dryRunChk").checked = true; // revert until ack
+      $("armMotorsBtn").click();
+    };
+    $("armMotorsBtn").onclick = async () => {
+      const ok = await confirmDialog(
+        "Arm motors? (disable dry-run)",
+        "Motor commands will be sent to the robot.\nField must be clear. E-Stop ready.",
+        { danger: true, okLabel: "Arm motors" }
+      );
+      if (!ok) return;
+      const res = await api("/api/dry_run", {
+        method: "POST",
+        body: JSON.stringify({ enabled: false, arm_ack: true }),
+      });
+      if (!res.ok) showToast(res.error || "arm failed");
+      await poll();
+    };
+    $("readyBtn").onclick = async () => {
+      const r = await api("/api/readiness");
+      $("readyBox").textContent = JSON.stringify(r, null, 2);
+      $("readyHint").textContent = `${r.link_kind} · dry_run=${r.dry_run} · physical origin unverified`;
+    };
+    $("replayPauseBtn").onclick = async () => {
+      const pausing = $("replayPauseBtn").textContent !== "Resume";
+      await api("/api/replay/pause", { method: "POST", body: JSON.stringify({ pause: pausing }) });
       await refreshRecHint();
     };
     $("replayStopBtn").onclick = async () => {
+      const ok = await confirmDialog(
+        "Abort replay?",
+        "Motors stop and arm returns toward origin.",
+        { danger: true, okLabel: "Abort" }
+      );
+      if (!ok) return;
       await api("/api/replay/stop", { method: "POST", body: "{}" });
       await refreshRecHint();
     };
-
-    async function refreshMsList() {
-      try {
-        const s = await api("/api/mission/list");
-        const sel = $("msSelect");
-        const cur = sel.value;
-        sel.innerHTML = "";
-        (s.files || []).forEach((f) => {
-          const o = document.createElement("option");
-          o.value = f.name;
-          o.textContent = f.name;
-          sel.appendChild(o);
-        });
-        if (cur) sel.value = cur;
-      } catch (_) {}
-    }
-
-    async function refreshMsState() {
-      try {
-        const s = await api("/api/mission/state");
-        $("msRunBtn").disabled = !!s.running || !connected;
-        $("msStopBtn").disabled = !s.running;
-        if (s.running) $("msHint").textContent = `RUNNING · line ~${s.line}`;
-        else if (s.error) $("msHint").textContent = `err: ${s.error}`;
-        else $("msHint").textContent = "drive / arm / conveyor / wait / wait_color / play · OTA: ota-flash.bat";
-      } catch (_) {}
-    }
-
-    $("msLoadBtn").onclick = async () => {
-      const name = $("msSelect").value;
-      if (!name) return;
-      const r = await api("/api/mission/get?name=" + encodeURIComponent(name));
-      if (!r.ok) { alert(r.error || "load failed"); return; }
-      $("msName").value = r.name;
-      $("msSrc").value = r.src || "";
-    };
-    $("msSaveBtn").onclick = async () => {
-      const name = ($("msName").value || "").trim();
-      const src = $("msSrc").value || "";
-      const r = await api("/api/mission/save", { method: "POST", body: JSON.stringify({ name, src }) });
-      if (!r.ok) { alert(r.error || "save failed"); return; }
-      await refreshMsList();
-      $("msSelect").value = r.name;
-    };
-    $("msRunBtn").onclick = async () => {
-      const src = $("msSrc").value || "";
-      const name = ($("msName").value || "").trim();
-      const r = await api("/api/mission/run", { method: "POST", body: JSON.stringify({ src, name }) });
-      if (!r.ok) alert(r.error || "run failed");
-      await refreshMsState();
-    };
-    $("msStopBtn").onclick = async () => {
-      await api("/api/mission/stop", { method: "POST", body: "{}" });
-      await refreshMsState();
-    };
+    window.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
+        ev.preventDefault();
+        $("estopBtn").click();
+      }
+    });
     $("otaBoot0Btn").onclick = async () => {
-      if (!confirm("Reboot robot into ota_0?")) return;
-      await api("/api/ota", { method: "POST", body: JSON.stringify({ action: 7 }) });
+      const ok = await confirmDialog("Reboot into ota_0?", "Robot will reboot into partition ota_0.", { danger: true, okLabel: "Reboot OTA0" });
+      if (ok) apiFire("/api/ota", { action: 7 });
     };
     $("otaBoot1Btn").onclick = async () => {
-      if (!confirm("Reboot robot into ota_1?")) return;
-      await api("/api/ota", { method: "POST", body: JSON.stringify({ action: 8 }) });
+      const ok = await confirmDialog("Reboot into ota_1?", "Robot will reboot into partition ota_1.", { danger: true, okLabel: "Reboot OTA1" });
+      if (ok) apiFire("/api/ota", { action: 8 });
     };
 
-    bindHold("fwdBtn", "fwd");
-    bindHold("backBtn", "back");
-    bindHold("leftBtn", "left");
-    bindHold("rightBtn", "right");
-    setInterval(poll, 100);
+    setInterval(poll, 40);
     poll();
-    setInterval(refreshRecHint, 400);
-    setInterval(refreshMsState, 400);
+    setInterval(refreshRecHint, 500);
     refreshRpmList();
-    refreshMsList();
-    refreshMsState();
-    api("/api/mission/get?name=triage").then((r) => {
-      if (r.ok && !$("msSrc").value) {
-        $("msName").value = "triage";
-        $("msSrc").value = r.src || "";
-      }
-    }).catch(() => {});
+
+    poll().then(async () => {
+      if (!connected && stickyWanted) await doConnect({ discover: true });
+    });
   </script>
 </body>
 </html>

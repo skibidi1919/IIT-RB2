@@ -48,9 +48,11 @@ class ColorRyg {
     emaInit_ = false;
   }
 
-  ColorRygOut update(bool /*moving*/, uint16_t distMm, bool tofOk) {
+  ColorRygOut update(bool moving, uint16_t distMm, bool tofOk) {
     uint32_t now = millis();
-    if (now - lastMs_ < PERIOD_MS) return out_;
+    /* While driving, sample a bit slower — pulseIn blocks less often per second */
+    uint32_t period = moving ? (PERIOD_MS + 25) : PERIOD_MS;
+    if (now - lastMs_ < period) return out_;
     lastMs_ = now;
 
     digitalWrite(pins_.led, HIGH);
@@ -81,7 +83,27 @@ class ColorRyg {
       rank3_(r, y, g, &leader, &best, &second);
     int lead = (int)best - (int)second;
 
-    decide_(leader, best, lead, present);
+    /* Prefer UNKNOWN when bars are close (reflections / mixed light) */
+    if (best > 0 && lead * 100 < (int)best * 16) {
+      leader = 0;
+      present = false;
+    }
+    if (second >= MIN_SCORE && lead < (int)CLEAR_LEAD + 3) {
+      leader = 0;
+      present = false;
+    }
+
+    /* Motion / distance: demand clearer lead + longer lock */
+    bool distant = tofOk && distMm >= 140;
+    uint8_t minScore = moving ? (uint8_t)(MIN_SCORE + 8) : MIN_SCORE;
+    uint8_t clearLead = moving ? (uint8_t)(CLEAR_LEAD + 3) : CLEAR_LEAD;
+    uint8_t lockN = moving ? (uint8_t)(LOCK_N + 2) : LOCK_N;
+    if (distant) {
+      minScore = (uint8_t)(minScore + 8);
+      clearLead = (uint8_t)(clearLead + 3);
+      lockN = (uint8_t)(lockN + 1);
+    }
+    decide_(leader, best, lead, present, minScore, clearLead, lockN);
     out_.label = lockLab_;
     out_.conf = (uint8_t)constrain((int)lroundf(confEma_), 0, 100);
 
@@ -103,8 +125,8 @@ class ColorRyg {
 
  private:
   bool logEnable_ = true;
-  static const uint8_t SAMPLES = 7;
-  static const uint32_t PULSE_TO = 25000UL;
+  static const uint8_t SAMPLES = 3;  /* snappier; median of 3 */
+  static const uint32_t PULSE_TO = 8000UL;  /* was 25ms — blocked drive/TOF */
   static const uint32_t PERIOD_MS = 70;
   static const uint16_t AMB_FAR_MM = 100;
   static const uint8_t MIN_SCORE = 24;   /* chroma bars — need real block */
@@ -282,12 +304,13 @@ class ColorRyg {
     return 0;
   }
 
-  void decide_(uint8_t leader, uint8_t best, int lead, bool present) {
+  void decide_(uint8_t leader, uint8_t best, int lead, bool present,
+               uint8_t minScore, uint8_t clearLead, uint8_t lockN) {
     if (lockLab_) {
       uint8_t sc = lockedScore_();
       bool stillLead = present && (leader == lockLab_);
-      bool overtake = present && leader != 0 && leader != lockLab_ && best >= MIN_SCORE &&
-                      (int)best >= (int)sc + (int)SWITCH_LEAD && lead >= (int)CLEAR_LEAD;
+      bool overtake = present && leader != 0 && leader != lockLab_ && best >= minScore &&
+                      (int)best >= (int)sc + (int)SWITCH_LEAD && lead >= (int)clearLead;
 
       if (overtake) {
         if (++switchStreak_ >= SWITCH_N) {
@@ -302,7 +325,7 @@ class ColorRyg {
       }
 
       float target = 0;
-      if (stillLead && sc >= MIN_SCORE) {
+      if (stillLead && sc >= minScore) {
         target = (float)sc;
         if (target < 20) target = 20;
         if (target > 100) target = 100;
@@ -324,7 +347,7 @@ class ColorRyg {
     }
 
     switchStreak_ = 0;
-    if (!present || leader == 0 || best < MIN_SCORE || lead < (int)CLEAR_LEAD) {
+    if (!present || leader == 0 || best < minScore || lead < (int)clearLead) {
       cand_ = 0;
       streak_ = 0;
       confEma_ *= 0.5f;
@@ -338,13 +361,13 @@ class ColorRyg {
       cand_ = leader;
       streak_ = 1;
     }
-    confEma_ = (float)streak_ * (100.0f / (float)LOCK_N);
+    confEma_ = (float)streak_ * (100.0f / (float)lockN);
     if (confEma_ > 99) confEma_ = 99;
 
-    if (streak_ >= LOCK_N) {
+    if (streak_ >= lockN) {
       lockLab_ = leader;
       confEma_ = fmaxf(60.0f, (float)best);
-      streak_ = LOCK_N;
+      streak_ = lockN;
     }
   }
 

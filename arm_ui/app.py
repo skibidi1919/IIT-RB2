@@ -3,23 +3,51 @@
 
 from __future__ import annotations
 
+import atexit
 import re
 import socket
 import struct
 import threading
 import time
-from collections import deque
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
 
+from color_host import ColorFilter
+from hardware_ready import (
+    HW_TEST_PULSE_MS,
+    clamp_hw_conveyor,
+    clamp_hw_drive,
+    is_motion_op,
+    resolve_link_kind,
+    run_preflight,
+)
 from meowler_pb import meowler_pb2 as pb
-from mission import (
-    MissionError,
-    MissionRunner,
-    list_missions,
-    load_mission,
-    save_mission,
+from robot_log import RobotLog
+from rpm_format import (
+    REPLAYABLE_OPS,
+    expand_arm_events,
+    filter_replayable,
+    load_rpm_bytes,
+    sanitize_timeline,
+    validate_conveyor,
+    validate_drive,
+    validate_joint,
+    write_rpm_bytes,
+)
+from net_discover import (
+    canonicalize_host,
+    connect_hint,
+    default_host_for_lan,
+    discover as discover_robots,
+    suggested_hosts,
+)
+from safety import (
+    OpMode,
+    allow_manual_motion,
+    allow_record_start,
+    allow_replay_start,
+    mode_from_flags,
 )
 
 app = Flask(__name__)
@@ -28,12 +56,35 @@ _lock = threading.RLock()
 _sock: socket.socket | None = None
 _stop = threading.Event()
 _reader: threading.Thread | None = None
-_logs: deque[str] = deque(maxlen=50)
-_state = {
+_watchdog: threading.Thread | None = None
+_keepalive: threading.Thread | None = None
+_want_link = False
+_link_host: str | None = None
+_link_port = 3333
+_reconnect_gate = threading.Event()
+_log = RobotLog(maxlen=400)
+_color = ColorFilter()
+LOG_DIR = Path(__file__).resolve().parent / "logs"
+
+_state: dict = {
     "connected": False,
     "mode": None,
+    "op_mode": OpMode.DISCONNECTED.value,
+    "link_kind": "DISCONNECTED",
+    "dry_run": True,  # safe default until operator arms motors
+    "origin_physical_verified": False,  # software cannot set True
+    "origin_note": (
+        "Arm origin = recorded joint angles only. "
+        "Physical field pose cannot be verified — place robot on INITIAL mark manually."
+    ),
     "host": None,
+    "auto_reconnect": False,
+    "reconnect_attempts": 0,
+    "reconnect_note": None,
     "error": None,
+    "warning": None,
+    "fault": False,
+    "estop": False,
     "base": 90,
     "height": 90,
     "grip": 90,
@@ -52,9 +103,10 @@ _state = {
     "yaw_cdeg": 0,
     "pitch_cdeg": 0,
     "roll_cdeg": 0,
-    "color": 0,  # 0 UNKNOWN 1 RED 2 YELLOW 3 GREEN
+    "color": 0,
     "color_name": "—",
     "color_conf": 0,
+    "color_stable": False,
     "color_r": 0,
     "color_g": 0,
     "color_b": 0,
@@ -67,60 +119,122 @@ _state = {
     "ack": None,
     "recording": False,
     "replaying": False,
+    "replay_paused": False,
+    "ready_replay": False,
     "record_name": None,
     "record_events": 0,
+    "record_duration_ms": 0,
+    "replay_name": None,
+    "replay_index": 0,
+    "replay_total": 0,
+    "replay_progress": 0.0,
+    "last_telem_age_ms": None,
+    "origin": None,
+    "hw_test_active": False,
+    "session_log": None,
+    "tx_suppressed": 0,
 }
 
-DEFAULT_HOST = "192.168.137.222"
+DEFAULT_HOST = default_host_for_lan("192.168.137.222")
 DEFAULT_PORT = 3333
 MAX_FRAME = 4096
+TELEM_TIMEOUT_S = 2.5
+MAX_REC_EVENTS = 20_000
 RPM_DIR = Path(__file__).resolve().parent / "recordings"
 _SAFE_NAME = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
-
-# Binary .rpm v2 — little-endian packed timeline
-# Header 16B: magic"MRPM" ver u8 flags u8 name_len u16 created u32 count u32
-# then name UTF-8; then count events: t_ms u32, op u8, payload
-RPM_MAGIC = b"MRPM"
-RPM_VERSION = 2
-RPM_HDR = struct.Struct("<4sBBHII")  # 16 bytes
-OP_DRIVE = 1
-OP_ARM = 2
-OP_STOP = 3
-OP_CENTER = 4
-OP_ZERO = 5
-OP_CONV = 6
-OP_MTEST = 7
-_OP_NAME = {
-    OP_DRIVE: "drive",
-    OP_ARM: "arm",
-    OP_STOP: "stop",
-    OP_CENTER: "center",
-    OP_ZERO: "zero",
-    OP_CONV: "conveyor",
-    OP_MTEST: "motor_test",
-}
-_OP_CODE = {v: k for k, v in _OP_NAME.items()}
 
 _rec_lock = threading.Lock()
 _recording = False
 _rec_t0 = 0.0
 _rec_events: list[dict] = []
 _rec_name: str | None = None
+_rec_origin: dict | None = None
 _replaying = False
+_replay_paused = False
 _replay_stop = threading.Event()
+_replay_pause_ev = threading.Event()
+_replay_tx_lock = threading.Lock()
 _replay_thread: threading.Thread | None = None
+_replay_origin: dict | None = None
+_last_telem_mono = 0.0
+_last_cmd_sig: tuple | None = None
+_last_cmd_mono = 0.0
+_telem_fault = False
+_last_color_log = (0, False)
+
+
+def _refresh_link_kind() -> None:
+    _state["link_kind"] = resolve_link_kind(
+        connected=bool(_state.get("connected")),
+        host=_state.get("host"),
+        dry_run=bool(_state.get("dry_run")),
+    )
+
+
+def _refresh_op_mode() -> None:
+    _refresh_link_kind()
+    _state["op_mode"] = mode_from_flags(
+        connected=bool(_state.get("connected")),
+        estop=bool(_state.get("estop")),
+        fault=bool(_state.get("fault")),
+        recording=_recording,
+        replaying=_replaying,
+        paused=_replay_paused,
+        ready_replay=bool(_state.get("ready_replay")),
+    ).value
+
+
+def _session_log_path() -> Path:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    name = time.strftime("hw-%Y%m%d-%H%M%S.log")
+    path = LOG_DIR / name
+    _state["session_log"] = str(path)
+    return path
+
+
+def _log_hw(cat: str, msg: str) -> None:
+    _log.add(cat, msg)
+    path = _state.get("session_log")
+    if not path:
+        return
+    try:
+        with open(path, "a", encoding="utf-8") as f:
+            stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            ms = int((time.time() % 1) * 1000)
+            f.write(f"{stamp}.{ms:03d} [{cat}] {msg}\n")
+    except OSError:
+        pass
+
+
+def _coerce_int(value, default: int = 0) -> int:
+    """Accept int/float/numeric string; reject bool/garbage."""
+    if isinstance(value, bool):
+        raise ValueError("bool not allowed")
+    if value is None:
+        return int(default)
+    return int(float(value))
+
+
+def _set_fault(msg: str) -> None:
+    _state["fault"] = True
+    _state["error"] = msg
+    _refresh_op_mode()
+
+
+def _clear_fault() -> None:
+    _state["fault"] = False
+    if (_state.get("error") or "").startswith(("replay error", "EMERGENCY STOP", "fault:")):
+        _state["error"] = None
+    _refresh_op_mode()
 
 
 def _normalize_host_port(host: str, port: int) -> tuple[str, int]:
-    """Parse host box: strip scheme/path, honor host:port, keep exact IP/hostname."""
     h = (host or "").strip()
     if not h:
         return DEFAULT_HOST, port
-    # strip URL scheme / path
     if "://" in h:
         h = h.split("://", 1)[1]
     h = h.split("/", 1)[0].strip()
-    # [ipv6]:port — skip; we use IPv4 / names
     if h.startswith("["):
         return h, port
     if h.count(":") == 1:
@@ -134,25 +248,6 @@ def _normalize_host_port(host: str, port: int) -> tuple[str, int]:
     if port < 1 or port > 65535:
         port = DEFAULT_PORT
     return h, port
-
-
-def _send(msg: pb.ClientToRobot, record: bool = True) -> bool:
-    del record  # capture is streamed by the ESP32 as RecEvent
-    data = msg.SerializeToString()
-    frame = struct.pack("<I", len(data)) + data
-    with _lock:
-        sock = _sock
-    if sock is None:
-        _state["error"] = "not connected"
-        return False
-    try:
-        sock.sendall(frame)
-        _state["error"] = None
-        return True
-    except Exception as exc:  # noqa: BLE001
-        _state["error"] = str(exc)
-        _state["connected"] = False
-        return False
 
 
 def _safe_rpm_name(name: str) -> str | None:
@@ -169,48 +264,71 @@ def _rpm_path(name: str) -> Path:
     return RPM_DIR / f"{name}.rpm"
 
 
+def _arm_pose_from_state() -> dict:
+    def _joint(key: str) -> int:
+        v = _state.get(key)
+        return 90 if v is None else validate_joint(int(v))
+
+    return {"base": _joint("base"), "height": _joint("height"), "grip": _joint("grip")}
+
+
+def _arm_msg(pose: dict) -> pb.ClientToRobot:
+    msg = pb.ClientToRobot()
+    msg.arm.base = validate_joint(pose["base"])
+    msg.arm.height = validate_joint(pose["height"])
+    msg.arm.grip = validate_joint(pose["grip"])
+    msg.arm.set_base = msg.arm.set_height = msg.arm.set_grip = True
+    return msg
+
+
+def _stop_msg() -> pb.ClientToRobot:
+    msg = pb.ClientToRobot()
+    msg.stop = True
+    return msg
+
+
 def _msg_to_event(msg: pb.ClientToRobot) -> dict | None:
     which = msg.WhichOneof("op")
     if which == "drive":
-        return {"op": "drive", "left": int(msg.drive.left), "right": int(msg.drive.right)}
+        l, r = validate_drive(msg.drive.left, msg.drive.right)
+        return {"op": "drive", "left": l, "right": r}
     if which == "arm":
         ev: dict = {"op": "arm"}
         if msg.arm.set_base:
-            ev["base"] = int(msg.arm.base)
+            ev["base"] = validate_joint(msg.arm.base)
         if msg.arm.set_height:
-            ev["height"] = int(msg.arm.height)
+            ev["height"] = validate_joint(msg.arm.height)
         if msg.arm.set_grip:
-            ev["grip"] = int(msg.arm.grip)
-        return ev
+            ev["grip"] = validate_joint(msg.arm.grip)
+        return ev if len(ev) > 1 else None
     if which == "stop":
         return {"op": "stop"}
     if which == "center":
         return {"op": "center"}
-    if which == "zero":
-        return {"op": "zero"}
     if which == "conveyor":
-        return {"op": "conveyor", "speed": int(msg.conveyor.speed)}
-    if which == "motor_test":
-        return {"op": "motor_test"}
+        return {"op": "conveyor", "speed": validate_conveyor(msg.conveyor.speed)}
     return None
 
 
 def _event_to_msg(ev: dict) -> pb.ClientToRobot | None:
     op = ev.get("op")
+    if op not in REPLAYABLE_OPS:
+        return None
     msg = pb.ClientToRobot()
     if op == "drive":
-        msg.drive.left = int(ev.get("left", 0))
-        msg.drive.right = int(ev.get("right", 0))
+        l, r = validate_drive(ev.get("left", 0), ev.get("right", 0))
+        msg.drive.left = l
+        msg.drive.right = r
         return msg
     if op == "arm":
         if "base" in ev:
-            msg.arm.base = int(ev["base"])
+            msg.arm.base = validate_joint(ev["base"])
             msg.arm.set_base = True
         if "height" in ev:
-            msg.arm.height = int(ev["height"])
+            msg.arm.height = validate_joint(ev["height"])
             msg.arm.set_height = True
         if "grip" in ev:
-            msg.arm.grip = int(ev["grip"])
+            msg.arm.grip = validate_joint(ev["grip"])
             msg.arm.set_grip = True
         return msg
     if op == "stop":
@@ -219,14 +337,8 @@ def _event_to_msg(ev: dict) -> pb.ClientToRobot | None:
     if op == "center":
         msg.center = True
         return msg
-    if op == "zero":
-        msg.zero = True
-        return msg
     if op == "conveyor":
-        msg.conveyor.speed = int(ev.get("speed", 0))
-        return msg
-    if op == "motor_test":
-        msg.motor_test = True
+        msg.conveyor.speed = validate_conveyor(ev.get("speed", 0))
         return msg
     return None
 
@@ -238,178 +350,338 @@ def _event_payload_eq(a: dict, b: dict) -> bool:
     return all(a.get(k) == b.get(k) for k in keys)
 
 
-def _i16(v: int) -> int:
-    return max(-32768, min(32767, int(v)))
+def _event_sig(ev: dict) -> tuple:
+    return (
+        ev.get("op"),
+        ev.get("left"),
+        ev.get("right"),
+        ev.get("base"),
+        ev.get("height"),
+        ev.get("grip"),
+        ev.get("speed"),
+    )
 
 
-def _u8(v: int) -> int:
-    return max(0, min(255, int(v)))
+def _host_record_append(ev: dict) -> None:
+    """Authoritative host timeline — motion ops only, de-duped, timed from t0."""
+    global _last_cmd_sig, _last_cmd_mono
+    if ev.get("op") not in REPLAYABLE_OPS:
+        return
+    now = time.monotonic()
+    sig = _event_sig(ev)
+    # Suppress identical spam within 15ms (button bounce / slider flood)
+    if sig == _last_cmd_sig and (now - _last_cmd_mono) < 0.015:
+        return
+    _last_cmd_sig = sig
+    _last_cmd_mono = now
+    with _rec_lock:
+        if not _recording:
+            return
+        t_ms = int(max(0, (now - _rec_t0) * 1000))
+        row = {"t_ms": t_ms, **{k: v for k, v in ev.items() if k != "t_ms"}}
+        if _rec_events and _event_payload_eq(_rec_events[-1], row):
+            # Update timestamp on hold (drive held) so replay duration is correct
+            if row.get("op") == "drive" and (row.get("left") or row.get("right")):
+                _rec_events[-1]["t_ms"] = t_ms
+            return
+        if len(_rec_events) >= MAX_REC_EVENTS:
+            _state["warning"] = f"recording capped at {MAX_REC_EVENTS} events"
+            return
+        _rec_events.append(row)
+        _state["record_events"] = len(_rec_events)
+        _state["record_duration_ms"] = t_ms
+    _log.add("REC", f"+{ev.get('op')} t={t_ms}")
 
 
-def _pack_event(ev: dict) -> bytes:
-    op_name = ev.get("op")
-    code = _OP_CODE.get(op_name)  # type: ignore[arg-type]
-    if code is None:
-        raise ValueError(f"bad op {op_name!r}")
-    t_ms = max(0, int(ev.get("t_ms", 0))) & 0xFFFFFFFF
-    head = struct.pack("<IB", t_ms, code)
-    if code == OP_DRIVE:
-        return head + struct.pack("<hh", _i16(ev.get("left", 0)), _i16(ev.get("right", 0)))
-    if code == OP_ARM:
-        mask = 0
-        body = bytearray()
-        if "base" in ev:
-            mask |= 1
-            body.append(_u8(ev["base"]))
-        if "height" in ev:
-            mask |= 2
-            body.append(_u8(ev["height"]))
-        if "grip" in ev:
-            mask |= 4
-            body.append(_u8(ev["grip"]))
-        return head + bytes([mask]) + bytes(body)
-    if code == OP_CONV:
-        return head + struct.pack("<h", _i16(ev.get("speed", 0)))
-    return head
+def _send(
+    msg: pb.ClientToRobot,
+    *,
+    record: bool = True,
+    force: bool = False,
+) -> bool:
+    global _sock
+    which = msg.WhichOneof("op")
+    if _state.get("estop") and not force and which not in ("stop",):
+        _state["error"] = "emergency stop — clear before commanding"
+        return False
+    if _replaying and not force and which not in ("stop", "rec"):
+        _state["warning"] = "blocked during replay"
+        return False
 
+    # Dry-run: suppress actuator commands; always allow stop / rec / ota / color_cal
+    if (
+        _state.get("dry_run")
+        and is_motion_op(which)
+        and which != "stop"
+    ):
+        _state["tx_suppressed"] = int(_state.get("tx_suppressed") or 0) + 1
+        _log_hw("DRY", f"suppress {which} (dry-run — no motor TX)")
+        if record and _recording:
+            ev = _msg_to_event(msg)
+            if ev is not None:
+                _host_record_append(ev)
+        return True
 
-def _unpack_events(blob: bytes, count: int) -> list[dict]:
-    events: list[dict] = []
-    off = 0
-    n = len(blob)
-    for _ in range(count):
-        if off + 5 > n:
-            raise ValueError("truncated event")
-        t_ms, code = struct.unpack_from("<IB", blob, off)
-        off += 5
-        name = _OP_NAME.get(code)
-        if name is None:
-            raise ValueError(f"unknown opcode {code}")
-        ev: dict = {"t_ms": int(t_ms), "op": name}
-        if code == OP_DRIVE:
-            if off + 4 > n:
-                raise ValueError("truncated drive")
-            left, right = struct.unpack_from("<hh", blob, off)
-            off += 4
-            ev["left"] = int(left)
-            ev["right"] = int(right)
-        elif code == OP_ARM:
-            if off + 1 > n:
-                raise ValueError("truncated arm")
-            mask = blob[off]
-            off += 1
-            for bit, key in ((1, "base"), (2, "height"), (4, "grip")):
-                if mask & bit:
-                    if off + 1 > n:
-                        raise ValueError("truncated arm field")
-                    ev[key] = int(blob[off])
-                    off += 1
-        elif code == OP_CONV:
-            if off + 2 > n:
-                raise ValueError("truncated conveyor")
-            (speed,) = struct.unpack_from("<h", blob, off)
-            off += 2
-            ev["speed"] = int(speed)
-        events.append(ev)
-    return events
+    data = msg.SerializeToString()
+    frame = struct.pack("<I", len(data)) + data
+    with _lock:
+        sock = _sock
+    if sock is None:
+        _state["error"] = "not connected"
+        _state["connected"] = False
+        _refresh_op_mode()
+        return False
+    try:
+        sock.sendall(frame)
+        if which != "rec":
+            _state["error"] = None
+        # Arm/drive spam must stay off the disk log — sync I/O was lagging TX
+        if which not in ("arm", "drive", "conveyor"):
+            kind = _state.get("link_kind") or "?"
+            _log_hw("TX", f"{which or '?'} via {kind}")
+        if record and _recording:
+            ev = _msg_to_event(msg)
+            if ev is not None:
+                _host_record_append(ev)
+        return True
+    except Exception as exc:  # noqa: BLE001
+        _state["error"] = str(exc)
+        _state["connected"] = False
+        _log_hw("ERR", f"send failed: {exc}")
+        with _lock:
+            if _sock is not None:
+                try:
+                    _sock.close()
+                except Exception:  # noqa: BLE001
+                    pass
+                _sock = None
+        _on_link_lost("send failure")
+        return False
 
 
 def _write_rpm(name: str, events: list[dict]) -> Path:
-    name_b = name.encode("utf-8")
-    if len(name_b) > 0xFFFF:
-        raise ValueError("name too long")
-    body = bytearray()
-    for ev in events:
-        body += _pack_event(ev)
-    hdr = RPM_HDR.pack(
-        RPM_MAGIC,
-        RPM_VERSION,
-        0,
-        len(name_b),
-        int(time.time()) & 0xFFFFFFFF,
-        len(events),
-    )
     path = _rpm_path(name)
-    path.write_bytes(hdr + name_b + bytes(body))
+    clean = sanitize_timeline(events, max_events=MAX_REC_EVENTS)
+    path.write_bytes(write_rpm_bytes(name, clean))
     return path
-
-
-def _read_rpm_header(path: Path) -> tuple[int, int, int, bytes]:
-    """Return (version, created_unix, event_count, name_bytes)."""
-    raw = path.read_bytes()
-    if len(raw) < RPM_HDR.size:
-        raise ValueError("too short")
-    magic, ver, _flags, name_len, created, count = RPM_HDR.unpack_from(raw, 0)
-    if magic != RPM_MAGIC:
-        raise ValueError("not a binary meowler .rpm (bad magic)")
-    if ver != RPM_VERSION:
-        raise ValueError(f"unsupported .rpm version {ver}")
-    end = RPM_HDR.size + name_len
-    if end > len(raw):
-        raise ValueError("truncated name")
-    return ver, int(created), int(count), raw[RPM_HDR.size:end]
 
 
 def _load_rpm(name: str) -> dict:
     path = _rpm_path(name)
     if not path.is_file():
         raise FileNotFoundError(name)
+    data = load_rpm_bytes(path.read_bytes())
+    data["events"] = sanitize_timeline(list(data.get("events") or []), max_events=MAX_REC_EVENTS)
+    return data
+
+
+def _read_rpm_header(path: Path) -> tuple[int, int, int, bytes]:
     raw = path.read_bytes()
-    if len(raw) < RPM_HDR.size:
-        raise ValueError("too short")
-    magic, ver, _flags, name_len, created, count = RPM_HDR.unpack_from(raw, 0)
-    if magic != RPM_MAGIC:
-        raise ValueError("not a binary meowler .rpm (bad magic)")
-    if ver != RPM_VERSION:
-        raise ValueError(f"unsupported .rpm version {ver}")
-    off = RPM_HDR.size
-    name_b = raw[off : off + name_len]
-    off += name_len
-    if len(name_b) != name_len:
-        raise ValueError("truncated name")
-    events = _unpack_events(raw[off:], count)
-    return {
-        "format": "meowler.rpm",
-        "version": ver,
-        "name": name_b.decode("utf-8", errors="replace"),
-        "created_unix": int(created),
-        "events": events,
-    }
+    data = load_rpm_bytes(raw)
+    return (
+        int(data["version"]),
+        int(data["created_unix"]),
+        len(data["events"]),
+        data["name"].encode("utf-8"),
+    )
 
 
-def _replay_loop(events: list[dict]) -> None:
-    global _replaying
-    last_t = 0
-    try:
-        for ev in events:
-            if _replay_stop.is_set():
+# MG90 settle timing
+_SERVO_HOLD_S = 0.42
+_SERVO_DEG_S = 0.0022
+_SERVO_MIN_S = 0.28
+_SERVO_MAX_S = 1.4
+
+
+def _servo_settle_s(pose: dict, prev: dict) -> float:
+    delta = max(
+        abs(int(pose["base"]) - int(prev.get("base", pose["base"]))),
+        abs(int(pose["height"]) - int(prev.get("height", pose["height"]))),
+        abs(int(pose["grip"]) - int(prev.get("grip", pose["grip"]))),
+    )
+    if delta <= 0:
+        return 0.0
+    return max(_SERVO_MIN_S, min(_SERVO_MAX_S, _SERVO_HOLD_S + delta * _SERVO_DEG_S))
+
+
+def _sleep_until(deadline: float, stop_ev: threading.Event) -> bool:
+    while True:
+        if stop_ev.is_set():
+            return True
+        while _replay_paused and not stop_ev.is_set():
+            if stop_ev.wait(0.05):
+                return True
+        left = deadline - time.monotonic()
+        if left <= 0:
+            return False
+        if stop_ev.wait(min(left, 0.05)):
+            return True
+
+
+def _block_while_paused(stop_ev: threading.Event) -> bool:
+    """Hold between schedule wake and TX so pause/E-stop cannot race a drive send."""
+    while _replay_paused and not stop_ev.is_set():
+        if stop_ev.wait(0.05):
+            return True
+    return stop_ev.is_set()
+
+
+def _restore_arm_origin(origin: dict | None, stop_ev: threading.Event) -> None:
+    if not origin:
+        return
+    cur = _arm_pose_from_state()
+    _send(_arm_msg(origin), record=False, force=True)
+    settle = _servo_settle_s(origin, cur)
+    if settle > 0:
+        stop_ev.wait(settle)
+    _state["base"] = origin["base"]
+    _state["height"] = origin["height"]
+    _state["grip"] = origin["grip"]
+    _log.add("REPLAY", f"restore arm {origin['base']}/{origin['height']}/{origin['grip']}")
+
+
+def _origin_from_events(events: list[dict], fallback: dict) -> dict:
+    for ev in events:
+        if ev.get("op") == "arm" and all(k in ev for k in ("base", "height", "grip")):
+            return {
+                "base": validate_joint(ev["base"]),
+                "height": validate_joint(ev["height"]),
+                "grip": validate_joint(ev["grip"]),
+            }
+    return dict(fallback)
+
+
+def _run_timeline(
+    events: list[dict],
+    stop_ev: threading.Event,
+    origin: dict | None = None,
+) -> None:
+    seed = origin or _arm_pose_from_state()
+    filtered = sanitize_timeline(events, max_events=MAX_REC_EVENTS)
+    expanded = expand_arm_events(filtered, seed)
+    total = max(1, len(expanded))
+    _state["replay_total"] = len(expanded)
+    _state["replay_index"] = 0
+    _state["replay_progress"] = 0.0
+
+    # Critical: start from recorded origin before any motion
+    _send(_stop_msg(), record=False, force=True)
+    _restore_arm_origin(origin, stop_ev)
+    if stop_ev.is_set():
+        return
+
+    t0 = time.monotonic()
+    pause_offset = 0.0
+    arm_free_at = t0
+    arm_n = 0
+    for i, ev in enumerate(expanded):
+        if stop_ev.is_set():
+            break
+        if not _state.get("connected"):
+            _log.add("ERR", "link lost mid-replay")
+            stop_ev.set()
+            break
+        # Accumulate pause time so absolute schedule stays correct
+        while _replay_paused and not stop_ev.is_set():
+            paused_at = time.monotonic()
+            if stop_ev.wait(0.05):
                 break
-            t_ms = int(ev.get("t_ms", last_t))
-            dt = max(0, t_ms - last_t) / 1000.0
-            last_t = t_ms
-            if dt > 0:
-                _replay_stop.wait(dt)
-            if _replay_stop.is_set():
-                break
-            msg = _event_to_msg(ev)
-            if msg is None:
+            if _replay_paused:
                 continue
-            _send(msg, record=False)
-        _send(_stop_msg(), record=False)
+            pause_offset += time.monotonic() - paused_at
+
+        t_ms = int(ev.get("t_ms", 0))
+        due = t0 + pause_offset + t_ms / 1000.0
+        op = ev.get("op")
+        _state["replay_index"] = i + 1
+        _state["replay_progress"] = (i + 1) / total
+
+        if op == "arm":
+            if _sleep_until(max(due, arm_free_at), stop_ev):
+                break
+            if _block_while_paused(stop_ev):
+                break
+            pose = {
+                "base": validate_joint(ev["base"]),
+                "height": validate_joint(ev["height"]),
+                "grip": validate_joint(ev["grip"]),
+            }
+            prev = ev.get("_prev") or pose
+            if not _replay_send(_arm_msg(pose), stop_ev):
+                if stop_ev.is_set() or _replay_paused:
+                    if stop_ev.is_set():
+                        break
+                    continue
+                stop_ev.set()
+                break
+            arm_free_at = time.monotonic() + _servo_settle_s(pose, prev)
+            arm_n += 1
+            _state["base"] = pose["base"]
+            _state["height"] = pose["height"]
+            _state["grip"] = pose["grip"]
+            _log.add("REPLAY", f"arm {pose['base']}/{pose['height']}/{pose['grip']} @{t_ms}ms")
+            continue
+
+        if _sleep_until(due, stop_ev):
+            break
+        if _block_while_paused(stop_ev):
+            break
+        msg = _event_to_msg(ev)
+        if msg is None:
+            continue
+        if not _replay_send(msg, stop_ev):
+            if stop_ev.is_set() or _replay_paused:
+                if stop_ev.is_set():
+                    break
+                continue
+            stop_ev.set()
+            break
+        _log.add("REPLAY", f"{op} @{t_ms}ms")
+
+    if arm_free_at > time.monotonic() and not stop_ev.is_set():
+        _sleep_until(arm_free_at, stop_ev)
+    _log.add("REPLAY", f"timeline arm={arm_n} total={len(expanded)}")
+    _send(_stop_msg(), record=False, force=True)
+
+
+def _replay_loop(events: list[dict], origin: dict, name: str) -> None:
+    global _replaying, _replay_origin, _replay_paused
+    try:
+        _log.add(
+            "REPLAY",
+            f"start {name} n={len(events)} origin={origin['base']}/{origin['height']}/{origin['grip']}",
+        )
+        _run_timeline(events, _replay_stop, origin=origin)
+        if _replay_stop.is_set():
+            _send(_stop_msg(), record=False, force=True)
+            _restore_arm_origin(origin, threading.Event())
+            _log.add("REPLAY", "aborted — motors stopped, origin restore")
+        else:
+            _state["ready_replay"] = True
+            _log.add("REPLAY", "complete")
+    except Exception as exc:  # noqa: BLE001
+        _set_fault(f"replay error: {exc}")
+        _log.add("ERR", f"replay: {exc}")
+        try:
+            _send(_stop_msg(), record=False, force=True)
+        except Exception:  # noqa: BLE001
+            pass
     finally:
         with _rec_lock:
             _replaying = False
+            _replay_paused = False
             _state["replaying"] = False
-        _logs.appendleft("REPLAY done")
-
-
-def _stop_msg() -> pb.ClientToRobot:
-    msg = pb.ClientToRobot()
-    msg.stop = True
-    return msg
+            _state["replay_paused"] = False
+            _replay_origin = None
+            _refresh_op_mode()
+        _log.add("REPLAY", "idle")
 
 
 def _apply_telem(t: pb.Telemetry) -> None:
+    global _last_telem_mono, _telem_fault, _last_color_log
+    _last_telem_mono = time.monotonic()
+    _telem_fault = False
+    moving = abs(int(t.cmd_l)) > 8 or abs(int(t.cmd_r)) > 8
     _state["distance_mm"] = t.distance_mm
     _state["left"] = t.cmd_l
     _state["right"] = t.cmd_r
@@ -428,27 +700,46 @@ def _apply_telem(t: pb.Telemetry) -> None:
     _state["yaw_cdeg"] = t.yaw_cdeg
     _state["pitch_cdeg"] = t.pitch_cdeg
     _state["roll_cdeg"] = t.roll_cdeg
-    code = int(t.color) if 0 <= int(t.color) <= 3 else 0
-    names = ("—", "RED", "YELLOW", "GREEN")
-    _state["color"] = code
-    _state["color_name"] = names[code]
-    _state["color_conf"] = int(t.color_conf)
-    _state["color_r"] = int(t.color_r)
-    _state["color_g"] = int(t.color_g)
-    _state["color_b"] = int(t.color_b)
     _state["color_rp"] = int(t.color_rp)
     _state["color_gp"] = int(t.color_gp)
     _state["color_bp"] = int(t.color_bp)
     _state["color_cp"] = int(t.color_cp)
     _state["conveyor"] = t.conveyor
     _state["last_rx"] = "telem"
+    _state["last_telem_age_ms"] = 0
+
+    # Live color only — never from recording; never crash on bad telem
+    try:
+        filt = _color.update(
+            t.color,
+            t.color_conf,
+            t.color_r,
+            t.color_b,  # yellow bar
+            t.color_g,
+            moving=moving,
+            dist_mm=int(t.distance_mm) if t.distance_mm else None,
+        )
+        _state.update(filt)
+        key = (int(filt.get("color") or 0), bool(filt.get("color_stable")))
+        if key != _last_color_log and (key[1] or key[0] == 0):
+            _last_color_log = key
+            _log.add(
+                "COLOR",
+                f"{filt['color_name']} conf={filt['color_conf']} stable={int(filt['color_stable'])} "
+                f"R={filt['color_r']} Y={filt['color_b']} G={filt['color_g']}",
+            )
+    except Exception as exc:  # noqa: BLE001
+        _log.add("ERR", f"color filter: {exc}")
+        _state["color"] = 0
+        _state["color_name"] = "—"
+        _state["color_stable"] = False
 
 
 def _rec_event_to_dict(e) -> dict | None:
     op = int(e.op)
     t_ms = int(e.t_ms)
     if op == 1:
-        return {"t_ms" : t_ms, "op": "drive", "left": int(e.a), "right": int(e.b)}
+        return {"t_ms": t_ms, "op": "drive", "left": int(e.a), "right": int(e.b)}
     if op == 2:
         ev: dict = {"t_ms": t_ms, "op": "arm"}
         mask = int(e.mask)
@@ -467,51 +758,175 @@ def _rec_event_to_dict(e) -> dict | None:
         return {"t_ms": t_ms, "op": "stop"}
     if op == 4:
         return {"t_ms": t_ms, "op": "center"}
-    if op == 5:
-        return {"t_ms": t_ms, "op": "zero"}
     if op == 6:
         return {"t_ms": t_ms, "op": "conveyor", "speed": int(e.a)}
-    if op == 7:
-        return {"t_ms": t_ms, "op": "motor_test"}
+    # op 5 zero / 7 motor_test intentionally ignored (not replayable)
     return None
 
 
 def _handle_rec(e) -> None:
+    """ESP RecEvent stream — merge into host timeline when recording."""
     global _recording, _rec_events, _rec_name
     op = int(e.op)
+    with _rec_lock:
+        if op == 0:
+            # ESP begin — host already seeded; sync name
+            nm = (e.name or "").strip() or _rec_name or "move"
+            _rec_name = _safe_rpm_name(nm) or "move"
+            _state["record_name"] = _rec_name
+            _log.add("REC", f"ESP begin {_rec_name}")
+            return
+        if op == 255:
+            _log.add("REC", "ESP end marker")
+            return
+        if not _recording:
+            return
+        ev = _rec_event_to_dict(e)
+        if ev is None or ev.get("op") not in REPLAYABLE_OPS:
+            return
+        # Prefer host clock; only fill gaps if host missed (e.g. ESP-only path)
+        if _rec_events and _event_payload_eq(_rec_events[-1], ev):
+            return
+        # If ESP event is newer motion host didn't see, append with ESP time
+        _rec_events.append(ev)
+        _state["record_events"] = len(_rec_events)
+        _state["record_duration_ms"] = int(ev.get("t_ms", 0))
+
+
+def _close_transport() -> None:
+    """Tear down TCP reader/socket without clearing sticky reconnect intent."""
+    global _sock, _reader, _watchdog
+    _stop.set()
+    if _reader and _reader.is_alive() and threading.current_thread() is not _reader:
+        _reader.join(timeout=0.5)
+    _reader = None
+    _watchdog = None
+    with _lock:
+        if _sock is not None:
+            try:
+                _sock.close()
+            except Exception:  # noqa: BLE001
+                pass
+            _sock = None
+        _state["connected"] = False
+        _state["wifi_ok"] = False
+        _state["mode"] = None
+        _refresh_op_mode()
+
+
+def _on_link_lost(reason: str) -> None:
+    global _recording, _replaying
+    _log.add("LINK", f"lost: {reason}")
+    _replay_stop.set()
+    # Safe stop attempt (may fail)
+    try:
+        _send(_stop_msg(), record=False, force=True)
+    except Exception:  # noqa: BLE001
+        pass
     finish_name = None
     finish_events: list[dict] | None = None
     with _rec_lock:
-        if op == 0:
-            _recording = True
-            _rec_events = []
-            nm = (e.name or "").strip() or _rec_name or "move"
-            _rec_name = _safe_rpm_name(nm) or "move"
-            _state["recording"] = True
-            _state["record_name"] = _rec_name
-            _state["record_events"] = 0
-            _logs.appendleft(f"REC stream {_rec_name}.rpm (ESP32)")
-            return
-        if op == 255:
-            finish_name = _rec_name or "move"
+        if _recording:
+            finish_name = _rec_name or time.strftime("move-%Y%m%d-%H%M%S")
             finish_events = list(_rec_events)
             _recording = False
             _state["recording"] = False
-            _state["record_events"] = len(finish_events)
-        else:
-            if not _recording:
-                return
-            ev = _rec_event_to_dict(e)
-            if ev is None:
-                return
-            if _rec_events and _event_payload_eq(_rec_events[-1], ev):
-                return
-            _rec_events.append(ev)
-            _state["record_events"] = len(_rec_events)
-            return
+        if _replaying:
+            _state["error"] = f"disconnected during replay ({reason})"
     if finish_events is not None and finish_name:
-        path = _write_rpm(finish_name, finish_events)
-        _logs.appendleft(f"REC saved {path.name} events={len(finish_events)} (ESP stream)")
+        try:
+            path = _write_rpm(finish_name, finish_events)
+            _state["ready_replay"] = True
+            _state["record_name"] = finish_name
+            _log.add("REC", f"auto-saved {path.name} on disconnect n={len(finish_events)}")
+        except Exception as exc:  # noqa: BLE001
+            _log.add("ERR", f"auto-save failed: {exc}")
+    _close_transport()
+    if _want_link:
+        with _lock:
+            _state["auto_reconnect"] = True
+            _state["warning"] = f"link lost ({reason}) — reconnecting…"
+            _state["reconnect_note"] = reason
+        _reconnect_gate.set()
+        _ensure_keepalive()
+    _refresh_op_mode()
+
+
+def _ensure_keepalive() -> None:
+    global _keepalive
+    if _keepalive is not None and _keepalive.is_alive():
+        return
+    _keepalive = threading.Thread(target=_keepalive_loop, daemon=True, name="link-keep")
+    _keepalive.start()
+
+
+def _keepalive_loop() -> None:
+    backoff = 1.0
+    while True:
+        # Wait until something asks us to retry, or poll slowly while sticky
+        if not _want_link:
+            _reconnect_gate.wait(timeout=1.0)
+            _reconnect_gate.clear()
+            backoff = 1.0
+            with _lock:
+                _state["auto_reconnect"] = False
+                _state["reconnect_note"] = None
+            continue
+        if _state.get("connected") and _sock is not None:
+            with _lock:
+                _state["auto_reconnect"] = False
+                note = _state.get("warning") or ""
+                if note.startswith("link lost") or note.startswith("reconnecting"):
+                    _state["warning"] = None
+                _state["reconnect_note"] = None
+            _reconnect_gate.wait(timeout=1.0)
+            _reconnect_gate.clear()
+            backoff = 1.0
+            continue
+
+        with _lock:
+            _state["auto_reconnect"] = True
+            _state["reconnect_note"] = f"scanning… (backoff {backoff:.0f}s)"
+
+        hosts: list[str] = []
+        if _link_host:
+            hosts.append(canonicalize_host(_link_host))
+        lan = default_host_for_lan("192.168.137.222")
+        if lan not in hosts:
+            hosts.append(lan)
+        if "192.168.137.222" not in hosts:
+            hosts.append("192.168.137.222")
+        try:
+            for hit in discover_robots(port=_link_port or DEFAULT_PORT):
+                h = hit["host"]
+                if h not in hosts:
+                    hosts.append(h)
+        except Exception:  # noqa: BLE001
+            pass
+
+        ok = False
+        for h in hosts:
+            if not _want_link:
+                break
+            try:
+                connect_tcp(h, _link_port or DEFAULT_PORT, sticky=True)
+                _log.add("LINK", f"RECONNECT {h}:{_link_port}")
+                with _lock:
+                    _state["auto_reconnect"] = False
+                    _state["reconnect_note"] = None
+                    _state["warning"] = None
+                ok = True
+                backoff = 1.0
+                break
+            except Exception as exc:  # noqa: BLE001
+                with _lock:
+                    _state["reconnect_attempts"] = int(_state.get("reconnect_attempts") or 0) + 1
+                    _state["reconnect_note"] = f"{h}: {exc}"[:160]
+        if ok:
+            continue
+        _reconnect_gate.wait(timeout=backoff)
+        _reconnect_gate.clear()
+        backoff = min(backoff * 1.5, 12.0)
 
 
 def _handle_server(msg: pb.RobotToClient) -> None:
@@ -520,24 +935,26 @@ def _handle_server(msg: pb.RobotToClient) -> None:
         h = msg.hello
         ip = socket.inet_ntoa(struct.pack("!I", h.ip & 0xFFFFFFFF))
         line = f"HELLO {ip}:{h.port} pca={int(h.pca_ok)} tof={int(h.tof_ok)} imu={int(h.imu_ok)}"
-        _logs.appendleft(line)
+        _log.add("LINK", line)
         _state["last_rx"] = line
         _state["pca_ok"] = h.pca_ok
         _state["tof_ok"] = h.tof_ok
         _state["imu_ok"] = h.imu_ok
         _state["wifi_ok"] = True
+        _state["connected"] = True
+        _refresh_op_mode()
     elif which == "telem":
         _apply_telem(msg.telem)
     elif which == "ack":
         _state["ack"] = msg.ack
         if msg.ack != 0:
-            _logs.appendleft(f"ACK err={msg.ack}")
+            _log.add("RX", f"ACK err={msg.ack}")
     elif which == "log":
         lvl = ("DBG", "INF", "WRN", "ERR")
         i = int(msg.log.level)
         tag = lvl[i] if 0 <= i < len(lvl) else str(i)
-        line = f"[{tag}] {msg.log.text}"
-        _logs.appendleft(line)
+        line = f"{msg.log.text}"
+        _log.add(tag if tag != "INF" else "RX", line)
         _state["last_rx"] = line
     elif which == "rec":
         _handle_rec(msg.rec)
@@ -558,13 +975,11 @@ def _reader_loop() -> None:
         except Exception as exc:  # noqa: BLE001
             with _lock:
                 _state["error"] = str(exc)
-                _state["connected"] = False
+            _on_link_lost(str(exc))
             time.sleep(0.2)
             continue
         if not chunk:
-            with _lock:
-                _state["error"] = "robot disconnected"
-                _state["connected"] = False
+            _on_link_lost("EOF")
             time.sleep(0.2)
             continue
         buf.extend(chunk)
@@ -572,7 +987,7 @@ def _reader_loop() -> None:
             (n,) = struct.unpack_from("<I", buf, 0)
             if n == 0 or n > MAX_FRAME:
                 buf.clear()
-                _logs.appendleft("bad frame length")
+                _log.add("ERR", "bad frame length")
                 break
             if len(buf) < 4 + n:
                 break
@@ -582,55 +997,182 @@ def _reader_loop() -> None:
             try:
                 msg.ParseFromString(payload)
             except Exception as exc:  # noqa: BLE001
-                _logs.appendleft(f"protobuf decode: {exc}")
+                _log.add("ERR", f"protobuf decode: {exc}")
                 continue
             with _lock:
                 _handle_server(msg)
 
 
-def connect_tcp(host: str, port: int = DEFAULT_PORT) -> None:
-    global _sock, _reader
-    disconnect()
-    sock = socket.create_connection((host, port), timeout=6.0)
+def _watchdog_loop() -> None:
+    global _telem_fault
+    while not _stop.is_set():
+        time.sleep(0.25)
+        if not _state.get("connected"):
+            _telem_fault = False
+            continue
+        if _last_telem_mono <= 0:
+            continue
+        age = time.monotonic() - _last_telem_mono
+        _state["last_telem_age_ms"] = int(age * 1000)
+        if age > TELEM_TIMEOUT_S * 3.5:
+            # Socket half-open / Wi‑Fi blip — force sticky reconnect
+            _log.add("WARN", f"telem dead {age:.1f}s — drop link for reconnect")
+            _on_link_lost(f"telemetry dead {age:.1f}s")
+            return
+        if age > TELEM_TIMEOUT_S:
+            if not _telem_fault:
+                _telem_fault = True
+                _log.add("WARN", f"telem timeout {age:.1f}s — E-stop")
+                _state["warning"] = f"telemetry timeout {age:.1f}s"
+                _do_estop(reason="telemetry timeout")
+        else:
+            _telem_fault = False
+
+
+def connect_tcp(host: str, port: int = DEFAULT_PORT, *, sticky: bool = True) -> None:
+    global _sock, _reader, _watchdog, _last_telem_mono, _want_link, _link_host, _link_port
+    host = canonicalize_host(host)
+    _close_transport()
+    if not _state.get("session_log"):
+        _session_log_path()
+    try:
+        sock = socket.create_connection((host, port), timeout=6.0)
+    except (TimeoutError, socket.timeout, OSError) as exc:
+        raise TimeoutError(connect_hint(f"{host}")) from exc
     sock.settimeout(0.05)
     try:
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     except OSError:
         pass
+    _want_link = bool(sticky)
+    _link_host = host
+    _link_port = port
     with _lock:
         _sock = sock
         _state["connected"] = True
         _state["mode"] = "protobuf-tcp"
         _state["host"] = f"{host}:{port}"
         _state["error"] = None
+        _state["warning"] = None
+        _state["fault"] = False
+        _state["estop"] = False
         _state["wifi_ok"] = True
+        _state["auto_reconnect"] = False
+        _state["reconnect_note"] = None
+        _state["origin_physical_verified"] = False
+        _state["tx_suppressed"] = 0
+        _last_telem_mono = time.monotonic()
+        _color.reset()
+        _refresh_op_mode()
     _stop.clear()
-    _reader = threading.Thread(target=_reader_loop, daemon=True)
+    _reader = threading.Thread(target=_reader_loop, daemon=True, name="pb-reader")
     _reader.start()
+    _watchdog = threading.Thread(target=_watchdog_loop, daemon=True, name="watchdog")
+    _watchdog.start()
+    if sticky:
+        _ensure_keepalive()
+    # Motors must start stopped on every link-up
+    _force_all_stop()
+    _log_hw(
+        "LINK",
+        f"CONNECT {host}:{port} kind={_state.get('link_kind')} dry_run={int(bool(_state.get('dry_run')))} sticky={int(sticky)}",
+    )
 
 
-def disconnect() -> None:
-    global _sock, _reader
+def disconnect(*, sticky: bool = False) -> None:
+    """Close link. sticky=False (default) cancels auto-reconnect — intentional hang-up."""
+    global _want_link
+    if not sticky:
+        _want_link = False
+        with _lock:
+            _state["auto_reconnect"] = False
+            _state["reconnect_note"] = None
+    _replay_stop.set()
     try:
-        msg = pb.ClientToRobot()
-        msg.stop = True
-        _send(msg)
+        # Temporarily allow stop TX even if dry-run (stop is never suppressed)
+        _force_all_stop()
     except Exception:  # noqa: BLE001
         pass
-    _stop.set()
-    if _reader and _reader.is_alive():
-        _reader.join(timeout=0.6)
-    _reader = None
+    _close_transport()
     with _lock:
-        if _sock is not None:
+        if not sticky:
+            _state["host"] = None
+        _state["hw_test_active"] = False
+        _refresh_op_mode()
+    _log_hw("LINK", "DISCONNECT — stop commanded" + (" (sticky)" if sticky else ""))
+
+
+atexit.register(lambda: disconnect(sticky=False))
+
+
+def _force_all_stop(*, _locked: bool = False) -> None:
+    """Best-effort: stop flag + explicit zero drive + zero conveyor."""
+
+    def _body() -> None:
+        _send(_stop_msg(), record=False, force=True)
+        drive = pb.ClientToRobot()
+        drive.drive.left = 0
+        drive.drive.right = 0
+        _send(drive, record=False, force=True)
+        conv = pb.ClientToRobot()
+        conv.conveyor.speed = 0
+        _send(conv, record=False, force=True)
+        _send(_stop_msg(), record=False, force=True)
+        _state["left"] = 0
+        _state["right"] = 0
+        _state["conveyor"] = 0
+
+    if _locked:
+        _body()
+    else:
+        with _replay_tx_lock:
+            _body()
+
+
+def _replay_send(msg: pb.ClientToRobot, stop_ev: threading.Event) -> bool:
+    """Send during replay only if not paused/stopped (atomic with pause/E-stop)."""
+    with _replay_tx_lock:
+        if stop_ev.is_set() or _replay_paused:
+            return False
+        return _send(msg, record=False, force=True)
+
+
+def _do_estop(reason: str = "user") -> None:
+    global _recording, _replaying, _replay_paused
+    _state["estop"] = True
+    _state["error"] = f"EMERGENCY STOP ({reason})"
+    _replay_stop.set()
+    _replay_paused = False
+    _state["replay_paused"] = False
+    _force_all_stop()
+    with _rec_lock:
+        if _recording:
+            name = _rec_name or time.strftime("move-%Y%m%d-%H%M%S")
+            events = list(_rec_events)
+            _recording = False
+            _state["recording"] = False
             try:
-                _sock.close()
-            except Exception:  # noqa: BLE001
-                pass
-        _sock = None
-        _state["connected"] = False
-        _state["host"] = None
-        _state["mode"] = None
+                path = _write_rpm(name, events)
+                _state["ready_replay"] = True
+                _log.add("REC", f"saved on E-stop {path.name}")
+            except Exception as exc:  # noqa: BLE001
+                _log.add("ERR", f"E-stop save: {exc}")
+    _log.add("ESTOP", reason)
+    _refresh_op_mode()
+
+
+def _gate_motion() -> tuple[bool, str | None]:
+    if not allow_manual_motion(
+        connected=bool(_state.get("connected")),
+        estop=bool(_state.get("estop")),
+        replaying=_replaying,
+    ):
+        if _state.get("estop"):
+            return False, "emergency stop"
+        if _replaying:
+            return False, "replaying"
+        return False, "not connected"
+    return True, None
 
 
 @app.get("/")
@@ -640,14 +1182,45 @@ def index():
 
 @app.get("/api/ports")
 def api_ports():
-    return jsonify({"default_host": DEFAULT_HOST, "default_port": DEFAULT_PORT, "proto": "protobuf"})
+    host = default_host_for_lan(DEFAULT_HOST)
+    return jsonify(
+        {
+            "default_host": host,
+            "default_port": DEFAULT_PORT,
+            "suggested_hosts": suggested_hosts(),
+            "proto": "protobuf",
+        }
+    )
+
+
+@app.get("/api/discover")
+def api_discover():
+    try:
+        port = int(request.args.get("port") or DEFAULT_PORT)
+    except (TypeError, ValueError):
+        port = DEFAULT_PORT
+    hits = discover_robots(port=port)
+    return jsonify(
+        {
+            "ok": True,
+            "port": port,
+            "hosts": hits,
+            "suggested_hosts": suggested_hosts(),
+            "default_host": default_host_for_lan(DEFAULT_HOST),
+        }
+    )
 
 
 @app.get("/api/state")
 def api_state():
     with _lock:
+        with _rec_lock:
+            if _recording and _rec_t0:
+                _state["record_duration_ms"] = int((time.monotonic() - _rec_t0) * 1000)
+        _refresh_op_mode()
         payload = dict(_state)
-        payload["logs"] = list(_logs)[:24]
+        payload["logs"] = _log.lines(48)
+        payload["sticky_link"] = bool(_want_link)
     return jsonify(payload)
 
 
@@ -656,51 +1229,202 @@ def api_connect():
     data = request.get_json(force=True, silent=True) or {}
     raw_host = data.get("host")
     if raw_host is None or str(raw_host).strip() == "":
-        raw_host = DEFAULT_HOST
+        raw_host = default_host_for_lan(DEFAULT_HOST)
     try:
         port = int(data.get("port") or DEFAULT_PORT)
     except (TypeError, ValueError):
         port = DEFAULT_PORT
     host, port = _normalize_host_port(str(raw_host), port)
+    # Hotspot DHCP leftovers (.140) → static *.222 before first attempt
+    host = canonicalize_host(host)
+    auto = bool(data.get("auto_discover", True))
+    tried = [host]
     try:
         connect_tcp(host, port)
-        _logs.appendleft(f"CONNECT {host}:{port}")
+        _log.add("LINK", f"CONNECT {host}:{port}")
         return jsonify({"ok": True, "mode": "protobuf-tcp", "host": host, "port": port})
-    except Exception as exc:  # noqa: BLE001
-        _logs.appendleft(f"CONNECT FAIL {host}:{port} — {exc}")
-        return jsonify({"ok": False, "error": str(exc), "host": host, "port": port}), 500
+    except Exception as first_exc:  # noqa: BLE001
+        _log.add("ERR", f"CONNECT FAIL {host}:{port} — {first_exc}")
+        fallbacks: list[str] = []
+        if auto:
+            lan = default_host_for_lan(DEFAULT_HOST)
+            if lan not in tried:
+                fallbacks.append(lan)
+            for hit in discover_robots(port=port):
+                alt = hit["host"]
+                if alt not in tried and alt not in fallbacks:
+                    fallbacks.append(alt)
+            for alt in fallbacks:
+                tried.append(alt)
+                try:
+                    connect_tcp(alt, port)
+                    _log.add("LINK", f"CONNECT {alt}:{port} (auto-discover)")
+                    return jsonify(
+                        {
+                            "ok": True,
+                            "mode": "protobuf-tcp",
+                            "host": alt,
+                            "port": port,
+                            "discovered": True,
+                        }
+                    )
+                except Exception:  # noqa: BLE001
+                    continue
+        hits = discover_robots(port=port)
+        err = str(first_exc)
+        if host != canonicalize_host(str(raw_host)):
+            err = connect_hint(str(raw_host).strip())
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "error": err,
+                    "host": host,
+                    "port": port,
+                    "tried": tried,
+                    "discovered_hosts": hits,
+                    "suggested_hosts": suggested_hosts(),
+                }
+            ),
+            500,
+        )
 
 
 @app.post("/api/disconnect")
 def api_disconnect():
-    disconnect()
-    return jsonify({"ok": True})
+    disconnect(sticky=False)
+    _log.add("LINK", "DISCONNECT")
+    return jsonify({"ok": True, "auto_reconnect": False})
+
+
+@app.post("/api/reconnect")
+def api_reconnect():
+    """Force an immediate sticky reconnect attempt (keeps auto-reconnect armed)."""
+    global _want_link, _link_host, _link_port
+    data = request.get_json(force=True, silent=True) or {}
+    raw = data.get("host") or _link_host or default_host_for_lan(DEFAULT_HOST)
+    try:
+        port = int(data.get("port") or _link_port or DEFAULT_PORT)
+    except (TypeError, ValueError):
+        port = DEFAULT_PORT
+    host, port = _normalize_host_port(str(raw), port)
+    host = canonicalize_host(host)
+    _want_link = True
+    _link_host = host
+    _link_port = port
+    with _lock:
+        _state["auto_reconnect"] = True
+        _state["reconnect_note"] = "manual reconnect"
+        _state["host"] = f"{host}:{port}"
+        _state["reconnect_attempts"] = int(_state.get("reconnect_attempts") or 0)
+    _ensure_keepalive()
+    _reconnect_gate.set()
+    try:
+        connect_tcp(host, port, sticky=True)
+        return jsonify({"ok": True, "host": host, "port": port, "sticky_link": True})
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"ok": False, "error": str(exc), "host": host, "port": port, "auto_reconnect": True, "sticky_link": True}), 500
+
+
+@app.post("/api/sticky")
+def api_sticky():
+    """Arm or cancel sticky auto-reconnect without requiring a live socket."""
+    global _want_link, _link_host, _link_port
+    data = request.get_json(force=True, silent=True) or {}
+    enabled = bool(data.get("enabled"))
+    if "host" in data and str(data.get("host") or "").strip():
+        host, port = _normalize_host_port(str(data.get("host")), int(data.get("port") or _link_port or DEFAULT_PORT))
+        _link_host = canonicalize_host(host)
+        _link_port = port
+    _want_link = enabled
+    with _lock:
+        _state["auto_reconnect"] = bool(enabled and not _state.get("connected"))
+        if enabled:
+            _state["reconnect_note"] = _state.get("reconnect_note") or "sticky armed"
+            if _link_host:
+                _state["host"] = f"{_link_host}:{_link_port or DEFAULT_PORT}"
+        else:
+            _state["reconnect_note"] = None
+            _state["auto_reconnect"] = False
+    if enabled:
+        _ensure_keepalive()
+        _reconnect_gate.set()
+    _log.add("LINK", f"STICKY {'on' if enabled else 'off'} host={_link_host}:{_link_port}")
+    return jsonify(
+        {
+            "ok": True,
+            "sticky_link": enabled,
+            "auto_reconnect": bool(_state.get("auto_reconnect")),
+            "host": _link_host,
+            "port": _link_port,
+        }
+    )
+
+
+@app.post("/api/estop")
+def api_estop():
+    _do_estop(reason="user")
+    return jsonify({"ok": True, "op_mode": _state["op_mode"]})
+
+
+@app.post("/api/estop/clear")
+def api_estop_clear():
+    if not _state.get("connected"):
+        return jsonify({"ok": False, "error": "not connected"}), 400
+    _state["estop"] = False
+    _clear_fault()
+    if (_state.get("error") or "").startswith("EMERGENCY STOP"):
+        _state["error"] = None
+    _send(_stop_msg(), record=False, force=True)
+    _refresh_op_mode()
+    _log.add("ESTOP", "cleared")
+    return jsonify({"ok": True, "op_mode": _state["op_mode"]})
 
 
 @app.post("/api/arm")
 def api_arm():
+    ok_gate, err = _gate_motion()
+    if not ok_gate:
+        return jsonify({"ok": False, "error": err}), 409
     data = request.get_json(force=True, silent=True) or {}
-    msg = pb.ClientToRobot()
-    arm = msg.arm
-    if data.get("base") is not None and data.get("height") is None and data.get("grip") is None:
-        arm.base = int(data["base"])
-        arm.set_base = True
-    elif data.get("height") is not None and data.get("base") is None and data.get("grip") is None:
-        arm.height = int(data["height"])
-        arm.set_height = True
-    elif data.get("grip") is not None and data.get("base") is None and data.get("height") is None:
-        arm.grip = int(data["grip"])
-        arm.set_grip = True
-    else:
-        arm.base = int(data["base"] if data.get("base") is not None else _state["base"])
-        arm.height = int(data["height"] if data.get("height") is not None else _state["height"])
-        arm.grip = int(data["grip"] if data.get("grip") is not None else _state["grip"])
-        arm.set_base = arm.set_height = arm.set_grip = True
+    try:
+        msg = pb.ClientToRobot()
+        arm = msg.arm
+        if data.get("base") is not None and data.get("height") is None and data.get("grip") is None:
+            arm.base = validate_joint(_coerce_int(data["base"]))
+            arm.set_base = True
+            _state["base"] = arm.base
+        elif data.get("height") is not None and data.get("base") is None and data.get("grip") is None:
+            arm.height = validate_joint(_coerce_int(data["height"]))
+            arm.set_height = True
+            _state["height"] = arm.height
+        elif data.get("grip") is not None and data.get("base") is None and data.get("height") is None:
+            arm.grip = validate_joint(_coerce_int(data["grip"]))
+            arm.set_grip = True
+            _state["grip"] = arm.grip
+        else:
+            arm.base = validate_joint(
+                _coerce_int(data["base"] if data.get("base") is not None else _state["base"])
+            )
+            arm.height = validate_joint(
+                _coerce_int(data["height"] if data.get("height") is not None else _state["height"])
+            )
+            arm.grip = validate_joint(
+                _coerce_int(data["grip"] if data.get("grip") is not None else _state["grip"])
+            )
+            arm.set_base = arm.set_height = arm.set_grip = True
+            _state["base"], _state["height"], _state["grip"] = arm.base, arm.height, arm.grip
+        _state["arm_cmd_mono"] = time.monotonic()
+    except (TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": f"invalid arm: {exc}"}), 400
     return jsonify({"ok": _send(msg), "error": _state.get("error")})
 
 
 @app.post("/api/center")
 def api_center():
+    ok_gate, err = _gate_motion()
+    if not ok_gate:
+        return jsonify({"ok": False, "error": err}), 409
     msg = pb.ClientToRobot()
     msg.center = True
     return jsonify({"ok": _send(msg), "error": _state.get("error")})
@@ -708,10 +1432,17 @@ def api_center():
 
 @app.post("/api/drive")
 def api_drive():
+    ok_gate, err = _gate_motion()
+    if not ok_gate:
+        return jsonify({"ok": False, "error": err}), 409
     data = request.get_json(force=True, silent=True) or {}
+    try:
+        l, r = validate_drive(_coerce_int(data.get("left", 0)), _coerce_int(data.get("right", 0)))
+    except (TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": f"invalid drive: {exc}"}), 400
     msg = pb.ClientToRobot()
-    msg.drive.left = max(-255, min(255, int(data.get("left", 0))))
-    msg.drive.right = max(-255, min(255, int(data.get("right", 0))))
+    msg.drive.left = l
+    msg.drive.right = r
     return jsonify({"ok": _send(msg), "error": _state.get("error")})
 
 
@@ -719,27 +1450,39 @@ def api_drive():
 def api_stop():
     msg = pb.ClientToRobot()
     msg.stop = True
-    return jsonify({"ok": _send(msg), "error": _state.get("error")})
+    return jsonify({"ok": _send(msg, force=True), "error": _state.get("error")})
 
 
 @app.post("/api/motor_test")
 def api_motor_test():
+    ok_gate, err = _gate_motion()
+    if not ok_gate:
+        return jsonify({"ok": False, "error": err}), 409
     msg = pb.ClientToRobot()
     msg.motor_test = True
-    return jsonify({"ok": _send(msg), "error": _state.get("error")})
+    return jsonify({"ok": _send(msg, record=False), "error": _state.get("error")})
 
 
 @app.post("/api/zero")
 def api_zero():
+    ok_gate, err = _gate_motion()
+    if not ok_gate:
+        return jsonify({"ok": False, "error": err}), 409
     msg = pb.ClientToRobot()
     msg.zero = True
-    return jsonify({"ok": _send(msg), "error": _state.get("error")})
+    return jsonify({"ok": _send(msg, record=False), "error": _state.get("error")})
 
 
 @app.post("/api/conveyor")
 def api_conveyor():
+    ok_gate, err = _gate_motion()
+    if not ok_gate:
+        return jsonify({"ok": False, "error": err}), 409
     data = request.get_json(force=True, silent=True) or {}
-    speed = max(-255, min(255, int(data.get("speed", 0))))
+    try:
+        speed = validate_conveyor(_coerce_int(data.get("speed", 0)))
+    except (TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": f"invalid conveyor: {exc}"}), 400
     msg = pb.ClientToRobot()
     msg.conveyor.speed = speed
     ok = _send(msg)
@@ -750,12 +1493,14 @@ def api_conveyor():
 
 @app.post("/api/color_cal")
 def api_color_cal():
-    """mode: 0=white 1=teach RED 2=YELLOW 3=GREEN 4=clear teach 5=factory"""
+    ok_gate, err = _gate_motion()
+    if not ok_gate:
+        return jsonify({"ok": False, "error": err}), 409
     data = request.get_json(force=True, silent=True) or {}
     mode = int(data.get("mode", 0))
     msg = pb.ClientToRobot()
     msg.color_cal.mode = mode
-    ok = _send(msg)
+    ok = _send(msg, record=False)
     names = {
         0: "white-balance",
         1: "teach RED",
@@ -764,7 +1509,8 @@ def api_color_cal():
         4: "clear teach",
         5: "factory reset",
     }
-    _logs.appendleft(f"COLOR CAL {names.get(mode, mode)} ok={int(ok)}")
+    _log.add("COLOR", f"CAL {names.get(mode, mode)} ok={int(ok)}")
+    _color.reset()
     return jsonify({"ok": ok, "mode": mode, "error": _state.get("error")})
 
 
@@ -787,9 +1533,12 @@ def api_record_state():
         return jsonify({
             "recording": _recording,
             "replaying": _replaying,
+            "paused": _replay_paused,
             "name": _rec_name,
             "events": len(_rec_events) if _recording else _state.get("record_events", 0),
+            "duration_ms": _state.get("record_duration_ms", 0),
             "files": _list_rpms(),
+            "op_mode": _state.get("op_mode"),
         })
 
 
@@ -798,56 +1547,97 @@ def _send_rec(action: int, name: str = "") -> bool:
     msg.rec.action = int(action)
     if name:
         msg.rec.name = name[:31]
-    return _send(msg, record=False)
+    return _send(msg, record=False, force=True)
 
 
 @app.post("/api/record/start")
 def api_record_start():
-    global _recording, _rec_t0, _rec_events, _rec_name
+    global _recording, _rec_t0, _rec_events, _rec_name, _rec_origin, _last_cmd_sig
     data = request.get_json(force=True, silent=True) or {}
     name = _safe_rpm_name(str(data.get("name") or time.strftime("move-%Y%m%d-%H%M%S")))
     if not name:
         return jsonify({"ok": False, "error": "bad name"}), 400
+
+    pose = _arm_pose_from_state()
+    # Claim recording under lock first (blocks double-start races)
     with _rec_lock:
-        if _replaying:
-            return jsonify({"ok": False, "error": "replaying"}), 409
-        if not _state.get("connected"):
-            return jsonify({"ok": False, "error": "not connected"}), 400
+        err = allow_record_start(
+            connected=bool(_state.get("connected")),
+            estop=bool(_state.get("estop")),
+            recording=_recording,
+            replaying=_replaying,
+        )
+        if err:
+            return jsonify({"ok": False, "error": err}), 409
         _recording = True
-        _rec_t0 = time.monotonic()
-        _rec_events = []
-        _rec_name = name
         _state["recording"] = True
+        _rec_name = name
+        _rec_t0 = time.monotonic()
+        _last_cmd_sig = None
+        _rec_origin = dict(pose)
+        _rec_events = [{
+            "t_ms": 0,
+            "op": "arm",
+            "base": pose["base"],
+            "height": pose["height"],
+            "grip": pose["grip"],
+        }]
         _state["record_name"] = name
-        _state["record_events"] = 0
+        _state["record_events"] = 1
+        _state["record_duration_ms"] = 0
+        _state["ready_replay"] = False
+        _state["origin"] = dict(pose)
+        _state["warning"] = None
+        _refresh_op_mode()
+
     ok = _send_rec(1, name)
-    _logs.appendleft(f"REC start {name}.rpm → ESP32 stream")
-    return jsonify({"ok": ok, "name": name, "error": _state.get("error")})
+    if not ok:
+        with _rec_lock:
+            _recording = False
+            _state["recording"] = False
+            _rec_events = []
+            _refresh_op_mode()
+        return jsonify({"ok": False, "error": _state.get("error") or "send failed"}), 502
+
+    _log.add("REC", f"start {name}.rpm origin={pose['base']}/{pose['height']}/{pose['grip']}")
+    return jsonify({"ok": True, "name": name, "origin": pose})
 
 
 @app.post("/api/record/stop")
 def api_record_stop():
-    global _recording, _rec_events, _rec_name
+    global _recording, _rec_events, _rec_name, _rec_origin
     with _rec_lock:
         if not _recording:
             return jsonify({"ok": False, "error": "not recording"}), 400
         name = _rec_name or time.strftime("move-%Y%m%d-%H%M%S")
-    _send_rec(2, name)
-    deadline = time.monotonic() + 1.6
-    while time.monotonic() < deadline:
-        with _rec_lock:
-            if not _recording:
-                n = int(_state.get("record_events") or 0)
-                return jsonify({"ok": True, "name": name, "events": n, "file": f"{name}.rpm"})
-        time.sleep(0.05)
-    with _rec_lock:
         events = list(_rec_events)
-        name = _rec_name or name
+        origin = dict(_rec_origin) if _rec_origin else _arm_pose_from_state()
         _recording = False
         _state["recording"] = False
-    path = _write_rpm(name, events)
-    _logs.appendleft(f"REC saved {path.name} events={len(events)} (timeout flush)")
-    return jsonify({"ok": True, "name": name, "events": len(events), "file": path.name})
+
+    _send_rec(2, name)
+    # Ensure stop recorded / motors off
+    _send(_stop_msg(), record=False, force=True)
+
+    clean = sanitize_timeline(events, max_events=MAX_REC_EVENTS)
+    path = _write_rpm(name, clean)
+    n = len(clean)
+    _state["record_events"] = n
+    _state["record_name"] = name
+    _state["ready_replay"] = n > 0
+    _state["origin"] = origin
+
+    # Return robot to INITIAL origin after recording
+    _restore_arm_origin(origin, threading.Event())
+    _refresh_op_mode()
+    _log.add("REC", f"saved {path.name} events={n}; restored origin")
+    return jsonify({
+        "ok": True,
+        "name": name,
+        "events": n,
+        "file": path.name,
+        "origin": origin,
+    })
 
 
 @app.get("/api/record/list")
@@ -857,191 +1647,317 @@ def api_record_list():
 
 @app.post("/api/replay")
 def api_replay():
-    global _replaying, _replay_thread
+    global _replaying, _replay_thread, _replay_origin, _replay_paused
     data = request.get_json(force=True, silent=True) or {}
     name = _safe_rpm_name(str(data.get("name") or ""))
     if not name:
         return jsonify({"ok": False, "error": "need name"}), 400
+    confirm = bool(data.get("confirm", False))
+    if not confirm:
+        return jsonify({"ok": False, "error": "confirm required"}), 400
+    # Operator must acknowledge physical placement (software cannot verify)
+    if not bool(data.get("origin_ack", False)):
+        return jsonify({
+            "ok": False,
+            "error": "origin_ack required — place robot on INITIAL field mark, then confirm",
+        }), 400
+
     try:
         rpm = _load_rpm(name)
     except FileNotFoundError:
         return jsonify({"ok": False, "error": "missing"}), 404
     except Exception as exc:  # noqa: BLE001
-        return jsonify({"ok": False, "error": str(exc)}), 400
+        return jsonify({"ok": False, "error": f"invalid recording: {exc}"}), 400
+
+    events = sanitize_timeline(list(rpm.get("events") or []), max_events=MAX_REC_EVENTS)
+    if not events:
+        return jsonify({"ok": False, "error": "empty / no replayable events"}), 400
+
+    # Pre-flight — block autonomous replay on critical FAIL
+    pf = run_preflight(_state, events=events)
+    if not pf["ok_to_replay"]:
+        _log_hw("PREFLT", f"BLOCKED critical_fail checks={[c['id'] for c in pf['checks'] if c['status']=='FAIL' and c['critical']]}")
+        return jsonify({"ok": False, "error": "preflight failed", "preflight": pf}), 409
+
+    if _state.get("link_kind") == "SIMULATED" and not bool(data.get("allow_sim", False)):
+        return jsonify({
+            "ok": False,
+            "error": "SIMULATED link — pass allow_sim=true to run mock replay (not real hardware)",
+            "link_kind": "SIMULATED",
+        }), 409
+
+    origin = _origin_from_events(events, _arm_pose_from_state())
+    _state["origin"] = dict(origin)
+    _log_hw(
+        "REPLAY",
+        f"preflight OK kind={_state.get('link_kind')} dry_run={int(bool(_state.get('dry_run')))} "
+        f"events={len(events)} origin_ack=1 physical_pose=UNVERIFIED",
+    )
     with _rec_lock:
-        if _recording:
-            return jsonify({"ok": False, "error": "recording"}), 409
-        if _replaying:
-            return jsonify({"ok": False, "error": "already replaying"}), 409
-        if not _state.get("connected"):
-            return jsonify({"ok": False, "error": "not connected"}), 400
+        err = allow_replay_start(
+            connected=bool(_state.get("connected")),
+            estop=bool(_state.get("estop")),
+            recording=_recording,
+            replaying=_replaying,
+            confirm=True,
+        )
+        if err:
+            return jsonify({"ok": False, "error": err}), 409
+        _replay_origin = origin
         _replay_stop.clear()
+        _replay_paused = False
         _replaying = True
         _state["replaying"] = True
-        events = list(rpm.get("events") or [])
-        _replay_thread = threading.Thread(target=_replay_loop, args=(events,), daemon=True)
+        _state["replay_paused"] = False
+        _state["replay_name"] = name
+        _state["ready_replay"] = False
+        _state["replay_index"] = 0
+        _state["replay_total"] = len(events)
+        _state["replay_progress"] = 0.0
+        _state["fault"] = False
+        _refresh_op_mode()
+        _replay_thread = threading.Thread(
+            target=_replay_loop, args=(events, origin, name), daemon=True, name="replay"
+        )
         _replay_thread.start()
-    _logs.appendleft(f"REPLAY {name}.rpm events={len(events)}")
-    return jsonify({"ok": True, "name": name, "events": len(events)})
+    _log.add("REPLAY", f"queued {name}.rpm events={len(events)}")
+    return jsonify({"ok": True, "name": name, "events": len(events), "origin": origin})
 
 
 @app.post("/api/replay/stop")
 def api_replay_stop():
+    global _replay_paused
     _replay_stop.set()
-    _send(_stop_msg(), record=False)
+    _replay_paused = False
+    _state["replay_paused"] = False
+    _send(_stop_msg(), record=False, force=True)
+    _log.add("REPLAY", "stop requested")
     return jsonify({"ok": True})
 
 
-def _play_rpm_blocking(name: str, stop_ev: threading.Event) -> None:
-    """Replay a .rpm for mission scripts (blocks; respects stop_ev)."""
-    rpm = _load_rpm(name)
-    events = list(rpm.get("events") or [])
-    last_t = 0
-    for ev in events:
-        if stop_ev.is_set():
-            break
-        t_ms = int(ev.get("t_ms", last_t))
-        dt = max(0, t_ms - last_t) / 1000.0
-        last_t = t_ms
-        if dt > 0 and stop_ev.wait(dt):
-            break
-        if stop_ev.is_set():
-            break
-        msg = _event_to_msg(ev)
-        if msg is not None:
-            _send(msg, record=False)
-    _send(_stop_msg(), record=False)
-
-
-def _mission_record_start(name: str) -> None:
-    global _recording, _rec_t0, _rec_events, _rec_name
-    with _rec_lock:
-        if _replaying or _recording:
-            raise MissionError("busy recording/replaying")
-        _recording = True
-        _rec_t0 = time.monotonic()
-        _rec_events = []
-        _rec_name = name
-        _state["recording"] = True
-        _state["record_name"] = name
-        _state["record_events"] = 0
-    _send_rec(1, name)
-
-
-def _mission_record_stop() -> None:
-    global _recording, _rec_events, _rec_name
-    with _rec_lock:
-        if not _recording:
-            return
-        name = _rec_name or "move"
-    _send_rec(2, name)
-    deadline = time.monotonic() + 1.6
-    while time.monotonic() < deadline:
-        with _rec_lock:
-            if not _recording:
-                return
-        time.sleep(0.05)
-    with _rec_lock:
-        events = list(_rec_events)
-        name = _rec_name or name
-        _recording = False
-        _state["recording"] = False
-    _write_rpm(name, events)
-
-
-_mission = MissionRunner(
-    send_msg=lambda m: _send(m, record=False),
-    get_state=lambda: _state,
-    play_rpm=_play_rpm_blocking,
-    record_start=_mission_record_start,
-    record_stop=_mission_record_stop,
-    log=lambda s: _logs.appendleft(s),
-)
-
-
-@app.get("/api/mission/list")
-def api_mission_list():
-    return jsonify({"files": list_missions()})
-
-
-@app.get("/api/mission/get")
-def api_mission_get():
-    name = str(request.args.get("name") or "")
-    try:
-        return jsonify({"ok": True, "name": name, "src": load_mission(name)})
-    except MissionError as e:
-        return jsonify({"ok": False, "error": str(e)}), 404
-
-
-@app.post("/api/mission/save")
-def api_mission_save():
+@app.post("/api/replay/pause")
+def api_replay_pause():
+    global _replay_paused
     data = request.get_json(force=True, silent=True) or {}
-    name = str(data.get("name") or "").strip()
-    src = str(data.get("src") or "")
-    try:
-        path = save_mission(name, src)
-        return jsonify({"ok": True, "name": path.stem})
-    except MissionError as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
-
-
-@app.post("/api/mission/run")
-def api_mission_run():
-    data = request.get_json(force=True, silent=True) or {}
-    src = data.get("src")
-    name = str(data.get("name") or "").strip()
-    if src is None and name:
-        try:
-            src = load_mission(name)
-        except MissionError as e:
-            return jsonify({"ok": False, "error": str(e)}), 404
-    if not isinstance(src, str) or not src.strip():
-        return jsonify({"ok": False, "error": "need src or name"}), 400
-    if not _state.get("connected"):
-        return jsonify({"ok": False, "error": "not connected"}), 400
+    pause = bool(data.get("pause", True))
     with _rec_lock:
-        if _recording or _replaying:
-            return jsonify({"ok": False, "error": "recording/replaying"}), 409
-    if _mission.is_running():
-        return jsonify({"ok": False, "error": "mission running"}), 409
-    try:
-        _mission.start(src)
-    except MissionError as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
-    _logs.appendleft("MISSION start")
-    return jsonify({"ok": True})
-
-
-@app.post("/api/mission/stop")
-def api_mission_stop():
-    _mission.stop()
-    _replay_stop.set()
-    _send(_stop_msg(), record=False)
-    return jsonify({"ok": True})
-
-
-@app.get("/api/mission/state")
-def api_mission_state():
-    return jsonify({
-        "running": _mission.is_running(),
-        "line": _mission.line,
-        "error": _mission.last_error,
-        "files": list_missions(),
-    })
+        if not _replaying:
+            return jsonify({"ok": False, "error": "not replaying"}), 400
+        with _replay_tx_lock:
+            _replay_paused = pause
+            _state["replay_paused"] = pause
+            if pause:
+                _force_all_stop(_locked=True)
+        _refresh_op_mode()
+    _log.add("REPLAY", "paused" if pause else "resumed")
+    return jsonify({"ok": True, "paused": pause})
 
 
 @app.post("/api/ota")
 def api_ota():
-    """action: 6=query 7=boot ota_0 8=boot ota_1 — full upload via ota_upload.py"""
     data = request.get_json(force=True, silent=True) or {}
     action = int(data.get("action", 6))
     if action not in (6, 7, 8):
         return jsonify({"ok": False, "error": "use ota_upload.py for begin/chunk/finish/apply"}), 400
     msg = pb.ClientToRobot()
     msg.ota.action = action
-    ok = _send(msg, record=False)
-    _logs.appendleft(f"OTA action={action} ok={int(ok)}")
+    ok = _send(msg, record=False, force=True)
+    _log.add("OTA", f"action={action} ok={int(ok)}")
     return jsonify({"ok": ok, "action": action, "error": _state.get("error")})
+
+
+@app.get("/api/preflight")
+def api_preflight():
+    name = _safe_rpm_name(str(request.args.get("name") or _state.get("record_name") or ""))
+    events: list[dict] = []
+    if name:
+        try:
+            events = list(_load_rpm(name).get("events") or [])
+        except Exception as exc:  # noqa: BLE001
+            return jsonify({"ok_to_replay": False, "error": str(exc), "checks": []}), 400
+    report = run_preflight(_state, events=events)
+    _log_hw("PREFLT", f"ok_to_replay={report['ok_to_replay']} warnings={report['warning_count']}")
+    return jsonify(report)
+
+
+@app.post("/api/dry_run")
+def api_dry_run():
+    data = request.get_json(force=True, silent=True) or {}
+    if "enabled" not in data:
+        return jsonify({"ok": False, "error": "need enabled bool"}), 400
+    enabled = bool(data.get("enabled"))
+    if not enabled and _state.get("link_kind") == "SIMULATED":
+        # turning off dry-run while on localhost still isn't real hardware
+        pass
+    if not enabled and not _state.get("connected"):
+        return jsonify({"ok": False, "error": "connect first before arming motors"}), 400
+    if not enabled:
+        # Arming motors — require explicit ack
+        if not bool(data.get("arm_ack", False)):
+            return jsonify({
+                "ok": False,
+                "error": "arm_ack required to disable dry-run (motors will move)",
+            }), 400
+        _force_all_stop()
+    _state["dry_run"] = enabled
+    _refresh_op_mode()
+    _log_hw("SAFE", f"dry_run={int(enabled)} link_kind={_state.get('link_kind')}")
+    return jsonify({
+        "ok": True,
+        "dry_run": enabled,
+        "link_kind": _state.get("link_kind"),
+    })
+
+
+@app.get("/api/readiness")
+def api_readiness():
+    """Audit snapshot for hardware-test briefings — never claims physical success."""
+    return jsonify({
+        "link_kind": _state.get("link_kind"),
+        "dry_run": bool(_state.get("dry_run")),
+        "connected": bool(_state.get("connected")),
+        "host": _state.get("host"),
+        "origin_physical_verified": False,
+        "origin_note": _state.get("origin_note"),
+        "session_log": _state.get("session_log"),
+        "tx_suppressed": _state.get("tx_suppressed"),
+        "color_independent": True,
+        "limits": {
+            "drive": 255,
+            "hw_test_drive": 120,
+            "hw_test_conveyor": 100,
+            "hw_test_pulse_ms": HW_TEST_PULSE_MS,
+            "telem_timeout_s": TELEM_TIMEOUT_S,
+        },
+        "comm_path": "PC -> WiFi TCP -> ESP32 :3333 length-prefixed protobuf (ClientToRobot / RobotToClient)",
+    })
+
+
+def _hw_pulse_drive(left: int, right: int, pulse_ms: int) -> None:
+    def _run() -> None:
+        _state["hw_test_active"] = True
+        try:
+            msg = pb.ClientToRobot()
+            msg.drive.left = left
+            msg.drive.right = right
+            _send(msg, record=False)
+            time.sleep(max(0.05, pulse_ms / 1000.0))
+        finally:
+            _force_all_stop()
+            _state["hw_test_active"] = False
+            _log_hw("HWTEST", f"pulse done L={left} R={right}")
+
+    threading.Thread(target=_run, daemon=True, name="hw-pulse").start()
+
+
+@app.post("/api/hw_test")
+def api_hw_test():
+    """Controlled single-action hardware bench tests with hard speed/time caps."""
+    data = request.get_json(force=True, silent=True) or {}
+    action = str(data.get("action") or "").strip().lower()
+    if not _state.get("connected"):
+        return jsonify({"ok": False, "error": "not connected"}), 400
+    if _state.get("estop"):
+        return jsonify({"ok": False, "error": "emergency stop"}), 409
+    if _recording or _replaying:
+        return jsonify({"ok": False, "error": "busy recording/replaying"}), 409
+
+    pulse = int(data.get("pulse_ms") or HW_TEST_PULSE_MS)
+    pulse = max(50, min(800, pulse))
+    spd = abs(int(data.get("speed") or 90))
+    left, right = 0, 0
+
+    if action == "connection":
+        age = _state.get("last_telem_age_ms")
+        ok = bool(_state.get("connected")) and age is not None and int(age) < 1500
+        _log_hw("HWTEST", f"connection ok={ok} age={age} kind={_state.get('link_kind')}")
+        return jsonify({
+            "ok": ok,
+            "link_kind": _state.get("link_kind"),
+            "dry_run": _state.get("dry_run"),
+            "telem_age_ms": age,
+            "note": "PASS here means link+telem only — not proof of motors",
+        })
+
+    if action == "color":
+        _log_hw(
+            "HWTEST",
+            f"color name={_state.get('color_name')} conf={_state.get('color_conf')} "
+            f"stable={_state.get('color_stable')} R={_state.get('color_r')} "
+            f"Y={_state.get('color_b')} G={_state.get('color_g')}",
+        )
+        return jsonify({
+            "ok": True,
+            "color": _state.get("color"),
+            "color_name": _state.get("color_name"),
+            "color_conf": _state.get("color_conf"),
+            "color_stable": _state.get("color_stable"),
+            "bars": {
+                "r": _state.get("color_r"),
+                "y": _state.get("color_b"),
+                "g": _state.get("color_g"),
+            },
+            "independent_of_recording": True,
+        })
+
+    if action == "stop" or action == "estop":
+        if action == "estop":
+            _do_estop(reason="hw_test")
+        else:
+            _force_all_stop()
+        return jsonify({"ok": True, "action": action, "link_kind": _state.get("link_kind")})
+
+    if action in ("forward", "backward", "left", "right", "drive"):
+        if action == "forward":
+            left = right = spd
+        elif action == "backward":
+            left = right = -spd
+        elif action == "left":
+            left, right = -spd, spd
+        elif action == "right":
+            left, right = spd, -spd
+        else:
+            left, right = int(data.get("left", 0)), int(data.get("right", 0))
+        left, right = clamp_hw_drive(left, right)
+        _log_hw(
+            "HWTEST",
+            f"{action} L={left} R={right} pulse={pulse}ms dry_run={int(bool(_state.get('dry_run')))} "
+            f"kind={_state.get('link_kind')}",
+        )
+        _hw_pulse_drive(left, right, pulse)
+        return jsonify({
+            "ok": True,
+            "action": action,
+            "left": left,
+            "right": right,
+            "pulse_ms": pulse,
+            "dry_run": _state.get("dry_run"),
+            "link_kind": _state.get("link_kind"),
+            "note": "DRY_RUN suppresses motor TX" if _state.get("dry_run") else "REAL pulse sent",
+        })
+
+    if action == "conveyor":
+        speed = clamp_hw_conveyor(int(data.get("speed") or 80))
+        msg = pb.ClientToRobot()
+        msg.conveyor.speed = speed
+        ok = _send(msg, record=False)
+
+        def _stop_later() -> None:
+            time.sleep(pulse / 1000.0)
+            z = pb.ClientToRobot()
+            z.conveyor.speed = 0
+            _send(z, record=False)
+
+        threading.Thread(target=_stop_later, daemon=True).start()
+        return jsonify({"ok": ok, "speed": speed, "pulse_ms": pulse, "dry_run": _state.get("dry_run")})
+
+    if action == "arm_center":
+        msg = pb.ClientToRobot()
+        msg.center = True
+        ok = _send(msg, record=False)
+        return jsonify({"ok": ok, "dry_run": _state.get("dry_run")})
+
+    return jsonify({"ok": False, "error": f"unknown action {action}"}), 400
 
 
 def main() -> None:

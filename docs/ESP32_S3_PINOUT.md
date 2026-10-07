@@ -16,9 +16,11 @@ Boot scan only finds devices that are wired. Preferred:
 |--------|-----|-----|------|-------|
 | **PCA9685** | **21** | **47** | `0x40` | confirmed (MODE1 read) |
 | **VL53L0X** | **21** | **47** | `0x29` | same Wire as PCA |
-| **BNO08x** | **21/47** *or* **41/42** soft | | `0x4A`/`0x4B` | PS0/PS1 → GND |
+| **BNO08x** | **21** | **47** | `0x4A`/`0x4B` | PS0/PS1 → GND · **VIN = GPIO38 HIGH** |
 
-**Must:** common **GND**, logic **3.3 V**, PCA **OE → GND**, pull-ups to **3.3 V**.
+**Must:** common **GND**, PCA **OE → GND**, I2C pull-ups to **3.3 V**.
+
+**BNO power:** 3V3-only modules → **VIN → GPIO38** (firmware drives HIGH ≈ 3.3 V). Do **not** feed board 5 V into BNO VIN.
 
 **Do not use GPIO14 for I2C** — onboard camera FLASH LED.
 
@@ -32,7 +34,7 @@ Boot scan only finds devices that are wired. Preferred:
 | TCS S0/S1 | **5V / GND** (20%) |
 | TCS S2/S3/OUT/LED | **15 / 16 / 17 / 18** |
 
-## PCA9685 channels (@ 150 Hz, pulse 500–2500 µs)
+## PCA9685 channels (@ 50 Hz, pulse 500–2500 µs)
 
 | CH | Function |
 |----|----------|

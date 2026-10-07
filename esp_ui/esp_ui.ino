@@ -8,8 +8,9 @@
  * Camera OFF + SD unused → those GPIOs free for robot I/O.
  * Avoid only: 35–37 (OPI PSRAM). Careful: 0/3/45/46 (strapping).
  *
- * I2C: PCA @0x40 + VL53 @0x29 on Wire SDA=21 SCL=47.
- * BNO08x: same 21/47 or soft 41/42. Logic 3.3 V. GPIO14 = FLASH LED (not I2C).
+ * I2C: PCA @0x40 + VL53 @0x29 + BNO08x @0x4A/0x4B on Wire SDA=21 SCL=47.
+ * BNO VIN: GPIO38 HIGH ≈3.3 V rail (board 5 V is unsafe for 3V3-only IMU).
+ * GPIO14 = FLASH LED (not I2C). Do not use 38/39 as I2C (38 = IMU power).
  * Drive (3.3V → L298N; pull ENA/ENB jumpers):
  *   M1 OUT3/4: ENB=10 IN3=13 IN4=8
  *   M2 OUT1/2: ENA=9  IN1=11 IN2=12
@@ -31,9 +32,7 @@
 #include <VL53L0X.h>
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
-#define BNO_USE_I2C
-#include <7Semi_BNO08x.h>
-#include "soft_bno_i2c.h"
+#include <SparkFun_BNO080_Arduino_Library.h>
 #include "meow_frame.h"
 #include "color_ryg.h"
 #include "ota_pb_update.h"
@@ -48,6 +47,13 @@ enum : uint32_t { LOG_DBG = 0, LOG_INFO = 1, LOG_WARN = 2, LOG_ERR = 3 };
 #endif
 #ifndef WIFI_PASS
 #define WIFI_PASS "Darsh@3001"
+#endif
+/* SoftAP fallback when PC hotspot / STA is unreachable (PC joins this SSID) */
+#ifndef WIFI_AP_SSID
+#define WIFI_AP_SSID "Meowler"
+#endif
+#ifndef WIFI_AP_PASS
+#define WIFI_AP_PASS "Darsh@3001"
 #endif
 /* Static STA IP always ends in .222 on whatever subnet DHCP/gateway gives */
 #ifndef WIFI_HOST_OCTET
@@ -72,8 +78,10 @@ static const uint8_t MAX_CLIENTS = 3;
 #define M_PI 3.14159265358979323846
 #endif
 
-/* PCA + VL53 on Wire 21/47 (live scan). GPIO14 = FLASH LED. No OTA chainload. */
-static const int PIN_I2C0_SDA = 21, PIN_I2C0_SCL = 47;  // Wire = PCA + VL53
+/* PCA + VL53 + BNO on Wire 21/47. GPIO14 = FLASH LED. No OTA chainload. */
+static const int PIN_I2C0_SDA = 21, PIN_I2C0_SCL = 47;  // Wire = PCA + VL53 + BNO
+/* GPIO HIGH ≈ 3.3 V — powers 3V3-only BNO08x (do NOT feed board 5 V into VIN). */
+static const uint8_t PIN_IMU_3V3 = 38;
 static int i2cSda = PIN_I2C0_SDA, i2cScl = PIN_I2C0_SCL;
 static bool i2cLocked = false;
 
@@ -89,17 +97,21 @@ static const uint8_t REG_PRESCALE = 0xFE;
  */
 static const uint16_t SERVO_US_MIN = 500;   // MG90 0°
 static const uint16_t SERVO_US_MAX = 2500;  // MG90 180°
-static const uint16_t SERVO_PERIOD_US = 6667;  // 1e6/150
-static const uint8_t PCA_PRESCALE = 40;        // ≈150 Hz
+/* Analog MG90s want ~50 Hz. 150 Hz made height (gravity load) sluggish/weak. */
+static const uint16_t SERVO_PERIOD_US = 20000;  // 1e6/50
+static const uint8_t PCA_PRESCALE = 121;        // ≈50 Hz (25MHz/(4096*50)-1)
 static const uint8_t CH_BASE = 0, CH_HEIGHT = 1, CH_GRIP = 2;
 static const uint8_t CH_CONVEYOR = 4;  // SG90-360 continuous (UM belt)
 static const uint16_t CONV_US_STOP = 1500;
 static const uint16_t CONV_US_MIN = 1000;
 static const uint16_t CONV_US_MAX = 2000;
 
-/* MG90: drive to X → hold → relax (PWM off) → reassert X → relax */
-enum : uint8_t { AX_MOVE = 0, AX_HOLD, AX_RELAX, AX_REASSERT, AX_IDLE };
-static const uint32_t AX_HOLD_MS = 350;      // keep torque while holding/nudging
+/* MG90: snap to X then HOLD with continuous PWM (stall torque).
+ * PWM-off only on explicit relax (E-stop / axesRelaxAll) — never auto-droop. */
+enum : uint8_t { AX_MOVE = 0, AX_HOLD, AX_IDLE };
+static const uint32_t AX_PWM_REFRESH_MS = 80;       // base/grip hold refresh
+static const uint32_t AX_HEIGHT_REFRESH_MS = 35;    // height fights gravity — reassert often
+static const uint32_t AX_HOLD_MS = AX_PWM_REFRESH_MS;  /* legacy name */
 /* Unused when soft=false (snap). Kept for any future soft axis. */
 static const float AXIS_VMAX = 720.0f;
 static const float AXIS_ACCEL = 2400.0f;
@@ -163,7 +175,7 @@ static volatile uint8_t prevM1 = 0, prevM2 = 0;
 static portMUX_TYPE encMux = portMUX_INITIALIZER_UNLOCKED;
 static const int8_t ENC_LUT[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
 static int32_t yawCdeg = 0, pitchCdeg = 0, rollCdeg = 0;
-static uint32_t lastTofMs = 0, lastTelemMs = 0, lastImuMs = 0, lastColorMs = 0;
+static uint32_t lastTofMs = 0, lastTelemMs = 0, lastImuMs = 0, lastImuDataMs = 0, lastColorMs = 0;
 
 static uint8_t colorLabel = 0;  // 0 unknown 1 R 2 Y 3 G
 static uint8_t colorConf = 0;
@@ -171,6 +183,7 @@ static uint8_t colorR100 = 0, colorG100 = 0, colorB100 = 0;
 static uint16_t lastRp = 0, lastGp = 0, lastBp = 0, lastCp = 0;
 static ColorRyg colorRyg;
 static bool wifiOk = false;
+static bool wifiApOn = false;
 static bool chainloadOta1 = false;
 static uint32_t chainloadAtMs = 0;
 static bool chainloadTimerOn = false;
@@ -187,11 +200,7 @@ static uint8_t mtestPhase = 0;  /* 0 idle · 1 L · 2 R · 3 both */
 static uint32_t mtestMs = 0;
 
 static VL53L0X tof;
-static SoftBnoI2CBus softBus(41, 42, IMU_A, 50000UL);
-static BnoI2CBus hwBus(Wire1, -1, -1, IMU_A, 100000UL, -1, -1);
-static BNO08x_7Semi bnoHw(hwBus);
-static BNO08x_7Semi bnoSoft(softBus);
-static BNO08x_7Semi *bno = &bnoHw;
+static BNO080 bno;  /* SparkFun BNO080/085 — shared Wire 21/47 with PCA+VL53 */
 static TwoWire *tofBus = &Wire;
 
 static WiFiServer netServer(NET_PORT);
@@ -373,6 +382,30 @@ static void wifiBindServer() {
   }
 }
 
+static void wifiStopSoftAp_() {
+  if (!wifiApOn) return;
+  WiFi.softAPdisconnect(true);
+  wifiApOn = false;
+  meowLog(LOG_INFO, "WIFI SoftAP off");
+}
+
+/* Reachable when STA cannot join PC hotspot — connect phone/PC to Meowler → 192.168.4.1:3333 */
+static bool wifiStartSoftAp_() {
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.setHostname("meowler");
+  if (!WiFi.softAP(WIFI_AP_SSID, WIFI_AP_PASS)) {
+    meowLog(LOG_ERR, "WIFI SoftAP FAIL");
+    wifiApOn = false;
+    return false;
+  }
+  delay(100);
+  wifiApOn = true;
+  wifiBindServer();
+  meowLogf(LOG_INFO, "WIFI SoftAP '%s' tcp://%s:%u (STA still retrying %s)",
+           WIFI_AP_SSID, WiFi.softAPIP().toString().c_str(), (unsigned)NET_PORT, WIFI_SSID);
+  return true;
+}
+
 static void wifiLearnFromDhcp_() {
   IPAddress gw = WiFi.gatewayIP();
   IPAddress sn = WiFi.subnetMask();
@@ -424,9 +457,9 @@ static bool wifiConnectDhcp_() {
   return wifiWaitConnected_(25000UL);
 }
 
-/* DHCP → learn → static *.222; on failure keep DHCP IP so TCP still works */
+/* DHCP → learn → static *.222; on failure SoftAP so TCP still works */
 static void startWifi() {
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(wifiApOn ? WIFI_AP_STA : WIFI_STA);
   WiFi.setHostname("meowler");
   WiFi.setAutoReconnect(true);
   WiFi.persistent(false);
@@ -437,6 +470,8 @@ static void startWifi() {
   if (wifiHaveNet) {
     meowLog(LOG_INFO, "WIFI reconnect (cached static)");
     if (wifiConnectStatic_()) {
+      wifiStopSoftAp_();
+      WiFi.mode(WIFI_STA);
       wifiOk = true;
       wifiBindServer();
       meowLogf(LOG_INFO, "WIFI ok tcp://%s:%u rssi=%d",
@@ -447,7 +482,8 @@ static void startWifi() {
   }
 
   if (!wifiConnectDhcp_()) {
-    meowLog(LOG_ERR, "WIFI FAIL (DHCP)");
+    meowLog(LOG_ERR, "WIFI FAIL (DHCP) — SoftAP fallback");
+    if (wifiStartSoftAp_()) wifiOk = true;
     return;
   }
   wifiLearnFromDhcp_();
@@ -455,11 +491,14 @@ static void startWifi() {
   if (!wifiConnectStatic_()) {
     meowLog(LOG_WARN, "WIFI static FAIL — DHCP fallback");
     if (!wifiConnectDhcp_()) {
-      meowLog(LOG_ERR, "WIFI FAIL");
+      meowLog(LOG_ERR, "WIFI FAIL — SoftAP fallback");
+      if (wifiStartSoftAp_()) wifiOk = true;
       return;
     }
   }
 
+  wifiStopSoftAp_();
+  WiFi.mode(WIFI_STA);
   wifiOk = true;
   wifiBindServer();
   meowLogf(LOG_INFO, "WIFI ok tcp://%s:%u rssi=%d",
@@ -473,12 +512,47 @@ static void serviceWifi() {
   wifiLastStatusMs = now;
 
   if (WiFi.status() == WL_CONNECTED) {
+    if (wifiApOn) wifiStopSoftAp_();
     if (!wifiOk) {
       wifiOk = true;
       wifiBindServer();
       meowLogf(LOG_INFO, "WIFI up %s rssi=%d", WiFi.localIP().toString().c_str(), WiFi.RSSI());
     }
     wifiFailStreak = 0;
+    return;
+  }
+
+  /* SoftAP alone is a valid link — do not tear it down every few seconds */
+  if (wifiApOn) {
+    wifiOk = true;
+    uint32_t gap = (WiFi.softAPgetStationNum() > 0) ? 20000UL : 10000UL;
+    if (now - wifiLastAttemptMs < gap) return;
+    wifiLastAttemptMs = now;
+    wifiFailStreak++;
+    meowLogf(LOG_INFO, "WIFI STA retry #%u (SoftAP up clients=%u)",
+             (unsigned)wifiFailStreak, (unsigned)WiFi.softAPgetStationNum());
+    /* Try STA without dropping SoftAP */
+    WiFi.mode(WIFI_AP_STA);
+    if (wifiHaveNet && wifiConnectStatic_()) {
+      wifiStopSoftAp_();
+      WiFi.mode(WIFI_STA);
+      wifiOk = true;
+      wifiBindServer();
+      wifiFailStreak = 0;
+      meowLogf(LOG_INFO, "WIFI ok tcp://%s:%u rssi=%d",
+               WiFi.localIP().toString().c_str(), (unsigned)NET_PORT, WiFi.RSSI());
+    } else if (wifiConnectDhcp_()) {
+      wifiLearnFromDhcp_();
+      if (wifiConnectStatic_() || WiFi.status() == WL_CONNECTED) {
+        wifiStopSoftAp_();
+        WiFi.mode(WIFI_STA);
+        wifiOk = true;
+        wifiBindServer();
+        wifiFailStreak = 0;
+        meowLogf(LOG_INFO, "WIFI ok tcp://%s:%u rssi=%d",
+                 WiFi.localIP().toString().c_str(), (unsigned)NET_PORT, WiFi.RSSI());
+      }
+    }
     return;
   }
 
@@ -554,8 +628,9 @@ static void serialPrintHelp() {
 static void serialPrintStatus() {
   int32_t el = 0, er = 0;
   encSnapshot_(&el, &er);
-  meowLogf(LOG_INFO, "STAT wifi=%d ip=%s rssi=%d pca=%d tof=%d imu=%d cmd=%d/%d enc=%ld/%ld",
-           (WiFi.status() == WL_CONNECTED) ? 1 : 0, WiFi.localIP().toString().c_str(), WiFi.RSSI(),
+  IPAddress ip = (WiFi.status() == WL_CONNECTED) ? WiFi.localIP() : (wifiApOn ? WiFi.softAPIP() : WiFi.localIP());
+  meowLogf(LOG_INFO, "STAT wifi=%d ap=%d ip=%s rssi=%d pca=%d tof=%d imu=%d cmd=%d/%d enc=%ld/%ld",
+           (WiFi.status() == WL_CONNECTED) ? 1 : 0, wifiApOn ? 1 : 0, ip.toString().c_str(), WiFi.RSSI(),
            pcaOk ? 1 : 0, tofOk ? 1 : 0, imuOk ? 1 : 0, (int)cmdL, (int)cmdR, (long)el, (long)er);
 }
 
@@ -656,6 +731,16 @@ static void setPwmRaw(uint8_t ch, uint16_t on, uint16_t off) {
   pcaBus->write((uint8_t)(off & 0xFF));
   pcaBus->write((uint8_t)(off >> 8));
   pcaBus->endTransmission();
+  /* Height channel: second write — I2C glitches were dropping CH1 under load */
+  if (ch == CH_HEIGHT) {
+    pcaBus->beginTransmission(pcaAddr);
+    pcaBus->write(reg);
+    pcaBus->write((uint8_t)(on & 0xFF));
+    pcaBus->write((uint8_t)(on >> 8));
+    pcaBus->write((uint8_t)(off & 0xFF));
+    pcaBus->write((uint8_t)(off >> 8));
+    pcaBus->endTransmission();
+  }
 }
 
 static void pcaFullOff(uint8_t ch) { setPwmRaw(ch, 0, 0x1000); }
@@ -705,18 +790,21 @@ static void axisEnter(Mg90Axis &a, uint8_t phase) {
   a.phaseMs = millis();
 }
 
-/* New target X → MOVE with torque; later HOLD→RELAX→REASSERT→IDLE */
+/* New target → immediate PWM (snap) then HOLD with continuous stall torque. */
 static void axisRequest(Mg90Axis &a, int deg) {
   if (deg < 0) deg = 0;
   if (deg > 180) deg = 180;
-  if (deg == a.tgt && (a.phase == AX_MOVE || a.phase == AX_HOLD || a.phase == AX_REASSERT))
-    return;
   a.tgt = deg;
   if (!a.soft) {
     a.live = a.smooth = (float)deg;
     a.vel = 0.0f;
     a.cur = deg;
-    writeAxisPwm(a, (float)deg);  /* snap PWM in the command handler — no loop wait */
+    a.lastTicks = 0xFFFF;  /* always push PCA — no coalesce lag on retarget */
+    writeAxisPwm(a, (float)deg);
+    axisEnter(a, AX_HOLD);
+    /* Height: force immediate re-refresh next stepMg90 (gravity load) */
+    if (a.ch == CH_HEIGHT) a.phaseMs = 0;
+    return;
   }
   axisEnter(a, AX_MOVE);
 }
@@ -796,15 +884,21 @@ static void stepMg90(Mg90Axis &a, float dt) {
       }
       break;
     case AX_HOLD:
-      writeAxisPwm(a, (float)a.tgt);
+      /* Continuous pulse = stall torque. Height refreshes faster (gravity). */
       a.cur = a.tgt;
-      if (now - a.phaseMs >= AX_HOLD_MS) {
-        axisRelax(a);
-        axisEnter(a, AX_IDLE);
+      {
+        const uint32_t refresh =
+            (a.ch == CH_HEIGHT) ? AX_HEIGHT_REFRESH_MS : AX_PWM_REFRESH_MS;
+        if (a.phaseMs == 0 || (now - a.phaseMs) >= refresh) {
+          a.phaseMs = now;
+          a.lastTicks = 0xFFFF;
+          writeAxisPwm(a, (float)a.tgt);
+        }
       }
       break;
     case AX_IDLE:
     default:
+      /* Torque off — only after explicit relax */
       a.cur = a.tgt;
       break;
   }
@@ -830,7 +924,7 @@ static void updateMg90Axes() {
 }
 
 static bool armBusy() {
-  return axB.phase != AX_IDLE || axH.phase != AX_IDLE || axG.phase != AX_IDLE;
+  return axB.phase == AX_MOVE || axH.phase == AX_MOVE || axG.phase == AX_MOVE;
 }
 
 static void requestBase(int b) { axisRequest(axB, b); }
@@ -843,6 +937,15 @@ static void applyArm(int b, int h, int g) {
   requestGrip(g);
 }
 
+static void axesRelaxAll() {
+  axisRelax(axB);
+  axisRelax(axH);
+  axisRelax(axG);
+  axisEnter(axB, AX_IDLE);
+  axisEnter(axH, AX_IDLE);
+  axisEnter(axG, AX_IDLE);
+}
+
 static void axesResetPose(int deg) {
   axB.tgt = axH.tgt = axG.tgt = deg;
   axB.cur = axH.cur = axG.cur = deg;
@@ -850,21 +953,21 @@ static void axesResetPose(int deg) {
   axB.smooth = axH.smooth = axG.smooth = (float)deg;
   axB.vel = axH.vel = axG.vel = 0.0f;
   axB.lastTicks = axH.lastTicks = axG.lastTicks = 0xFFFF;
-  axB.phase = axH.phase = axG.phase = AX_IDLE;
   if (pcaOk) {
     writeAxisPwm(axB, (float)deg);
     writeAxisPwm(axH, (float)deg);
     writeAxisPwm(axG, (float)deg);
-    delay(AX_HOLD_MS);
-    axisRelax(axB);
-    axisRelax(axH);
-    axisRelax(axG);
+    axisEnter(axB, AX_HOLD);
+    axisEnter(axH, AX_HOLD);
+    axisEnter(axG, AX_HOLD);
+  } else {
+    axB.phase = axH.phase = axG.phase = AX_IDLE;
   }
   curB = curH = curG = deg;
 }
 
 /* Continuous SG90-360: speed -255..255 → pulse.
- * Stop = FULL OFF on CH15 (1500µs still creeps on most 360° units). */
+ * Stop = FULL OFF on CH4 (1500µs still creeps on most 360° units). */
 static void setConveyor(int16_t spd) {
   if (spd > 255) spd = 255;
   if (spd < -255) spd = -255;
@@ -919,7 +1022,10 @@ static void applySideGpio(int16_t spd, uint8_t inA, uint8_t inB, uint8_t en) {
 
 static void holdPcaMotorsOff() {
   if (!pcaOk) return;
-  for (uint8_t ch = 4; ch <= 9; ch++) pcaFullOff(ch);
+  /* CH0–2 = arm (axis FSM). CH4 = conveyor — never kill while running. */
+  for (uint8_t ch = 5; ch <= 14; ch++) pcaFullOff(ch);
+  if (curConv == 0) pcaFullOff(CH_CONVEYOR);
+  else setConveyor(curConv);  /* refresh CH4 after bus glitches */
 }
 
 static void applyDrive() {
@@ -930,7 +1036,7 @@ static void applyDrive() {
 static void serviceDriveHold() {
   if (mtestPhase != 0) return;
   if (cmdL == 0 && cmdR == 0) return;
-  if (millis() - lastDriveMs > 400) setDrive(0, 0);
+  if (millis() - lastDriveMs > 280) setDrive(0, 0);
 }
 
 static void setDrive(int16_t l, int16_t r) {
@@ -1153,6 +1259,7 @@ static void i2cOpen(TwoWire &bus, int sda, int scl, uint32_t hz) {
   logI2cIdle("idle", sda, scl);
   bus.end();
   delay(5);
+  bus.setBufferSize(256);  /* BNO08x SHTP frames */
   bus.begin(sda, scl, hz);
   delay(20);
 }
@@ -1266,10 +1373,8 @@ static bool initPcaOnce() {
   if (i2cLocked) {
     return tryPcaBus(Wire, i2cSda, i2cScl, false);
   }
-  if (tryPcaBus(Wire, 21, 47, true)) return true;
-  if (i2cLocked) return false;
-  if (tryPcaBus(Wire, 38, 39, true)) return true;
-  return false;
+  /* Only 21/47 — GPIO38 is IMU 3V3 power; never open I2C there. */
+  return tryPcaBus(Wire, PIN_I2C0_SDA, PIN_I2C0_SCL, true);
 }
 
 static bool initTofOn(TwoWire &bus) {
@@ -1298,92 +1403,106 @@ static bool initTofOnce() {
   return false;
 }
 
-static void quatYPR(float qi, float qj, float qk, float qr, float *y, float *p, float *r) {
-  float sqi = qi * qi, sqj = qj * qj, sqk = qk * qk, sqr = qr * qr;
-  *y = atan2f(2.0f * (qi * qj + qk * qr), (sqi - sqj - sqk + sqr));
-  float sinp = -2.0f * (qi * qk - qj * qr);
-  if (sinp > 1) sinp = 1;
-  if (sinp < -1) sinp = -1;
+/* SparkFun quat = (i,j,k,real=w) — standard aerospace yaw/pitch/roll (rad). */
+static void quatYPR(float i, float j, float k, float w, float *y, float *p, float *r) {
+  *y = atan2f(2.0f * (w * k + i * j), 1.0f - 2.0f * (j * j + k * k));
+  float sinp = 2.0f * (w * j - k * i);
+  if (sinp > 1.0f) sinp = 1.0f;
+  if (sinp < -1.0f) sinp = -1.0f;
   *p = asinf(sinp);
-  *r = atan2f(2.0f * (qj * qk + qi * qr), (-sqi - sqj + sqk + sqr));
+  *r = atan2f(2.0f * (w * i + j * k), 1.0f - 2.0f * (i * i + j * j));
 }
 
-static bool initImuHwOn(TwoWire &bus, uint8_t addr) {
-  if (!i2cProbe(bus, addr)) return false;
-  hwBus.w = &bus;
-  hwBus.sda = -1;
-  hwBus.scl = -1;
-  hwBus.addr = addr;
-  hwBus.clk = 100000UL;
-  bno = &bnoHw;
-  if (!bnoHw.begin()) return false;
-  bus.setClock(100000);
-  delay(40);
-  if (!bnoHw.enableGameRotationVector(50)) return false;
-  imuOk = true;
-  meowLogf(LOG_INFO, "IMU OK hw %s @0x%02X", (&bus == &Wire1) ? "Wire1" : "Wire", addr);
-  return true;
+static void enableImu3v3() {
+  pinMode(PIN_IMU_3V3, OUTPUT);
+  digitalWrite(PIN_IMU_3V3, HIGH);  /* ~3.3 V from GPIO — BNO VIN only */
+  delay(500);  /* BNO08x power-on settle */
+  meowLogf(LOG_INFO, "IMU 3V3 enable GPIO%u=HIGH", (unsigned)PIN_IMU_3V3);
 }
 
-static bool initImuSoft(uint8_t sda, uint8_t scl, uint8_t addr) {
-  if (sda == (uint8_t)i2cSda && scl == (uint8_t)i2cScl) return false;
-  softBus.sdaPin = sda;
-  softBus.sclPin = scl;
-  softBus.addr = addr;
-  softBus.begin();
-  if (!softBus.probe()) return false;
-  bno = &bnoSoft;
-  if (!bnoSoft.begin()) return false;
-  delay(40);
-  if (!bnoSoft.enableGameRotationVector(50)) return false;
+static bool initImuAt(uint8_t addr) {
+  if (!i2cProbe(Wire, addr)) {
+    meowLogf(LOG_WARN, "IMU probe fail @0x%02X", addr);
+    return false;
+  }
+  Wire.setClock(100000);
+  /* SparkFun: Wire already open on 21/47; begin() soft-resets + product ID */
+  if (!bno.begin(addr, Wire)) {
+    meowLogf(LOG_WARN, "IMU SparkFun begin fail @0x%02X", addr);
+    return false;
+  }
+  /* Do not Wire.begin() again — re-init drops SHTP + glitches PCA/TOF */
+  Wire.setClock(100000);
+  bno.enableGameRotationVector(40);  /* ms between reports */
+  delay(50);
   imuOk = true;
-  meowLogf(LOG_INFO, "IMU OK soft %u/%u @0x%02X", sda, scl, addr);
+  lastImuDataMs = millis();
+  meowLogf(LOG_INFO, "IMU OK SparkFun @0x%02X Wire %d/%d", addr, PIN_I2C0_SDA, PIN_I2C0_SCL);
   return true;
 }
 
 static bool initImu() {
   imuOk = false;
-  if (initImuHwOn(Wire, IMU_A) || initImuHwOn(Wire, IMU_B)) return true;
-  if (initImuHwOn(Wire1, IMU_A) || initImuHwOn(Wire1, IMU_B)) return true;
-  const uint8_t sets[][2] = {{41, 42}};
-  for (uint8_t i = 0; i < 1; i++) {
-    if (initImuSoft(sets[i][0], sets[i][1], IMU_A)) return true;
-    if (initImuSoft(sets[i][0], sets[i][1], IMU_B)) return true;
-  }
+  if (initImuAt(IMU_A)) return true;
+  if (initImuAt(IMU_B)) return true;
   return false;
 }
 
 static void updateImu() {
-  if (!imuOk || !bno || millis() - lastImuMs < 20) return;
-  lastImuMs = millis();
-  bno->processData();
-  float qi, qj, qk, qr;
-  if (!bno->getGameRotationVector(qi, qj, qk, qr)) return;
-  float y, p, r;
-  quatYPR(qi, qj, qk, qr, &y, &p, &r);
-  const float k = 18000.0f / (float)M_PI;
-  yawCdeg = (int32_t)lroundf(y * k);
-  pitchCdeg = (int32_t)lroundf(p * k);
-  rollCdeg = (int32_t)lroundf(r * k);
+  if (!imuOk) return;
+  /* Pump several SHTP frames — shared bus with PCA/VL53 drops packets if we only try once */
+  bool got = false;
+  for (uint8_t n = 0; n < 6; n++) {
+    if (!bno.dataAvailable()) break;
+    got = true;
+    float i = bno.getQuatI();
+    float j = bno.getQuatJ();
+    float k = bno.getQuatK();
+    float w = bno.getQuatReal();
+    float y, p, r;
+    quatYPR(i, j, k, w, &y, &p, &r);
+    const float s = 18000.0f / (float)M_PI;
+    yawCdeg = (int32_t)lroundf(y * s);
+    pitchCdeg = (int32_t)lroundf(p * s);
+    rollCdeg = (int32_t)lroundf(r * s);
+    lastImuDataMs = millis();
+  }
+  /* Stale >1.5s → re-enable GRV (bus glitch / FIFO stall) */
+  if (millis() - lastImuDataMs > 1500) {
+    static uint32_t lastKick;
+    if (millis() - lastKick > 1500) {
+      lastKick = millis();
+      Wire.setClock(100000);
+      bno.enableGameRotationVector(40);
+      meowLog(LOG_WARN, "IMU kick GRV");
+    }
+  }
+  (void)got;
 }
 
 static void updateTof() {
-  if (millis() - lastTofMs < 50) return;
+  static uint8_t tofFailStreak = 0;
+  if (millis() - lastTofMs < 20) return;
   lastTofMs = millis();
   if (!tofOk) {
     static uint32_t lastTry;
-    if (millis() - lastTry > 2000) {
+    if (millis() - lastTry > 1500) {
       lastTry = millis();
       tofOk = initTofOnce();
+      if (tofOk) tofFailStreak = 0;
     }
     return;
   }
   uint16_t mm = tof.readRangeContinuousMillimeters();
-  if (tof.timeoutOccurred() || mm > 8000) {
-    distMm = 0;
-  } else {
+  /* Keep last good range — zeroing on every glitch made the UI look dead. */
+  if (!tof.timeoutOccurred() && mm > 0 && mm < 8000) {
     distMm = mm;
     tofOk = true;
+    tofFailStreak = 0;
+  } else if (++tofFailStreak >= 10) {
+    tofOk = false;
+    tofFailStreak = 0;
+    meowLog(LOG_WARN, "TOF lost — will retry");
   }
   if (tofOriginSet && distMm > 0)
     tofDispMm = (int16_t)((int32_t)tofOriginMm - (int32_t)distMm);
@@ -1443,8 +1562,18 @@ static void broadcastTelem() {
   t->color_bp = lastBp;
   t->color_cp = lastCp;
   t->conveyor = curConv;
-  meowSendRobotSerial(out);
-  broadcastRobot(out);
+  /* TCP clients get telem; skip USB encode when linked (cuts latency). */
+  bool tcp = false;
+  for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
+    if (netClients[i] && netClients[i].connected()) {
+      tcp = true;
+      break;
+    }
+  }
+  if (tcp)
+    broadcastRobot(out);
+  else
+    meowSendRobotSerial(out);
 }
 
 static void ensurePca() {
@@ -1544,6 +1673,7 @@ void setup() {
   ColorRygPins cpins = {PIN_S2, PIN_S3, PIN_OUT, PIN_LED};
   colorRyg.begin(cpins);
 
+  enableImu3v3();  /* before I2C — BNO shares Wire 21/47 with PCA+VL53 */
   beginI2C();
 
   pcaOk = initPcaOnce();
@@ -1556,16 +1686,18 @@ void setup() {
     delay(300);
     tofOk = initTofOnce();
   }
-  initImu();
+  if (!initImu()) {
+    delay(200);
+    initImu();
+  }
 
   if (pcaOk) {
-    axesResetPose(90);
-    applyArm(90, 90, 90);  // MOVE→HOLD→RELAX→REASSERT→IDLE on all MG90
+    axesResetPose(90);  /* HOLD with continuous PWM = stall torque at 90° */
     setConveyor(0);
-    holdPcaMotorsOff();
+    holdPcaMotorsOff();  /* unused CH only — arm CH0–2 stay powered */
     lastPcaHoldMs = millis();
     lastAxisUs = micros();
-    meowLog(LOG_INFO, "PCA 150Hz MG90 move/relax/reassert");
+    meowLog(LOG_INFO, "PCA 50Hz MG90 snap+HOLD (height fast-refresh)");
   }
   setDrive(0, 0);
   if (tofOk) {
@@ -1637,17 +1769,19 @@ void loop() {
     }
   }
   pollNet();
+  updateImu();   /* before ToF — keep SHTP fed on shared I2C */
   updateTof();
   pollNet();
   updateImu();
-  pollNet();
-  /* Color sampling blocks for ms — skip while arm is moving */
-  if (!armBusy()) {
+  /* Color pulseIn blocks — throttle hard so drive/TOF stay snappy */
+  static uint32_t lastColorPollMs = 0;
+  if (!armBusy() && (millis() - lastColorPollMs >= 120)) {
+    lastColorPollMs = millis();
     updateColor();
   }
   pollNet();
 
-  if (millis() - lastTelemMs >= 100) {
+  if (millis() - lastTelemMs >= 40) {
     lastTelemMs = millis();
     broadcastTelem();
   }

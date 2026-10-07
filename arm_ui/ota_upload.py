@@ -8,7 +8,7 @@ Running app accepts OTA into the *inactive* slot:
   4. apply  — boot new slot (crash rolls back)
 
 Usage:
-  py -3 arm_ui/ota_upload.py --host 192.168.137.222 --bin path/to/app.ino.bin
+  py -3 arm_ui/ota_upload.py --host 192.168.29.222 --bin path/to/app.ino.bin
   ota-flash.bat
 """
 

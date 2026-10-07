@@ -1,19 +1,19 @@
 # Meowler — live status
 
-Last updated: 2026-10-05 · migrating robot brain → **Freenove ESP32-S3 N16R8** (`esp_ui`) · panel http://127.0.0.1:5050
+Last updated: 2026-10-07 · brain = **Freenove ESP32-S3 N16R8** (`esp_ui`) · panel http://127.0.0.1:5050
 
 ## Active target: Freenove ESP32-S3 N16R8 (camera REMOVED)
 
 | Subsystem | Status | Notes |
 |-----------|--------|--------|
-| Board | Port ready | `esp_ui/` · CH343 COM (often COM5) · **cam unplugged** |
-| PCA9685 arm | Shared Wire | **SDA=21 SCL=14** @ `0x40` · with BNO |
-| BNO08x IMU | Shared Wire | same **21/14** @ `0x4A`/`0x4B` · PS0/PS1 GND |
-| VL53L0X ToF | Wire1 alone | **SDA=38 SCL=39** @ `0x29` |
+| Board | Port ready | `esp_ui/` · CH343 COM (often COM7) · **cam unplugged** |
+| PCA9685 arm | Shared Wire | **SDA=21 SCL=47** @ `0x40` · CH0–2 MG90 · **CH4** conveyor |
+| VL53L0X ToF | Shared Wire | **SDA=21 SCL=47** @ `0x29` |
+| BNO08x IMU | Shared Wire | **SDA=21 SCL=47** @ `0x4A` · VIN=**GPIO38 HIGH** · PS0/PS1/ADR GND · RST/CS→3V3 |
 | M1 / M2 | LEDC PWM | ENB10/IN3=13/IN4=8 · ENA9/IN1=11/IN2=12 |
 | Encoders | Port ready | 4/5 · 6/7 · Ø43 mm |
 | TCS3200 | Port ready | S0=5V S1=GND · S2=15 S3=16 OUT=17 LED=18 |
-| Nano `arm_ui` | Fallback | Still works on COM3 if ESP not wired yet |
+| Network | TCP :3333 | static **\*.222** on joined WiFi (SSID DarshIshaan) |
 
 Full ESP pin table: **`docs/ESP32_S3_PINOUT.md`**
 

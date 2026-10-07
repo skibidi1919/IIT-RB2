@@ -46,12 +46,12 @@ esp32:esp32:esp32s3:CDCOnBoot=default,USBMode=hwcdc,FlashSize=16M,PSRAM=opi,Part
 | **10** | L298N ENB PWM (M1) |
 | **11 / 12** | L298N IN1 / IN2 (M2) |
 | **13** | L298N IN3 (M1) |
-| **14** | I2C0 SCL — PCA9685 (+ optional BNO) |
+| **14** | Board FLASH LED (not I2C) |
 | **15 / 16** | TCS3200 S2 / S3 |
 | **17 / 18** | TCS3200 OUT / LED |
-| **21** | I2C0 SDA — PCA9685 (+ optional BNO) |
-| **38 / 39** | I2C1 SDA / SCL — VL53L0X (ToF) |
-| **41 / 42** | Soft-I2C fallback for BNO08x (if not on 21/14) |
+| **21 / 47** | I2C0 SDA / SCL — PCA9685 + VL53 + BNO08x |
+| **38** | BNO08x **3V3 power** (GPIO HIGH ≈ 3.3 V → IMU VIN) |
+| **41 / 42** | Soft-I2C fallback for BNO (only if not on 21/47) |
 
 ---
 
@@ -111,8 +111,8 @@ Wheel diameter used in firmware: **43 mm** · steps/rev ≈ **600** → mm/step 
 | **VCC** | **3.3 V** | Logic |
 | **V+** | 5–6 V servo rail | Servo power (separate) |
 | **GND** | Common GND | |
-| **SDA** | **21** (`Wire`) | Preferred with BNO |
-| **SCL** | **14** (`Wire`) | |
+| **SDA** | **21** (`Wire`) | Shared with VL53 + BNO |
+| **SCL** | **47** (`Wire`) | |
 | **OE** | **GND** | Outputs enabled |
 | ADDR | `0x40` (default) | Firmware scans `0x40`–`0x47` |
 
@@ -143,12 +143,12 @@ Panel: base / height / grip degrees · Center / Open / Close.
 
 ---
 
-## 5. Conveyor — SG90 360° (via PCA CH15)
+## 5. Conveyor — SG90 360° (via PCA CH4)
 
 | Item | Value |
 |------|--------|
 | Servo | Continuous rotation SG90-360 |
-| PCA channel | **15** |
+| PCA channel | **4** |
 | Stop | PWM full-off (or ~1500 µs mid) |
 | Drive | Pulse ~1000–2000 µs mapped from speed −255…255 |
 
@@ -162,37 +162,41 @@ Panel: Forward / Stop / Reverse + speed slider.
 |---------|---------------|--------|
 | **VIN / VCC** | **3.3 V** (or 5 V if breakout regulates) | Match board |
 | **GND** | Common GND | |
-| **SDA** | **38** (`Wire1`) | |
-| **SCL** | **39** (`Wire1`) | |
+| **SDA** | **21** (`Wire`) | Shared with PCA + BNO |
+| **SCL** | **47** (`Wire`) | |
 | ADDR | **`0x29`** | Fixed |
 
 Telemetry: `distance_mm`, `tof_disp_mm` (relative to origin when set).
 
 ---
 
-## 7. BNO08x / BNO085 — IMU
+## 7. BNO08x / BNO085 — IMU (PATH ECC)
 
 I2C mode: **PS0 = GND**, **PS1 = GND**. Address **`0x4A`** (ADR low) or **`0x4B`** (ADR high).
 
-### Preferred (share PCA bus)
+**3V3-only modules:** board rail is often 5 V — do **not** feed 5 V into VIN. Firmware drives **GPIO38 HIGH** (~3.3 V) as IMU power.
 
-| BNO08x | ESP32 / power |
-|--------|---------------|
-| VIN / VCC | 3.3 V or 5 V (per breakout) |
-| GND | Common GND |
-| **SDA** | **21** |
-| **SCL** | **14** |
-| PS0 / PS1 | **GND** |
+### Wire it (same I2C as PCA + VL53)
+
+| BNO08x | ESP32 |
+|--------|--------|
+| **VIN / VCC** | **GPIO 38** (firmware sets HIGH @ boot) |
+| **GND** | Common GND |
+| **SDA** | **21** (same as PCA + ToF) |
+| **SCL** | **47** (same as PCA + ToF) |
+| **PS0 / PS1** | **GND** (I2C mode) |
+| ADR | GND → `0x4A` (or HIGH → `0x4B`) |
 | INT / RST | nc |
 
-### Soft-I2C fallback (if not on 21/14)
+### Soft-I2C fallback (only if not on 21/47)
 
 | BNO08x | ESP32 |
 |--------|--------|
 | SDA | **41** |
 | SCL | **42** |
+| VIN | still **GPIO 38** |
 
-Firmware tries Wire1 → Wire → soft 41/42. Panel: yaw / pitch / roll (centidegrees).
+GPIO38 can source ~10–20 mA — enough for one BNO; keep wiring short. Panel: yaw / pitch / roll (centidegrees) for PATH ECC later.
 
 ---
 
@@ -234,12 +238,10 @@ Serial USB is **debug only** — not the control plane.
 
 | Bus | SDA / SCL | Devices |
 |-----|-----------|---------|
-| **Wire** | **21 / 14** | PCA9685 `0x40` · BNO08x `0x4A`/`0x4B` (preferred) |
-| **Wire1** | **38 / 39** | VL53L0X `0x29` · PCA fallback if needed |
+| **Wire** | **21 / 47** | PCA9685 `0x40` · VL53L0X `0x29` · BNO08x `0x4A`/`0x4B` |
+| Soft | **41 / 42** | BNO fallback only |
 
-All I2C: **3.3 V**, common **GND**, pull-ups to **3.3 V**.
-
-Ideal: put PCA + VL53 + BNO on one bus if wiring allows; firmware auto-probes both buses.
+All I2C logic: **3.3 V**, common **GND**, pull-ups to **3.3 V**. BNO **VIN** = **GPIO38 HIGH** (not 5 V).
 
 ---
 
@@ -279,11 +281,11 @@ uv run dashboard
 | 2 | L298N | GPIO PWM + DIR | 8–13 |
 | 3 | N20 motors ×2 | L298N OUT | M1 OUT3/4 · M2 OUT1/2 |
 | 4 | Encoders ×2 | GPIO | 4/5 · 6/7 |
-| 5 | PCA9685 | I2C `0x40` | SDA21 SCL14 |
+| 5 | PCA9685 | I2C `0x40` | SDA21 SCL47 |
 | 6 | MG90 ×3 | PCA CH0–2 | Base / height / grip |
-| 7 | SG90-360 | PCA CH15 | Conveyor |
-| 8 | VL53L0X | I2C `0x29` | SDA38 SCL39 |
-| 9 | BNO08x | I2C `0x4A`/`0x4B` | 21/14 or soft 41/42 |
+| 7 | SG90-360 | PCA CH4 | Conveyor |
+| 8 | VL53L0X | I2C `0x29` | SDA21 SCL47 |
+| 9 | BNO08x | I2C `0x4A`/`0x4B` | SDA21 SCL47 · VIN=GPIO38 |
 | 10 | TCS3200 | GPIO | S2=15 S3=16 OUT=17 LED=18 · S0/S1 hardwired |
 
 ---
