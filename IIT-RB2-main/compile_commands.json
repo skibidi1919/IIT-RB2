@@ -1,0 +1,102 @@
+[
+  {
+    "directory": "/Users/suri/Documents/Projects/IIT",
+    "arguments": [
+      "clang++",
+      "-x",
+      "c++",
+      "-std=gnu++11",
+      "-D__AVR_ATmega328P__",
+      "-DF_CPU=16000000L",
+      "-DARDUINO=10607",
+      "-DARDUINO_AVR_NANO",
+      "-DARDUINO_ARCH_AVR",
+      "-Wno-unknown-attributes",
+      "-isystem/Users/suri/Library/Arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/avr/include",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/cores/arduino",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/variants/eightanaloginputs",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/libraries/Wire/src",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/libraries/SPI/src",
+      "-I/Users/suri/Documents/Arduino/libraries/VL53L0X",
+      "-I/Users/suri/Documents/Arduino/libraries/SparkFun_BNO080_Cortex_Based_IMU/src",
+      "-include",
+      "Arduino.h",
+      "-c",
+      "/Users/suri/Documents/Projects/IIT/src/Robot_Master/Robot_Master.ino"
+    ],
+    "file": "/Users/suri/Documents/Projects/IIT/src/Robot_Master/Robot_Master.ino"
+  },
+  {
+    "directory": "/Users/suri/Documents/Projects/IIT",
+    "arguments": [
+      "clang++",
+      "-x",
+      "c++",
+      "-std=gnu++11",
+      "-D__AVR_ATmega328P__",
+      "-DF_CPU=16000000L",
+      "-DARDUINO=10607",
+      "-DARDUINO_AVR_NANO",
+      "-DARDUINO_ARCH_AVR",
+      "-Wno-unknown-attributes",
+      "-isystem/Users/suri/Library/Arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/avr/include",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/cores/arduino",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/variants/eightanaloginputs",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/libraries/Wire/src",
+      "-I/Users/suri/Documents/Arduino/libraries/VL53L0X",
+      "-include",
+      "Arduino.h",
+      "-c",
+      "/Users/suri/Documents/Projects/IIT/src/Robot_Simple/Robot_Simple.ino"
+    ],
+    "file": "/Users/suri/Documents/Projects/IIT/src/Robot_Simple/Robot_Simple.ino"
+  },
+  {
+    "directory": "/Users/suri/Documents/Projects/IIT",
+    "arguments": [
+      "clang++",
+      "-x",
+      "c++",
+      "-std=gnu++11",
+      "-D__AVR_ATmega328P__",
+      "-DF_CPU=16000000L",
+      "-DARDUINO=10607",
+      "-DARDUINO_AVR_NANO",
+      "-DARDUINO_ARCH_AVR",
+      "-Wno-unknown-attributes",
+      "-isystem/Users/suri/Library/Arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/avr/include",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/cores/arduino",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/variants/eightanaloginputs",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/libraries/Wire/src",
+      "-include",
+      "Arduino.h",
+      "-c",
+      "/Users/suri/Documents/Projects/IIT/tools/02_PCA9685_Motor_Test/02_PCA9685_Motor_Test.ino"
+    ],
+    "file": "/Users/suri/Documents/Projects/IIT/tools/02_PCA9685_Motor_Test/02_PCA9685_Motor_Test.ino"
+  },
+  {
+    "directory": "/Users/suri/Documents/Projects/IIT",
+    "arguments": [
+      "clang++",
+      "-x",
+      "c++",
+      "-std=gnu++11",
+      "-D__AVR_ATmega328P__",
+      "-DF_CPU=16000000L",
+      "-DARDUINO=10607",
+      "-DARDUINO_AVR_NANO",
+      "-DARDUINO_ARCH_AVR",
+      "-Wno-unknown-attributes",
+      "-isystem/Users/suri/Library/Arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/avr/include",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/cores/arduino",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/variants/eightanaloginputs",
+      "-I/Users/suri/Library/Arduino15/packages/arduino/hardware/avr/1.8.8/libraries/Wire/src",
+      "-include",
+      "Arduino.h",
+      "-c",
+      "/Users/suri/Documents/Projects/IIT/tools/01_I2C_Scanner/01_I2C_Scanner.ino"
+    ],
+    "file": "/Users/suri/Documents/Projects/IIT/tools/01_I2C_Scanner/01_I2C_Scanner.ino"
+  }
+]
