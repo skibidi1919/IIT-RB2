@@ -47,17 +47,33 @@ graph TD
 
 ---
 
+## 📚 Comprehensive Documentation Library
+
+The project features a fully organized technical documentation library located in the [`docs/`](docs/) directory:
+
+| Document | Focus Area | Description |
+| :--- | :--- | :--- |
+| **[Documentation Index](docs/README.md)** | Overview & Navigation | Master documentation hub, system topography, and quick-start roadmap. |
+| **[Hardware & Wiring Guide](docs/WIRING_GUIDE.md)** | Physical Assembly | Complete pinouts, dual L298N drivers, interrupt encoders, I2C bus, and power distribution. |
+| **[Firmware Architecture Guide](docs/FIRMWARE_GUIDE.md)** | Embedded Systems | Timer allocation, hybrid interrupt odometry, sensor pipelines, state machines, and serial API. |
+| **[Telemetry & Dashboard Guide](docs/DASHBOARD_GUIDE.md)** | Ground Control Station | Web Serial API, PowerShell network bridge server (`serve_dashboard.ps1`), and mobile Wi-Fi teleop. |
+| **[Diagnostics & Calibration Guide](docs/DIAGNOSTICS_AND_CALIBRATION.md)** | Bench Testing | Step-by-step commissioning, motor polarity calibration, and encoder odometry math. |
+| **[Troubleshooting & FAQ Guide](docs/TROUBLESHOOTING.md)** | Debugging & QA | Systematic solutions for motor reversing, MCU brownouts, I2C freeze, and upload errors. |
+| **[Diagnostic Tools Directory](tools/README.md)** | Bench Sketches | Quick reference for the standalone diagnostic firmware utilities in `tools/`. |
+
+---
+
 ## 📊 Current Project Status & Milestone Tracker
 
 | Subsystem / Task | Status | Details & Notes |
 | :--- | :---: | :--- |
-| **Direct Pinout Audit** | ✅ **Completed** | Conflict-free hardware pin mapping finalized and verified. |
+| **Direct Pinout Audit** | ✅ **Completed** | Conflict-free hardware pin mapping finalized and verified in [WIRING_GUIDE.md](docs/WIRING_GUIDE.md). |
 | **Bootloader & Toolchain** | ✅ **Completed** | Configured for `ATmega328P (Old Bootloader)` at 57600 baud. |
-| **Hardware Architecture Spec** | ✅ **Completed** | Full wiring guide updated in `docs/WIRING_GUIDE.md`. |
-| **Diagnostic Test Suite** | ✅ **Completed** | Full diagnostic suite in `tools/03_Direct_Hardware_Diagnostic_Test/`. |
-| **Autonomous Master Software** | ✅ **Completed** | Production controller updated in `src/Robot_Master/`. |
-| **Simple Trial Software** | ✅ **Completed** | Standalone obstacle test updated in `src/Robot_Simple/`. |
-| **Interactive Dashboard** | ✅ **Completed** | `Robot 2 Dashboard.html` — Run `start_network_dashboard.bat` to access from other computers over Wi-Fi/LAN (`http://<IP>:8080/`). |
+| **Hardware Architecture Spec** | ✅ **Completed** | Full wiring guide updated in [docs/WIRING_GUIDE.md](docs/WIRING_GUIDE.md). |
+| **Diagnostic Test Suite** | ✅ **Completed** | Full diagnostic suite in [tools/03_Direct_Hardware_Diagnostic_Test/](tools/03_Direct_Hardware_Diagnostic_Test/) and [DIAGNOSTICS_AND_CALIBRATION.md](docs/DIAGNOSTICS_AND_CALIBRATION.md). |
+| **Autonomous Master Software** | ✅ **Completed** | Production controller updated in [src/Robot_Master/](src/Robot_Master/) and documented in [FIRMWARE_GUIDE.md](docs/FIRMWARE_GUIDE.md). |
+| **Simple Trial Software** | ✅ **Completed** | Standalone obstacle test updated in [src/Robot_Simple/](src/Robot_Simple/). |
+| **Interactive Dashboard** | ✅ **Completed** | Full GCS web app in [`dashboard/`](dashboard/) — Documented in [DASHBOARD_GUIDE.md](docs/DASHBOARD_GUIDE.md). Run [start_dashboard.bat](start_dashboard.bat) to launch the server and access over Wi-Fi/LAN (`http://<IP>:8080/`). |
 
 ---
 
@@ -151,7 +167,15 @@ A dedicated diagnostic test suite is available in `tools/03_Direct_Hardware_Diag
 
 ## 🚀 How to Run the Software
 
-1. Open `tools/03_Direct_Hardware_Diagnostic_Test/03_Direct_Hardware_Diagnostic_Test.ino` in Arduino IDE or VS Code.
+### A. Hardware Calibration & Diagnostics (Bench Test)
+1. Open [`tools/03_Direct_Hardware_Diagnostic_Test/03_Direct_Hardware_Diagnostic_Test.ino`](tools/03_Direct_Hardware_Diagnostic_Test/03_Direct_Hardware_Diagnostic_Test.ino) in Arduino IDE or VS Code.
 2. Select Board: **Arduino Nano**, Processor: **ATmega328P (Old Bootloader)**.
 3. Upload the sketch and open **Serial Monitor** at **115200 baud**.
-4. Type numbers `1` through `8` to run hardware diagnostics or `S` to stop!
+4. Type numbers `1` through `8` to test single motors, combined 4WD motion, live encoders, or I2C discovery. Send `S` or `SPACE` for Emergency Stop.
+
+### B. Autonomous Master & Interactive Web Dashboard
+1. Open [`src/Robot_Master/Robot_Master.ino`](src/Robot_Master/Robot_Master.ino) and upload to the Arduino Nano.
+2. Launch the Ground Control Station by double-clicking [`start_dashboard.bat`](start_dashboard.bat) (or running `dashboard/start_network_dashboard.bat`).
+3. Open `http://localhost:8080/` (or `http://<YOUR_LAN_IP>:8080/` from phones/tablets on Wi-Fi).
+4. Click **Connect Arduino (USB)** for direct Web Serial, or click **Connect Wi-Fi Bridge** to control wirelessly over your local network!
+

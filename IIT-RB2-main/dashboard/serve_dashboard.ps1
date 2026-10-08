@@ -287,7 +287,11 @@ while ($true) {
                 # ================= STATIC FILE SERVING =================
                 else {
                     if ($path -eq "/" -or $path -eq "/index.html") {
-                        $path = "/Robot_2_Dashboard.html"
+                        if (Test-Path (Join-Path $RootPath "index.html")) {
+                            $path = "/index.html"
+                        } else {
+                            $path = "/Robot_2_Dashboard.html"
+                        }
                     }
 
                     $filePath = [System.IO.Path]::Combine($RootPath, $path.TrimStart("/").Replace("/", [System.IO.Path]::DirectorySeparatorChar))

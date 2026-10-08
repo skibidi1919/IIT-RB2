@@ -265,7 +265,7 @@ void processCommand(const char* cmd) {
   }
 
   // 4. Emergency Stop / Stop
-  if (strcmp(cmd, "STOP") == 0 || strcmp(cmd, "s") == 0 || strcmp(cmd, "S") == 0 || strcmp(cmd, " ") == 0) {
+  if (strcmp(cmd, "STOP") == 0 || strcmp(cmd, "ESTOP") == 0 || strcmp(cmd, "s") == 0 || strcmp(cmd, "S") == 0 || strcmp(cmd, " ") == 0) {
     stopRobot();
     opMode = OP_ESTOP;
     Serial.println(F("[ESTOP] Emergency stop executed. Motors disabled."));
