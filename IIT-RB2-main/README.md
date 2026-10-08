@@ -6,36 +6,43 @@ An autonomous robotic rover featuring 4-wheel drive skid-steering, high-resoluti
 
 ## 📌 Executive Summary & Architecture
 
-The rover is powered by an **Arduino Nano (ATmega328P)** mounted on a **Sensor Shield V3**. To eliminate microcontroller pin starvation and avoid serial communication conflicts on pins `D0` and `D1`, all motor actuation is offloaded to a **PCA9685 16-channel 12-bit PWM controller** over the **I2C bus (`A4/SDA`, `A5/SCL`)**. 
-
-The same 2-wire I2C bus hosts a **VL53L0X Time-of-Flight laser distance sensor** and a **BNO08x 9-DOF AHRS IMU**, while the Nano's digital pins remain dedicated to high-speed encoder pulse interrupts.
+The rover is powered by an **Arduino Nano (ATmega328P)** mounted on a **Sensor Shield V3**. The system uses a dedicated, conflict-free pin mapping:
+- **Direct Motor Drive:** Dual L298N motor drivers are controlled directly by the Arduino Nano using hardware PWM pins (`D6`, `D9`, `D10`, `D11`) and dedicated GPIO direction lines (`D7`, `D8`, `D12`, `D13`, `A0`, `A1`, `A2`, `A3`).
+- **Dedicated Interrupt Encoders:** All 4 wheel encoders connect directly to hardware interrupt pins (`D2`, `D3`) and pin-change interrupt pins (`D4`, `D5`).
+- **Shared I2C Spine:** The **I2C bus (`A4/SDA`, `A5/SCL`)** hosts the **PCA9685 PWM expansion board**, **VL53L0X Time-of-Flight laser distance sensor**, and **BNO08x 9-DOF AHRS IMU**.
+- **100% Free UART:** Pins `D0 (RX)` and `D1 (TX)` are completely unencumbered, enabling continuous USB programming and high-speed telemetry debugging.
 
 ```mermaid
 graph TD
-    Batt[11.1V / 12V LiPo/Li-ion Battery] -->|12V High Current| L298NA[L298N Driver A<br>Front Motors 1 & 2]
-    Batt -->|12V High Current| L298NB[L298N Driver B<br>Rear Motors 3 & 4]
+    Batt[11.1V / 12V Li-ion Battery] -->|12V High Current| L298NA[L298N Driver A<br>Motors 1 & 2]
+    Batt -->|12V High Current| L298NB[L298N Driver B<br>Motors 3 & 4]
     
     L298NA -->|5V Regulated Out| Shield5V[Sensor Shield 5V Bus]
     Batt -->|Common Ground| GNDBus[Common Ground Bus]
     
-    subgraph I2C_Bus [Shared I2C Bus: A4 SDA / A5 SCL]
-        Nano[Arduino Nano<br>Master Controller] -->|I2C Master| PCA[PCA9685 16-Ch PWM<br>Address: 0x40]
-        Nano -->|I2C Master| TOF[VL53L0X ToF Distance<br>Address: 0x29]
-        Nano -->|I2C Master| IMU[BNO08x 9-DOF AHRS<br>Address: 0x4A]
+    subgraph Nano_Direct_Control [Arduino Nano Direct Control]
+        Nano[Arduino Nano Controller]
+        Nano -->|D6 PWM / D7 Dir / D8 Dir| L298NA
+        Nano -->|D9 PWM / D12 Dir / D13 Dir| L298NA
+        Nano -->|D10 PWM / A0 Dir / A1 Dir| L298NB
+        Nano -->|D11 PWM / A2 Dir / A3 Dir| L298NB
     end
 
-    PCA -->|Channels 0-5| L298NA
-    PCA -->|Channels 6-11| L298NB
-    
+    subgraph I2C_Bus [Shared I2C Bus: A4 SDA / A5 SCL]
+        Nano -->|I2C Master| PCA[PCA9685 16-Ch PWM Board<br>Addr: 0x40]
+        Nano -->|I2C Master| TOF[VL53L0X Laser ToF<br>Addr: 0x29]
+        Nano -->|I2C Master| IMU[BNO08x 9-DOF IMU<br>Addr: 0x4A]
+    end
+
     L298NA -->|Drive OUT1/2| M1[N20 Front Left]
     L298NA -->|Drive OUT3/4| M2[N20 Front Right]
     L298NB -->|Drive OUT1/2| M3[N20 Rear Left]
     L298NB -->|Drive OUT3/4| M4[N20 Rear Right]
     
-    M1 -->|Encoder Pulse| Nano
-    M2 -->|Encoder Pulse| Nano
-    M3 -->|Encoder Pulse| Nano
-    M4 -->|Encoder Pulse| Nano
+    M1 -->|C1 Pulse| D2_Pin[Nano D2: External Interrupt 0]
+    M2 -->|C1 Pulse| D3_Pin[Nano D3: External Interrupt 1]
+    M3 -->|C1 Pulse| D5_Pin[Nano D5: PCINT21 on Port D]
+    M4 -->|C1 Pulse| D4_Pin[Nano D4: PCINT20 on Port D]
 ```
 
 ---
@@ -44,17 +51,13 @@ graph TD
 
 | Subsystem / Task | Status | Details & Notes |
 | :--- | :---: | :--- |
-| **Pinout Audit & Correction** | ✅ **Completed** | Fixed D0/D1 upload & PWM issue; transitioned motor driving to PCA9685. |
-| **Mac Dev Environment** | ✅ **Completed** | Solved `avr-gcc` bad CPU type on Apple Silicon via Rosetta 2; compiler working. |
-| **Bootloader Synchronization** | ✅ **Completed** | Identified 57600 baud `ATmega328P (Old Bootloader)` requirement. |
-| **Hardware Architecture Spec** | ✅ **Completed** | Full wiring guide documented in `docs/WIRING_GUIDE.md`. |
-| **Diagnostic Tool: I2C Scanner** | ✅ **Completed** | Tool created to verify all 3 I2C addresses (`0x29`, `0x40`, `0x4A`). |
-| **Diagnostic Tool: Motor Test** | ✅ **Completed** | Zero-dependency PCA9685 motor testbench created in `tools/`. |
-| **Master Rover Software** | ✅ **Completed** | Autonomous obstacle-avoidance controller with telemetry created in `src/`. |
-| **Physical Wiring to PCA9685** | 🟡 **In Progress** | Moving L298N inputs to PCA9685 Channels 0–11 and wiring I2C bus. |
-| **Hardware Bus Scan Verification** | ⏳ **Pending** | Flashing `01_I2C_Scanner.ino` to confirm live hardware communication. |
-| **Wheel Spin Direction Check** | ⏳ **Pending** | Running `02_PCA9685_Motor_Test.ino` and swapping motor wires if reversed. |
-| **PID Speed & Heading Tuning** | ⏳ **Pending** | Implementing closed-loop gyro-stabilized straight-line driving. |
+| **Direct Pinout Audit** | ✅ **Completed** | Conflict-free hardware pin mapping finalized and verified. |
+| **Bootloader & Toolchain** | ✅ **Completed** | Configured for `ATmega328P (Old Bootloader)` at 57600 baud. |
+| **Hardware Architecture Spec** | ✅ **Completed** | Full wiring guide updated in `docs/WIRING_GUIDE.md`. |
+| **Diagnostic Test Suite** | ✅ **Completed** | Full diagnostic suite in `tools/03_Direct_Hardware_Diagnostic_Test/`. |
+| **Autonomous Master Software** | ✅ **Completed** | Production controller updated in `src/Robot_Master/`. |
+| **Simple Trial Software** | ✅ **Completed** | Standalone obstacle test updated in `src/Robot_Simple/`. |
+| **Interactive Dashboard** | ✅ **Completed** | `Robot 2 Dashboard.html` — Run `start_network_dashboard.bat` to access from other computers over Wi-Fi/LAN (`http://<IP>:8080/`). |
 
 ---
 
@@ -62,195 +65,93 @@ graph TD
 
 ### 1. Arduino Nano / Sensor Shield V3 Pin Mapping
 
-| Arduino Nano Pin | Shield Row | Connected Subsystem / Signal | Description |
-| :--- | :--- | :--- | :--- |
-| **D0 (RX)** | D0 (S) | **UNCONNECTED** | Reserved for USB serial upload & Serial Monitor |
-| **D1 (TX)** | D1 (S) | **UNCONNECTED** | Reserved for USB serial upload & Serial Monitor |
-| **D2** | D2 (S) | **BNO08x Host Interrupt (`INT / H_INT`)** | External Interrupt 0 (`INT0`) - Low packet alert |
-| **D3** | D3 (S) | **Motor 1 Encoder Channel A** | External Interrupt 1 (`INT1`) - Front Left ticks |
-| **D4** | D4 (S) | **Motor 2 Encoder Channel A** | Pin Change Interrupt (`PCINT20`) - Front Right ticks |
-| **D5** | D5 (S) | Unused / Spare | Available digital I/O |
-| **D6** | D6 (S) | Unused / Spare | Available digital I/O |
-| **D7** | D7 (S) | **Motor 3 Encoder Channel A** | Pin Change Interrupt (`PCINT23`) - Rear Left ticks |
-| **D8** | D8 (S) | **Motor 4 Encoder Channel A** | Pin Change Interrupt (`PCINT0`) - Rear Right ticks |
-| **D9** | D9 (S) | Unused / Spare | Available digital I/O / Hardware PWM |
-| **D10** | D10 (S) | Unused / Spare | Available digital I/O / Hardware PWM |
-| **D11** | D11 (S) | Unused / Spare | Available digital I/O |
-| **D12** | D12 (S) | **BNO08x Reset (`RST`)** | Active-low hardware reset for IMU |
-| **D13** | D13 (S) | **UNCONNECTED** | Onboard LED pin (kept free to prevent motor twitches) |
-| **A0** | A0 (S) | Unused / Spare | Available analog or digital pin |
-| **A1** | A1 (S) | Unused / Spare | Available analog or digital pin |
-| **A2** | A2 (S) | Unused / Spare | Available analog or digital pin |
-| **A3** | A3 (S) | Unused / Spare | Available analog or digital pin |
-| **A4 (SDA)** | A4 (S) | **I2C Bus: SDA** | Connected to PCA9685, VL53L0X, and BNO08x SDA pins |
-| **A5 (SCL)** | A5 (S) | **I2C Bus: SCL** | Connected to PCA9685, VL53L0X, and BNO08x SCL pins |
-| **A6** | A6 (S) | Spare Analog Input | Analog input only (e.g., battery voltage sense) |
-| **A7** | A7 (S) | Spare Analog Input | Analog input only |
-| **5V (V)** | All V pins | **+5V Logic Power Rail** | Powers PCA9685, VL53L0X, BNO08x, and 4 Encoders |
-| **GND (G)** | All G pins | **Common Ground Rail** | Shared ground across all boards and battery (-) |
+| Arduino Nano Pin | Shield Row | Connected Subsystem / Signal | Hardware Function | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **D0 (RX)** | D0 (S) | **UNCONNECTED** | USB Serial Upload & Debug | ✅ Safe & Free |
+| **D1 (TX)** | D1 (S) | **UNCONNECTED** | USB Serial Upload & Debug | ✅ Safe & Free |
+| **D2** | D2 (S) | **Motor 1 Encoder Signal (C1)** | External Interrupt 0 (`INT0`) | ✅ Dedicated |
+| **D3** | D3 (S) | **Motor 2 Encoder Signal (C1)** | External Interrupt 1 (`INT1`) | ✅ Dedicated |
+| **D4** | D4 (S) | **Motor 4 Encoder Signal (C1)** | Pin Change Interrupt (`PCINT20`) | ✅ Dedicated |
+| **D5** | D5 (S) | **Motor 3 Encoder Signal (C1)** | Pin Change Interrupt (`PCINT21`) | ✅ Dedicated |
+| **D6** | D6 (S) | **Driver A: ENA (Motor 1 Speed)** | Hardware PWM (`Timer0A`) | ✅ Dedicated |
+| **D7** | D7 (S) | **Driver A: IN1 (Motor 1 Dir A)** | Digital GPIO | ✅ Dedicated |
+| **D8** | D8 (S) | **Driver A: IN2 (Motor 1 Dir B)** | Digital GPIO | ✅ Dedicated |
+| **D9** | D9 (S) | **Driver A: ENB (Motor 2 Speed)** | Hardware PWM (`Timer1A`) | ✅ Dedicated |
+| **D10** | D10 (S) | **Driver B: ENA (Motor 3 Speed)** | Hardware PWM (`Timer1B`) | ✅ Dedicated |
+| **D11** | D11 (S) | **Driver B: ENB (Motor 4 Speed)** | Hardware PWM (`Timer2A`) | ✅ Dedicated |
+| **D12** | D12 (S) | **Driver A: IN3 (Motor 2 Dir A)** | Digital GPIO | ✅ Dedicated |
+| **D13** | D13 (S) | **Driver A: IN4 (Motor 2 Dir B)** | Digital GPIO (Onboard LED line) | ✅ Dedicated |
+| **A0** | A0 (S) | **Driver B: IN1 (Motor 3 Dir A)** | Digital GPIO (`D14`) | ✅ Dedicated |
+| **A1** | A1 (S) | **Driver B: IN2 (Motor 3 Dir B)** | Digital GPIO (`D15`) | ✅ Dedicated |
+| **A2** | A2 (S) | **Driver B: IN3 (Motor 4 Dir A)** | Digital GPIO (`D16`) | ✅ Dedicated |
+| **A3** | A3 (S) | **Driver B: IN4 (Motor 4 Dir B)** | Digital GPIO (`D17`) | ✅ Dedicated |
+| **A4 (SDA)** | A4 (S) / SDA | **I2C Bus: SDA** | Hardware I2C (PCA9685, VL53L0X, BNO08x) | ✅ Shared Bus |
+| **A5 (SCL)** | A5 (S) / SCL | **I2C Bus: SCL** | Hardware I2C (PCA9685, VL53L0X, BNO08x) | ✅ Shared Bus |
+| **A6** | A6 (S) | Spare Analog Input Only | Available (e.g. Battery Voltage Monitor) | ⚪ Spare |
+| **A7** | A7 (S) | Spare Analog Input Only | Available (e.g. Current Sense) | ⚪ Spare |
+| **5V (V)** | All V pins | **+5V Logic Power Rail** | Powered from Driver A 5V Regulator | ✅ Connected |
+| **GND (G)** | All G pins | **Common Ground Plane** | Common Ground for all logic & battery | ✅ Connected |
 
 ---
 
-### 2. PCA9685 16-Channel Controller Pinout
+### 2. Dual L298N Motor Drivers Pinout
 
-All L298N control lines connect to the **Signal (S)** pin row of the 3-pin headers (marked `PWM` or `S` on the board).
+#### Driver A (Motors 1 & 2: Front Left & Front Right)
+| L298N Terminal | Target Motor | Nano Pin | Shield Header | Function / Signal |
+| :--- | :--- | :--- | :--- | :--- |
+| **ENA** | Motor 1 | **D6** | D6 (S) | Speed PWM (0–255) |
+| **IN1** | Motor 1 | **D7** | D7 (S) | Direction Bit A |
+| **IN2** | Motor 1 | **D8** | D8 (S) | Direction Bit B |
+| **IN3** | Motor 2 | **D12** | D12 (S) | Direction Bit A |
+| **IN4** | Motor 2 | **D13** | D13 (S) | Direction Bit B |
+| **ENB** | Motor 2 | **D9** | D9 (S) | Speed PWM (0–255) |
+| **OUT1 / OUT2** | Motor 1 | — | — | Front Left N20 Terminals |
+| **OUT3 / OUT4** | Motor 2 | — | — | Front Right N20 Terminals |
 
-```
-   PCA9685 Channel Header:
-   [ S ]  <--- Wire to L298N terminal
-   [ V+ ] <--- (Leave empty; used only for servos)
-   [ G ]  <--- Common Ground
-```
-
-| PCA9685 Terminal | Target Device | L298N Terminal | Signal Purpose |
-| :--- | :--- | :--- | :--- |
-| **VCC (Side pin)** | Sensor Shield | **5V (V)** | Module logic supply (5V) |
-| **GND (Side pin)** | Sensor Shield | **GND (G)** | Module logic ground |
-| **SDA (Side pin)** | Sensor Shield | **A4 (S)** | I2C Data line |
-| **SCL (Side pin)** | Sensor Shield | **A5 (S)** | I2C Clock line |
-| **V+ (Screw block)**| — | **LEAVE EMPTY** | Not needed (only used when powering servos) |
-| **Channel 0 (S)** | Driver A | **ENA** | Motor 1 Speed (12-bit PWM: 0–4095) |
-| **Channel 1 (S)** | Driver A | **IN1** | Motor 1 Direction A |
-| **Channel 2 (S)** | Driver A | **IN2** | Motor 1 Direction B |
-| **Channel 3 (S)** | Driver A | **IN3** | Motor 2 Direction A |
-| **Channel 4 (S)** | Driver A | **IN4** | Motor 2 Direction B |
-| **Channel 5 (S)** | Driver A | **ENB** | Motor 2 Speed (12-bit PWM: 0–4095) |
-| **Channel 6 (S)** | Driver B | **ENA** | Motor 3 Speed (12-bit PWM: 0–4095) |
-| **Channel 7 (S)** | Driver B | **IN1** | Motor 3 Direction A |
-| **Channel 8 (S)** | Driver B | **IN2** | Motor 3 Direction B |
-| **Channel 9 (S)** | Driver B | **IN3** | Motor 4 Direction A |
-| **Channel 10 (S)** | Driver B | **IN4** | Motor 4 Direction B |
-| **Channel 11 (S)** | Driver B | **ENB** | Motor 4 Speed (12-bit PWM: 0–4095) |
-| **Channels 12–15** | Spare | — | Free for future pan/tilt servos, arm, or LEDs |
+#### Driver B (Motors 3 & 4: Rear Left & Rear Right)
+| L298N Terminal | Target Motor | Nano Pin | Shield Header | Function / Signal |
+| :--- | :--- | :--- | :--- | :--- |
+| **ENA** | Motor 3 | **D10** | D10 (S) | Speed PWM (0–255) |
+| **IN1** | Motor 3 | **A0** | A0 (S) | Direction Bit A |
+| **IN2** | Motor 3 | **A1** | A1 (S) | Direction Bit B |
+| **IN3** | Motor 4 | **A2** | A2 (S) | Direction Bit A |
+| **IN4** | Motor 4 | **A3** | A3 (S) | Direction Bit B |
+| **ENB** | Motor 4 | **D11** | D11 (S) | Speed PWM (0–255) |
+| **OUT1 / OUT2** | Motor 3 | — | — | Rear Left N20 Terminals |
+| **OUT3 / OUT4** | Motor 4 | — | — | Rear Right N20 Terminals |
 
 ---
 
-### 3. L298N Dual Motor Drivers Pinout
+### 3. Encoder Pinout (C1 Pulse Signals)
 
-#### Driver A (Front Left & Front Right Motors)
-| Terminal | Connects To | Wire / Type | Function |
-| :--- | :--- | :--- | :--- |
-| **+12V Screw** | Battery (+) | High current wire | Motor high-voltage supply |
-| **GND Screw** | Battery (-) & Shield GND | High current wire | Common system ground |
-| **+5V Screw** | Shield **5V (V)** | Power wire | Supplies 5V to Nano & sensors (via 78M05) |
-| **5V Jumper** | **INSTALLED (ON)** | Jumper cap | Enables onboard 5V regulator |
-| **ENA** | PCA9685 **Channel 0 (S)** | Logic wire | Front Left speed PWM |
-| **IN1** | PCA9685 **Channel 1 (S)** | Logic wire | Front Left direction bit 1 |
-| **IN2** | PCA9685 **Channel 2 (S)** | Logic wire | Front Left direction bit 2 |
-| **IN3** | PCA9685 **Channel 3 (S)** | Logic wire | Front Right direction bit 1 |
-| **IN4** | PCA9685 **Channel 4 (S)** | Logic wire | Front Right direction bit 2 |
-| **ENB** | PCA9685 **Channel 5 (S)** | Logic wire | Front Right speed PWM |
-| **OUT1 & OUT2** | Motor 1 (Front Left) | Motor M+ / M- | Motor 1 power output |
-| **OUT3 & OUT4** | Motor 2 (Front Right)| Motor M+ / M- | Motor 2 power output |
-
-#### Driver B (Rear Left & Rear Right Motors)
-| Terminal | Connects To | Wire / Type | Function |
-| :--- | :--- | :--- | :--- |
-| **+12V Screw** | Battery (+) | High current wire | Motor high-voltage supply |
-| **GND Screw** | Battery (-) & Shield GND | High current wire | Common system ground |
-| **+5V Screw** | **LEAVE EMPTY** | — | Do NOT wire (prevents regulator conflict with Driver A) |
-| **5V Jumper** | **INSTALLED (ON)** | Jumper cap | Powers Driver B's internal logic gates |
-| **ENA** | PCA9685 **Channel 6 (S)** | Logic wire | Rear Left speed PWM |
-| **IN1** | PCA9685 **Channel 7 (S)** | Logic wire | Rear Left direction bit 1 |
-| **IN2** | PCA9685 **Channel 8 (S)** | Logic wire | Rear Left direction bit 2 |
-| **IN3** | PCA9685 **Channel 9 (S)** | Logic wire | Rear Right direction bit 1 |
-| **IN4** | PCA9685 **Channel 10 (S)**| Logic wire | Rear Right direction bit 2 |
-| **ENB** | PCA9685 **Channel 11 (S)**| Logic wire | Rear Right speed PWM |
-| **OUT1 & OUT2** | Motor 3 (Rear Left) | Motor M+ / M- | Motor 3 power output |
-| **OUT3 & OUT4** | Motor 4 (Rear Right)| Motor M+ / M- | Motor 4 power output |
+| Physical Motor | VCC Pin | GND Pin | Signal Pin (C1) | Shield Header | Interrupt Architecture |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Motor 1 (Front Left)** | VCC | GND | C1 | **D2** (V, G, S) | External Interrupt 0 (`INT0`) |
+| **Motor 2 (Front Right)**| VCC | GND | C1 | **D3** (V, G, S) | External Interrupt 1 (`INT1`) |
+| **Motor 3 (Rear Left)** | VCC | GND | C1 | **D5** (V, G, S) | Pin Change Interrupt 2 (`PCINT21`) |
+| **Motor 4 (Rear Right)**| VCC | GND | C1 | **D4** (V, G, S) | Pin Change Interrupt 2 (`PCINT20`) |
 
 ---
 
-### 4. N20 Motors & Encoders Pinout
+## 🛠 Diagnostic & Testing Software
 
-Each N20 motor has a 6-pin connector on the rear Hall sensor PCB:
-
-| Motor Pin Label | Connects To | Description |
-| :--- | :--- | :--- |
-| **M+ / M1** | L298N **OUT1** (or **OUT3**) | Motor power line (+) |
-| **GND** | Sensor Shield **GND (G)** | Hall sensor logic ground (0V) |
-| **C1 / A** | Arduino Nano **D3 / D4 / D7 / D8** | Encoder Channel A pulse output |
-| **C2 / B** | (Optional / Unconnected) | Encoder Channel B (quadrature phase) |
-| **3.3V–5V / VCC**| Sensor Shield **5V (V)** | Hall sensor logic power (powers green LED) |
-| **M- / M2** | L298N **OUT2** (or **OUT4**) | Motor power line (-) |
-
-#### Wheel-to-Nano Encoder Mapping (Channel A):
-* **Motor 1 (Front Left):** Pin **D3 (S)** *(External Interrupt `INT1`)*
-* **Motor 2 (Front Right):** Pin **D4 (S)** *(Pin Change Interrupt `PCINT20`)*
-* **Motor 3 (Rear Left):** Pin **D7 (S)** *(Pin Change Interrupt `PCINT23`)*
-* **Motor 4 (Rear Right):** Pin **D8 (S)** *(Pin Change Interrupt `PCINT0`)*
+A dedicated diagnostic test suite is available in `tools/03_Direct_Hardware_Diagnostic_Test/`:
+* **Menu-Driven Interactive Testing:**
+  * Option `1`: Test Motor 1 (D6, D7, D8) + verify D2 encoder ticks.
+  * Option `2`: Test Motor 2 (D9, D12, D13) + verify D3 encoder ticks.
+  * Option `3`: Test Motor 3 (D10, A0, A1) + verify D5 encoder ticks.
+  * Option `4`: Test Motor 4 (D11, A2, A3) + verify D4 encoder ticks.
+  * Option `5`: Combined 4WD drive cycle (Forward, Reverse, Spin Left, Spin Right).
+  * Option `6`: Real-time continuous encoder monitor for all 4 wheels.
+  * Option `7`: I2C Bus Scanner (`0x40`, `0x29`, `0x4A`).
+  * Option `8`: Automated full hardware self-test routine.
+  * Option `S`: Emergency stop.
 
 ---
 
-### 5. VL53L0X Laser Distance Sensor Pinout
+## 🚀 How to Run the Software
 
-| VL53L0X Pin | Target Connection | Sensor Shield Header | Function |
-| :--- | :--- | :--- | :--- |
-| **VIN** | Sensor Shield 5V Bus | **5V (V)** | 2.8V–5V Power supply |
-| **GND** | Sensor Shield GND Bus | **GND (G)** | Common ground |
-| **SCL** | Sensor Shield I2C SCL | **A5 (S)** | I2C Clock (Address: `0x29`) |
-| **SDA** | Sensor Shield I2C SDA | **A4 (S)** | I2C Data line |
-| **XSHUT** | (Leave Unconnected) | — | Hardware shutdown (internal pullup) |
-| **GPIO1** | (Leave Unconnected) | — | Interrupt output (optional) |
-
----
-
-### 6. BNO08x (BNO080 / BNO085) 9-DOF IMU Pinout
-
-| BNO08x Pin | Target Connection | Sensor Shield Header | Function |
-| :--- | :--- | :--- | :--- |
-| **VIN / VCC** | Sensor Shield 5V Bus | **5V (V)** | 3.3V–5V Logic power |
-| **GND** | Sensor Shield GND Bus | **GND (G)** | Common ground |
-| **SCL** | Sensor Shield I2C SCL | **A5 (S)** | I2C Clock (Address: `0x4A`) |
-| **SDA** | Sensor Shield I2C SDA | **A4 (S)** | I2C Data line |
-| **INT / H_INT**| Arduino Nano Pin **D2** | **D2 (S)** | Host Interrupt (Active LOW alert) |
-| **RST** | Arduino Nano Pin **D12** | **D12 (S)** | Hardware reset line |
-| **DI0 / ADDR**| Sensor Shield GND Bus | **GND (G)** | Ties address to default `0x4A` |
-
----
-
-## 🗂️ Project File Structure
-
-```text
-IIT/
-├── README.md                          # Master project documentation & complete pinouts
-├── docs/
-│   └── WIRING_GUIDE.md                # Electrical specifications & architecture
-├── tools/
-│   ├── 01_I2C_Scanner/
-│   │   └── 01_I2C_Scanner.ino         # Automated I2C health check (0x29, 0x40, 0x4A)
-│   └── 02_PCA9685_Motor_Test/
-│       └── 02_PCA9685_Motor_Test.ino # Zero-dependency 4-motor test sketch
-└── src/
-    ├── Robot_Simple/
-    │   └── Robot_Simple.ino           # Lightweight trial sketch for preliminary testing
-    └── Robot_Master/
-        └── Robot_Master.ino           # Master integrated autonomous controller
-```
-
----
-
-## 🚀 Step-by-Step Execution Plan
-
-### Step 1: Run the I2C Scanner
-* **File:** `tools/01_I2C_Scanner/01_I2C_Scanner.ino`
-* **Purpose:** Ensures PCA9685 (`0x40`), VL53L0X (`0x29`), and BNO08x (`0x4A`) are acknowledged on the bus.
-* **Baud Rate:** `9600`
-* **Success Criteria:** All three devices report `ONLINE [PASS]`.
-
-### Step 2: Run the Motor Testbench
-* **File:** `tools/02_PCA9685_Motor_Test/02_PCA9685_Motor_Test.ino`
-* **Purpose:** Confirms forward/reverse rotation and 12-bit PWM speed control on all 4 wheels.
-* **Baud Rate:** `9600`
-* **Success Criteria:** Each motor spins forward then reverse in sequence, followed by all 4 wheels together.
-
-### Step 3: Flash the Autonomous Rover Controller
-* **File:** `src/Robot_Master/Robot_Master.ino`
-* **Prerequisites:** `SparkFun BNO080 Cortex Based IMU` and `VL53L0X` (by Pololu) libraries (both installed and verified).
-* **Baud Rate:** `115200`
-* **Memory Footprint:** 18,228 bytes Flash (59%), 774 bytes RAM (37%) — perfectly fitted for ATmega328P.
-* **Features:**
-  * Real-time odometry streaming (tick count from all 4 encoders).
-  * Millimeter-accuracy laser obstacle detection.
-  * 3D IMU Euler angle tracking (Yaw, Pitch, Roll).
-  * Autonomous reactive collision avoidance.
+1. Open `tools/03_Direct_Hardware_Diagnostic_Test/03_Direct_Hardware_Diagnostic_Test.ino` in Arduino IDE or VS Code.
+2. Select Board: **Arduino Nano**, Processor: **ATmega328P (Old Bootloader)**.
+3. Upload the sketch and open **Serial Monitor** at **115200 baud**.
+4. Type numbers `1` through `8` to run hardware diagnostics or `S` to stop!
