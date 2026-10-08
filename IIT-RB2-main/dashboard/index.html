@@ -10,7 +10,7 @@
   <style>
     :root {
       --bg-dark: #060913;
-      --bg-card: rgba(13, 20, 36, 0.94);
+      --bg-card: rgba(13, 20, 36, 0.92);
       --bg-card-hover: rgba(18, 28, 50, 0.98);
       --accent-cyan: #00e5ff;
       --accent-blue: #2563eb;
@@ -37,98 +37,100 @@
       background: radial-gradient(circle at 18% 12%, #0f172a 0%, #03060d 100%);
       color: var(--text-main);
       min-height: 100vh;
-      line-height: 1.35;
-      padding: 10px 14px 20px;
+      line-height: 1.3;
+      padding: 6px 12px 14px;
       user-select: none;
       overflow-x: hidden;
     }
 
     .container {
-      max-width: 1480px;
+      max-width: 1540px;
       margin: 0 auto;
     }
 
-    /* ================= 1. CRITICAL STATUS & HEADER HIERARCHY ================= */
+    /* ================= 1. COMPACT TOP HEADER & STATUS BAR ================= */
     header {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      padding-bottom: 10px;
+      gap: 8px;
+      padding: 4px 8px 6px;
       border-bottom: 1px solid var(--border-card);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .header-branding {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .rover-logo-icon {
-      width: 36px;
-      height: 36px;
+      width: 28px;
+      height: 28px;
       background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      border-radius: 8px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      box-shadow: 0 0 16px rgba(0, 229, 255, 0.35);
+      font-size: 15px;
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+      flex-shrink: 0;
     }
 
     .rover-title-block h1 {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.15rem;
+      font-size: 0.96rem;
       font-weight: 800;
       letter-spacing: 0.04em;
       background: linear-gradient(90deg, #ffffff, #93c5fd);
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
-      line-height: 1.2;
+      line-height: 1.1;
     }
 
     .version-tag {
       font-family: 'Fira Code', monospace;
-      font-size: 0.58rem;
+      font-size: 0.54rem;
       font-weight: 700;
       color: var(--accent-cyan);
       background: rgba(0, 229, 255, 0.1);
       border: 1px solid rgba(0, 229, 255, 0.28);
-      padding: 1px 7px;
+      padding: 1px 5px;
       border-radius: 4px;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       white-space: nowrap;
     }
 
     .rover-title-block p {
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       color: var(--text-muted);
       letter-spacing: 0.01em;
-      margin-top: 2px;
+      line-height: 1.1;
     }
 
     .critical-bar {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
 
     .status-badge {
       font-family: 'Fira Code', monospace;
-      font-size: 0.68rem;
+      font-size: 0.64rem;
       font-weight: 600;
-      padding: 4px 9px;
+      padding: 3px 8px;
       border-radius: 5px;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border-card);
       color: var(--text-muted);
+      white-space: nowrap;
     }
 
     .status-badge.connected {
@@ -141,11 +143,11 @@
     .serial-control-group {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border-card);
-      border-radius: 6px;
-      padding: 2px 5px;
+      border-radius: 5px;
+      padding: 2px 4px;
       transition: all 0.2s ease;
     }
 
@@ -158,22 +160,21 @@
       border: 1px solid rgba(0, 229, 255, 0.3);
       color: var(--accent-cyan);
       font-family: 'Fira Code', monospace;
-      font-size: 0.68rem;
+      font-size: 0.64rem;
       font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 5px;
+      padding: 3px 8px;
+      border-radius: 4px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       transition: all 0.2s ease;
     }
 
     .btn-serial-connect:hover {
       background: rgba(0, 229, 255, 0.2);
       border-color: var(--accent-cyan);
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
-      transform: translateY(-1px);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
     }
 
     .btn-serial-connect.connected {
@@ -189,7 +190,7 @@
     }
 
     .serial-status-dot {
-      font-size: 0.68rem;
+      font-size: 0.64rem;
       color: var(--text-dim);
       transition: color 0.2s ease;
     }
@@ -209,8 +210,8 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-muted);
       font-family: 'Fira Code', monospace;
-      font-size: 0.66rem;
-      padding: 3px 5px;
+      font-size: 0.62rem;
+      padding: 2px 4px;
       border-radius: 4px;
       outline: none;
       cursor: pointer;
@@ -233,48 +234,49 @@
       color: #a5b4fc;
     }
 
-    /* E-STOP BUTTON (CRITICAL PROMINENCE) */
+    /* COMPACT E-STOP BUTTON */
     .btn-estop {
       background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(185, 28, 28, 0.35));
-      border: 2px solid var(--accent-red);
+      border: 1.5px solid var(--accent-red);
       color: #fff;
       font-family: 'Orbitron', sans-serif;
-      padding: 5px 14px;
-      border-radius: 6px;
+      padding: 3px 10px;
+      border-radius: 5px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 0 14px rgba(239, 68, 68, 0.35);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
+      height: 28px;
     }
 
     .btn-estop .estop-icon {
-      font-size: 1.05rem;
+      font-size: 0.90rem;
     }
 
     .btn-estop .estop-labels {
       display: flex;
       flex-direction: column;
       text-align: left;
-      line-height: 1.1;
+      line-height: 1.0;
     }
 
     .btn-estop .estop-main {
-      font-size: 0.78rem;
+      font-size: 0.70rem;
       font-weight: 800;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
     }
 
     .btn-estop .estop-sub {
-      font-size: 0.58rem;
+      font-size: 0.52rem;
       font-family: 'Fira Code', monospace;
       color: #fca5a5;
     }
 
     .btn-estop:hover {
       background: var(--accent-red);
-      box-shadow: 0 0 22px rgba(239, 68, 68, 0.7);
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.7);
       transform: scale(1.02);
     }
 
@@ -285,21 +287,21 @@
     }
 
     @keyframes estopBlink {
-      from { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
-      to { box-shadow: 0 0 35px rgba(239, 68, 68, 1); }
+      from { box-shadow: 0 0 10px rgba(239, 68, 68, 0.6); }
+      to { box-shadow: 0 0 25px rgba(239, 68, 68, 1); }
     }
 
-    /* SYSTEM FAULT / WARNING BANNER */
+    /* SLIM WARNING / STATUS BANNER */
     .warning-banner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 5px 12px;
-      border-radius: 6px;
-      font-size: 0.70rem;
+      padding: 3px 10px;
+      border-radius: 5px;
+      font-size: 0.64rem;
       font-weight: 600;
       font-family: 'Fira Code', monospace;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
       border: 1px solid rgba(16, 185, 129, 0.3);
       background: rgba(16, 185, 129, 0.08);
       color: var(--accent-green);
@@ -321,43 +323,45 @@
     /* CARD SYSTEM */
     .card {
       background: var(--bg-card);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--border-card);
-      border-radius: 10px;
-      padding: 11px 14px;
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+      border-radius: 8px;
+      padding: 8px 10px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
       position: relative;
     }
 
     .card-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       letter-spacing: 0.04em;
-      margin-bottom: 9px;
+      margin-bottom: 6px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       color: #e2e8f0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 4px;
     }
 
     .card-title-icon {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
+      gap: 5px;
     }
 
-    /* HARDWARE INTERLOCK & DISCONNECTED LOCK STYLING */
+    /* SLIM HARDWARE INTERLOCK BAR */
     .hw-interlock-notice {
       background: rgba(245, 158, 11, 0.08);
       border: 1px solid rgba(245, 158, 11, 0.35);
-      border-radius: 8px;
-      padding: 7px 14px;
-      margin-bottom: 8px;
+      border-radius: 6px;
+      padding: 4px 10px;
+      margin-bottom: 6px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 8px;
       transition: all 0.25s ease;
     }
 
@@ -368,28 +372,34 @@
     .hw-interlock-text {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
       flex: 1;
-      min-width: 280px;
     }
 
     .hw-lock-icon {
-      font-size: 1.25rem;
+      font-size: 1.0rem;
     }
 
     .hw-interlock-text strong {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.76rem;
+      font-size: 0.68rem;
       color: var(--accent-amber);
-      letter-spacing: 0.04em;
-      display: block;
-      margin-bottom: 2px;
+      letter-spacing: 0.03em;
+      display: inline-block;
+      margin-right: 6px;
     }
 
     .hw-interlock-text p {
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       color: #cbd5e1;
-      line-height: 1.35;
+      display: inline;
+    }
+
+    .hw-interlock-actions {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
     .btn-interlock-connect {
@@ -397,96 +407,95 @@
       border: none;
       color: #030712;
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.70rem;
+      font-size: 0.62rem;
       font-weight: 800;
-      padding: 5px 12px;
-      border-radius: 5px;
+      padding: 3px 8px;
+      border-radius: 4px;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.2s ease;
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+      box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
     }
 
     .btn-interlock-connect:hover {
-      box-shadow: 0 0 18px rgba(0, 229, 255, 0.6);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.6);
       transform: translateY(-1px);
+    }
+
+    .btn-interlock-wifi {
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      color: #ffffff;
+      border: none;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .btn-interlock-wifi:hover {
+      box-shadow: 0 0 12px rgba(14, 165, 233, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-interlock-bypass {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-family: 'Fira Code', monospace;
+      font-size: 0.60rem;
+      font-weight: 600;
+      padding: 3px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .btn-interlock-bypass:hover {
+      color: #f8fafc;
+      border-color: rgba(255, 255, 255, 0.35);
     }
 
     .network-notice-bar {
       display: none;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      padding: 6px 14px;
+      gap: 8px;
+      padding: 4px 10px;
       background: linear-gradient(90deg, rgba(14, 165, 233, 0.18), rgba(59, 130, 246, 0.12));
       border: 1px solid rgba(14, 165, 233, 0.45);
-      border-radius: 6px;
-      margin-bottom: 8px;
-      font-size: 0.72rem;
+      border-radius: 5px;
+      margin-bottom: 6px;
+      font-size: 0.64rem;
       color: #bae6fd;
     }
+
     .btn-mini-action {
       font-family: 'Fira Code', monospace;
-      font-size: 0.65rem;
+      font-size: 0.60rem;
       font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 4px;
+      padding: 2px 6px;
+      border-radius: 3px;
       border: 1px solid rgba(14, 165, 233, 0.5);
       background: rgba(14, 165, 233, 0.2);
       color: #fff;
       cursor: pointer;
       transition: all 0.15s ease;
     }
+
     .btn-mini-action:hover {
       background: rgba(14, 165, 233, 0.45);
-    }
-    .hw-interlock-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .btn-interlock-wifi {
-      background: linear-gradient(135deg, #0ea5e9, #2563eb);
-      color: #ffffff;
-      border: none;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.68rem;
-      font-weight: 800;
-      padding: 6px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s ease;
-      box-shadow: 0 0 12px rgba(14, 165, 233, 0.35);
-    }
-    .btn-interlock-wifi:hover {
-      box-shadow: 0 0 18px rgba(14, 165, 233, 0.65);
-      transform: translateY(-1px);
-    }
-    .btn-interlock-bypass {
-      background: rgba(255, 255, 255, 0.08);
-      color: #94a3b8;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      font-family: 'Fira Code', monospace;
-      font-size: 0.65rem;
-      font-weight: 600;
-      padding: 6px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s ease;
-    }
-    .btn-interlock-bypass:hover {
-      color: #f8fafc;
-      border-color: rgba(255, 255, 255, 0.35);
     }
 
     /* HARDWARE DISCONNECTED INTERLOCK STATE */
     body.hardware-disconnected .teleop-card,
     body.hardware-disconnected .script-card {
-      opacity: 0.5;
-      filter: grayscale(45%);
+      opacity: 0.55;
+      filter: grayscale(40%);
       position: relative;
     }
 
@@ -502,13 +511,13 @@
     /* ================= 2. PRIMARY COCKPIT GRID ================= */
     .cockpit-grid {
       display: grid;
-      grid-template-columns: 1fr 1.25fr;
-      gap: 10px;
-      margin-bottom: 10px;
+      grid-template-columns: 1.05fr 1.35fr;
+      gap: 8px;
+      margin-bottom: 8px;
       align-items: stretch;
     }
 
-    @media (max-width: 1080px) {
+    @media (max-width: 1040px) {
       .cockpit-grid {
         grid-template-columns: 1fr;
       }
@@ -518,7 +527,7 @@
     .teleop-card {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
       justify-content: space-between;
     }
 
@@ -526,43 +535,44 @@
       display: flex;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border-card);
-      border-radius: 6px;
+      border-radius: 5px;
       padding: 2px;
-      gap: 3px;
+      gap: 2px;
     }
 
     .mode-tab {
       flex: 1;
-      padding: 5px 6px;
-      border-radius: 5px;
+      padding: 3px 4px;
+      border-radius: 4px;
       border: none;
       background: transparent;
       color: var(--text-muted);
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.66rem;
+      font-size: 0.60rem;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
+      gap: 4px;
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
 
     .mode-tab.active {
       background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
       color: #030712;
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.35);
     }
 
     .controls-split {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      grid-template-columns: 1fr 1.05fr;
+      gap: 8px;
       align-items: center;
     }
 
-    @media (max-width: 540px) {
+    @media (max-width: 520px) {
       .controls-split {
         grid-template-columns: 1fr;
       }
@@ -572,18 +582,18 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
 
     .joystick-base {
-      width: 130px;
-      height: 130px;
+      width: 100px;
+      height: 100px;
       background: radial-gradient(circle, #0e172a 0%, #03060f 100%);
-      border: 2px solid rgba(0, 229, 255, 0.35);
+      border: 1.5px solid rgba(0, 229, 255, 0.35);
       border-radius: 50%;
       position: relative;
       touch-action: none;
-      box-shadow: 0 0 20px rgba(0, 229, 255, 0.12), inset 0 0 18px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.12), inset 0 0 12px rgba(0, 0, 0, 0.8);
       cursor: grab;
       display: flex;
       align-items: center;
@@ -596,22 +606,22 @@
 
     .joystick-ring-inner {
       position: absolute;
-      width: 66px;
-      height: 66px;
+      width: 50px;
+      height: 50px;
       border: 1px dashed rgba(255, 255, 255, 0.15);
       border-radius: 50%;
       pointer-events: none;
     }
 
     .joystick-puck {
-      width: 46px;
-      height: 46px;
+      width: 36px;
+      height: 36px;
       background: radial-gradient(circle at 35% 35%, #00e5ff 0%, #1d4ed8 100%);
       border-radius: 50%;
       position: absolute;
-      top: 42px;
-      left: 42px;
-      box-shadow: 0 3px 12px rgba(0, 229, 255, 0.55), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+      top: 32px;
+      left: 32px;
+      box-shadow: 0 2px 8px rgba(0, 229, 255, 0.55), inset 0 1px 3px rgba(255, 255, 255, 0.6);
       transition: transform 0.05s ease-out;
       pointer-events: none;
       display: flex;
@@ -621,31 +631,30 @@
 
     .joystick-puck::after {
       content: '';
-      width: 14px;
-      height: 14px;
+      width: 10px;
+      height: 10px;
       background: rgba(255, 255, 255, 0.95);
       border-radius: 50%;
-      box-shadow: 0 0 6px #fff;
+      box-shadow: 0 0 4px #fff;
     }
 
-    /* JOYSTICK NUMERICAL FEEDBACK (REQ 8) */
     .joystick-telemetry-row {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       font-family: 'Fira Code', monospace;
-      font-size: 0.64rem;
+      font-size: 0.58rem;
       color: var(--text-muted);
       background: rgba(255, 255, 255, 0.03);
-      padding: 3px 6px;
-      border-radius: 5px;
+      padding: 2px 5px;
+      border-radius: 4px;
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .dpad-container {
       display: grid;
-      grid-template-columns: repeat(3, 40px);
-      grid-template-rows: repeat(3, 40px);
-      gap: 5px;
+      grid-template-columns: repeat(3, 34px);
+      grid-template-rows: repeat(3, 34px);
+      gap: 4px;
       justify-content: center;
       align-content: center;
     }
@@ -653,9 +662,9 @@
     .dpad-btn {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
+      border-radius: 6px;
       color: var(--text-main);
-      font-size: 0.95rem;
+      font-size: 0.82rem;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -666,53 +675,51 @@
     }
 
     .dpad-btn span.key-hint {
-      font-size: 0.54rem;
+      font-size: 0.48rem;
       font-weight: 600;
       color: #93c5fd;
       background: rgba(0, 0, 0, 0.4);
-      padding: 1px 4px;
-      border-radius: 3px;
+      padding: 0 3px;
+      border-radius: 2px;
       border: 1px solid rgba(255, 255, 255, 0.1);
       font-family: 'Fira Code', monospace;
-      margin-top: 2px;
+      margin-top: 1px;
       letter-spacing: 0.02em;
     }
 
-    /* KEYBOARD SHORTCUTS QUICK BAR */
     .shortcut-legend-strip {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 6px;
-      padding: 5px 8px;
+      gap: 4px;
+      padding: 3px 6px;
       background: rgba(255, 255, 255, 0.025);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 6px;
-      margin-top: 4px;
+      border-radius: 4px;
+      margin-top: 2px;
       flex-wrap: wrap;
     }
 
     .shortcut-pill {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      font-size: 0.58rem;
+      gap: 3px;
+      font-size: 0.54rem;
       color: var(--text-dim);
     }
 
     .shortcut-pill kbd {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 3px;
-      padding: 1px 4px;
+      border-radius: 2px;
+      padding: 0 3px;
       font-family: 'Fira Code', monospace;
-      font-size: 0.56rem;
+      font-size: 0.52rem;
       color: #93c5fd;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
     }
 
     .shortcut-pill span {
-      font-size: 0.58rem;
+      font-size: 0.54rem;
       color: var(--text-muted);
     }
 
@@ -727,7 +734,7 @@
       border-color: #fff;
       color: #030712;
       transform: scale(0.94);
-      box-shadow: 0 0 14px rgba(0, 229, 255, 0.6);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
     }
 
     .dpad-btn.pressed span.key-hint {
@@ -737,7 +744,7 @@
 
     .dpad-up    { grid-column: 2; grid-row: 1; }
     .dpad-left  { grid-column: 1; grid-row: 2; }
-    .dpad-center{ grid-column: 2; grid-row: 2; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #f87171; font-size: 0.68rem; font-weight: 800; font-family: 'Orbitron'; }
+    .dpad-center{ grid-column: 2; grid-row: 2; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #f87171; font-size: 0.62rem; font-weight: 800; font-family: 'Orbitron'; }
     .dpad-center:hover { background: var(--accent-red); color: #fff; }
     .dpad-right { grid-column: 3; grid-row: 2; }
     .dpad-down  { grid-column: 2; grid-row: 3; }
@@ -745,169 +752,170 @@
     .speed-slider-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 5px 10px;
+      gap: 8px;
+      padding: 3px 8px;
       background: rgba(255, 255, 255, 0.03);
-      border-radius: 6px;
+      border-radius: 5px;
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .speed-slider-row span {
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       font-family: 'Fira Code', monospace;
       color: var(--text-muted);
-      min-width: 95px;
+      min-width: 85px;
     }
 
     .throttle-range {
       flex: 1;
       accent-color: var(--accent-cyan);
       cursor: pointer;
+      height: 4px;
     }
 
     /* RIGHT: 4WD CHASSIS & POWERTRAIN LIVE STATE */
     .chassis-visual-box {
       background: radial-gradient(circle at 50% 50%, #0b1324 0%, #040711 100%);
       border: 1px solid rgba(0, 229, 255, 0.2);
-      border-radius: 10px;
-      padding: 18px 45px;
+      border-radius: 8px;
+      padding: 10px 32px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       position: relative;
-      min-height: 200px;
-      box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.75);
+      min-height: 140px;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.75);
     }
 
     .rover-body {
-      width: 196px;
-      height: 126px;
+      width: 154px;
+      height: 96px;
       background: linear-gradient(145deg, #1e293b, #0f172a);
-      border: 2px solid #3b82f6;
-      border-radius: 14px;
+      border: 1.5px solid #3b82f6;
+      border-radius: 12px;
       position: relative;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.8), 0 0 16px rgba(59, 130, 246, 0.2);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8), 0 0 12px rgba(59, 130, 246, 0.2);
     }
 
     .front-arrow {
       position: absolute;
-      top: 7px;
-      font-size: 0.60rem;
+      top: 5px;
+      font-size: 0.52rem;
       font-weight: 800;
       font-family: 'Orbitron', sans-serif;
       color: var(--accent-cyan);
-      letter-spacing: 0.12em;
+      letter-spacing: 0.10em;
       white-space: nowrap;
     }
 
     .rover-center-status {
       text-align: center;
-      margin-top: 10px;
+      margin-top: 6px;
     }
 
     .rover-state-badge {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.84rem;
+      font-size: 0.74rem;
       font-weight: 800;
       color: #fff;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
     }
 
     .rover-speed-badge {
       font-family: 'Fira Code', monospace;
-      font-size: 0.70rem;
+      font-size: 0.62rem;
       color: var(--accent-cyan);
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
     /* 4 WHEELS WITH ANIMATED TREADS */
     .wheel {
-      width: 24px;
-      height: 48px;
-      background: repeating-linear-gradient(0deg, #111827 0px, #111827 4px, #374151 4px, #374151 8px);
-      background-size: 100% 16px;
-      border: 2px solid #4b5563;
-      border-radius: 6px;
+      width: 18px;
+      height: 38px;
+      background: repeating-linear-gradient(0deg, #111827 0px, #111827 3px, #374151 3px, #374151 6px);
+      background-size: 100% 12px;
+      border: 1.5px solid #4b5563;
+      border-radius: 4px;
       position: absolute;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     @keyframes roll-fwd {
       from { background-position: 0 0; }
-      to { background-position: 0 -16px; }
+      to { background-position: 0 -12px; }
     }
     @keyframes roll-rev {
       from { background-position: 0 0; }
-      to { background-position: 0 16px; }
+      to { background-position: 0 12px; }
     }
 
     .wheel.rolling-fwd {
       animation: roll-fwd 0.32s linear infinite;
       border-color: var(--accent-cyan);
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.55);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.55);
     }
     .wheel.rolling-rev {
       animation: roll-rev 0.32s linear infinite;
       border-color: var(--accent-amber);
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.55);
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.55);
     }
 
-    .wheel.w-fl { left: -16px; top: -8px; }
-    .wheel.w-fr { right: -16px; top: -8px; }
-    .wheel.w-rl { left: -16px; bottom: -8px; }
-    .wheel.w-rr { right: -16px; bottom: -8px; }
+    .wheel.w-fl { left: -12px; top: -6px; }
+    .wheel.w-fr { right: -12px; top: -6px; }
+    .wheel.w-rl { left: -12px; bottom: -6px; }
+    .wheel.w-rr { right: -12px; bottom: -6px; }
 
     .wheel-lbl {
       position: absolute;
       font-family: 'Fira Code', monospace;
-      font-size: 0.56rem;
+      font-size: 0.50rem;
       font-weight: 600;
       color: #93c5fd;
       background: rgba(3, 7, 18, 0.94);
-      padding: 2px 5px;
-      border-radius: 4px;
+      padding: 1px 4px;
+      border-radius: 3px;
       border: 1px solid rgba(59, 130, 246, 0.35);
       white-space: nowrap;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
       letter-spacing: 0.02em;
     }
 
-    .w-fl-lbl { left: -72px; top: 12px; }
-    .w-fr-lbl { right: -72px; top: 12px; }
-    .w-rl-lbl { left: -72px; bottom: 12px; }
-    .w-rr-lbl { right: -72px; bottom: 12px; }
+    .w-fl-lbl { left: -56px; top: 8px; }
+    .w-fr-lbl { right: -56px; top: 8px; }
+    .w-rl-lbl { left: -56px; bottom: 8px; }
+    .w-rr-lbl { right: -56px; bottom: 8px; }
 
-    /* MOTOR POWERTRAIN BREAKDOWN: COMMAND VS MEASURED (REQ 6) */
+    /* MOTOR POWERTRAIN BREAKDOWN: COMMAND VS MEASURED */
     .motor-metrics-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      margin-top: 10px;
+      gap: 4px;
+      margin-top: 6px;
     }
 
     .motor-cell {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 6px;
-      padding: 6px 8px;
+      border-radius: 5px;
+      padding: 4px 6px;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
     }
 
     .motor-cell-header {
-      font-size: 0.62rem;
+      font-size: 0.56rem;
       font-weight: 700;
       color: var(--text-muted);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      padding-bottom: 3px;
-      margin-bottom: 2px;
+      padding-bottom: 2px;
+      margin-bottom: 1px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -918,14 +926,14 @@
       justify-content: space-between;
       align-items: baseline;
       font-family: 'Fira Code', monospace;
-      font-size: 0.62rem;
+      font-size: 0.56rem;
       color: #cbd5e1;
-      line-height: 1.3;
+      line-height: 1.25;
     }
 
     .motor-data-line span.label {
       color: var(--text-dim);
-      font-size: 0.58rem;
+      font-size: 0.52rem;
       letter-spacing: 0.02em;
     }
 
@@ -934,39 +942,39 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.64rem;
+      font-size: 0.58rem;
       color: var(--text-muted);
       padding: 1px 0;
-      line-height: 1.35;
+      line-height: 1.25;
     }
 
     .metric-row .metric-label {
       color: var(--text-dim);
-      font-size: 0.60rem;
+      font-size: 0.54rem;
       letter-spacing: 0.01em;
     }
 
     .metric-row .metric-val {
       font-family: 'Fira Code', monospace;
-      font-size: 0.66rem;
+      font-size: 0.58rem;
       font-weight: 600;
       color: #f1f5f9;
     }
 
-    /* ================= 3. SENSOR & TELEMETRY STRIP (COMPASS & ODOMETRY) ================= */
+    /* ================= 3. SENSOR & TELEMETRY STRIP ================= */
     .telemetry-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 6px;
+      margin-bottom: 8px;
     }
 
-    @media (max-width: 1100px) {
+    @media (max-width: 1040px) {
       .telemetry-grid {
         grid-template-columns: repeat(3, 1fr);
       }
     }
-    @media (max-width: 680px) {
+    @media (max-width: 640px) {
       .telemetry-grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -975,18 +983,18 @@
     .metric-card {
       background: var(--bg-card);
       border: 1px solid var(--border-card);
-      border-radius: 8px;
-      padding: 9px 12px;
+      border-radius: 6px;
+      padding: 6px 8px;
       display: flex;
       flex-direction: column;
       gap: 2px;
     }
 
     .metric-header {
-      font-size: 0.64rem;
+      font-size: 0.58rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       color: var(--text-muted);
       display: flex;
       justify-content: space-between;
@@ -996,35 +1004,36 @@
     .metric-value-row {
       display: flex;
       align-items: baseline;
-      gap: 4px;
+      gap: 3px;
     }
 
     .metric-value {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.18rem;
+      font-size: 1.05rem;
       font-weight: 800;
       color: #fff;
+      line-height: 1.1;
     }
 
     .metric-unit {
-      font-size: 0.68rem;
+      font-size: 0.60rem;
       color: var(--text-muted);
       font-family: 'Inter', sans-serif;
     }
 
     .metric-sub {
-      font-size: 0.62rem;
+      font-size: 0.54rem;
       font-family: 'Fira Code', monospace;
       color: var(--text-dim);
       margin-top: 1px;
     }
 
     .metric-bar-bg {
-      height: 4px;
+      height: 3px;
       background: rgba(255, 255, 255, 0.08);
       border-radius: 9999px;
       overflow: hidden;
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
     .metric-bar-fill {
@@ -1035,18 +1044,18 @@
       transition: width 0.15s ease;
     }
 
-    /* COMPASS VISUAL DIAL (REQ 5) */
+    /* COMPASS VISUAL DIAL */
     .compass-container {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-top: 2px;
+      gap: 8px;
+      margin-top: 1px;
     }
 
     .compass-dial {
-      width: 40px;
-      height: 40px;
-      border: 2px solid rgba(0, 229, 255, 0.3);
+      width: 34px;
+      height: 34px;
+      border: 1.5px solid rgba(0, 229, 255, 0.3);
       border-radius: 50%;
       position: relative;
       display: flex;
@@ -1059,7 +1068,7 @@
     .compass-needle {
       position: absolute;
       width: 2px;
-      height: 30px;
+      height: 24px;
       background: linear-gradient(to bottom, #ef4444 50%, #38bdf8 50%);
       border-radius: 1px;
       transform: rotate(0deg);
@@ -1069,20 +1078,20 @@
     .compass-needle::after {
       content: '';
       position: absolute;
-      top: -3px;
-      left: -3px;
-      width: 8px;
-      height: 8px;
+      top: -2px;
+      left: -2px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
       background: #ef4444;
-      box-shadow: 0 0 6px #ef4444;
+      box-shadow: 0 0 4px #ef4444;
     }
 
     .compass-labels {
       position: absolute;
-      inset: 2px;
+      inset: 1px;
       pointer-events: none;
-      font-size: 0.52rem;
+      font-size: 0.46rem;
       font-weight: 700;
       color: var(--text-muted);
     }
@@ -1094,25 +1103,25 @@
     /* ================= 4. SYSTEM HEALTH & DIAGNOSTIC TESTS ================= */
     .bottom-split {
       display: grid;
-      grid-template-columns: 1.35fr 1fr;
-      gap: 10px;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 8px;
     }
 
-    @media (max-width: 980px) {
+    @media (max-width: 960px) {
       .bottom-split {
         grid-template-columns: 1fr;
       }
     }
 
-    /* SYSTEM HEALTH STRIP (REQ 9) */
+    /* SYSTEM HEALTH STRIP */
     .health-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-      margin-bottom: 9px;
+      gap: 4px;
+      margin-bottom: 6px;
     }
 
-    @media (max-width: 800px) {
+    @media (max-width: 760px) {
       .health-grid {
         grid-template-columns: repeat(4, 1fr);
       }
@@ -1121,19 +1130,19 @@
     .health-cell {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 6px;
-      padding: 5px 6px;
+      border-radius: 4px;
+      padding: 3px 4px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 2px;
+      gap: 1px;
       transition: all 0.2s ease;
     }
 
     .health-name {
-      font-size: 0.60rem;
+      font-size: 0.54rem;
       color: var(--text-dim);
       font-weight: 600;
       white-space: nowrap;
@@ -1142,20 +1151,20 @@
 
     .health-val {
       font-family: 'Fira Code', monospace;
-      font-size: 0.68rem;
+      font-size: 0.60rem;
       font-weight: 700;
       color: var(--accent-green);
     }
 
-    /* HARDWARE TEST SUITE WITH STATUS BADGES (REQ 12) */
+    /* HARDWARE TEST SUITE WITH STATUS BADGES */
     .script-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      margin-top: 6px;
+      gap: 4px;
+      margin-top: 4px;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 580px) {
       .script-grid {
         grid-template-columns: 1fr;
       }
@@ -1164,12 +1173,12 @@
     .script-card {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.07);
-      border-radius: 8px;
-      padding: 8px 10px;
+      border-radius: 6px;
+      padding: 5px 8px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 6px;
+      gap: 4px;
       transition: all 0.2s ease;
     }
 
@@ -1180,58 +1189,59 @@
 
     .script-card.active-running {
       border-color: var(--accent-cyan);
-      box-shadow: 0 0 14px rgba(0, 229, 255, 0.3);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
       background: rgba(0, 229, 255, 0.06);
     }
 
     .script-header-line {
       display: flex;
       align-items: flex-start;
-      gap: 8px;
+      gap: 6px;
     }
 
     .script-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
       background: rgba(0, 229, 255, 0.1);
       border: 1px solid rgba(0, 229, 255, 0.25);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.95rem;
+      font-size: 0.78rem;
       flex-shrink: 0;
     }
 
     .script-name {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.72rem;
+      font-size: 0.64rem;
       font-weight: 700;
       color: #fff;
+      line-height: 1.1;
     }
 
     .script-desc {
-      font-size: 0.64rem;
+      font-size: 0.56rem;
       color: var(--text-muted);
       margin-top: 1px;
-      line-height: 1.25;
+      line-height: 1.15;
     }
 
     .script-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 6px;
-      padding-top: 6px;
+      gap: 4px;
+      padding-top: 3px;
       border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .script-status-badge {
       font-family: 'Fira Code', monospace;
-      font-size: 0.58rem;
+      font-size: 0.52rem;
       font-weight: 700;
-      padding: 2px 5px;
-      border-radius: 4px;
+      padding: 1px 4px;
+      border-radius: 3px;
       background: rgba(255, 255, 255, 0.06);
       color: var(--text-muted);
     }
@@ -1243,24 +1253,24 @@
       background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
       color: #030712;
       border: none;
-      border-radius: 5px;
-      padding: 3px 9px;
+      border-radius: 4px;
+      padding: 2px 7px;
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.64rem;
+      font-size: 0.58rem;
       font-weight: 800;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       transition: all 0.2s ease;
     }
 
     .btn-run-script:hover {
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+      box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
       transform: scale(1.02);
     }
 
-    /* TELEMETRY TERMINAL WITH CONTROLS (REQ 13) */
+    /* TELEMETRY TERMINAL WITH CONTROLS */
     .terminal-card {
       display: flex;
       flex-direction: column;
@@ -1270,23 +1280,23 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 5px;
-      gap: 6px;
+      margin-bottom: 4px;
+      gap: 4px;
       flex-wrap: wrap;
     }
 
     .term-filters {
       display: flex;
-      gap: 3px;
+      gap: 2px;
     }
 
     .term-filter-btn {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.08);
       color: var(--text-dim);
-      font-size: 0.60rem;
-      padding: 2px 6px;
-      border-radius: 4px;
+      font-size: 0.54rem;
+      padding: 1px 4px;
+      border-radius: 3px;
       cursor: pointer;
       font-family: 'Fira Code', monospace;
     }
@@ -1299,16 +1309,16 @@
 
     .term-actions {
       display: flex;
-      gap: 4px;
+      gap: 3px;
     }
 
     .term-btn {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.08);
       color: var(--text-muted);
-      font-size: 0.60rem;
-      padding: 2px 6px;
-      border-radius: 4px;
+      font-size: 0.54rem;
+      padding: 1px 5px;
+      border-radius: 3px;
       cursor: pointer;
       font-family: 'Fira Code', monospace;
     }
@@ -1320,15 +1330,15 @@
 
     .terminal-box {
       font-family: 'Fira Code', monospace;
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       background: #02050f;
       border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 8px;
-      padding: 8px 10px;
-      height: 165px;
+      border-radius: 6px;
+      padding: 6px 8px;
+      height: 128px;
       overflow-y: auto;
       color: #94a3b8;
-      line-height: 1.45;
+      line-height: 1.35;
     }
 
     .term-rx { color: #34d399; }
@@ -1340,47 +1350,47 @@
     .script-banner {
       background: rgba(14, 22, 42, 0.98);
       border: 1px solid var(--accent-cyan);
-      box-shadow: 0 0 16px rgba(0, 229, 255, 0.35);
-      border-radius: 8px;
-      padding: 7px 12px;
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+      border-radius: 6px;
+      padding: 4px 10px;
       display: none;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 8px;
+      gap: 8px;
+      margin-bottom: 6px;
       animation: bannerSlide 0.25s ease;
     }
 
     @keyframes bannerSlide {
-      from { opacity: 0; transform: translateY(-6px); }
+      from { opacity: 0; transform: translateY(-4px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
     .script-info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
     }
 
     .script-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.76rem;
+      font-size: 0.68rem;
       font-weight: 700;
       color: var(--accent-cyan);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
 
     .script-step {
-      font-size: 0.68rem;
+      font-size: 0.60rem;
       color: #e2e8f0;
       font-family: 'Fira Code', monospace;
     }
 
     .script-progress-bar-bg {
-      width: 160px;
-      height: 5px;
+      width: 120px;
+      height: 4px;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 9999px;
       overflow: hidden;
@@ -1397,11 +1407,11 @@
       background: rgba(239, 68, 68, 0.25);
       border: 1px solid var(--accent-red);
       color: #fca5a5;
-      font-size: 0.68rem;
+      font-size: 0.60rem;
       font-family: 'Orbitron', sans-serif;
       font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 5px;
+      padding: 2px 7px;
+      border-radius: 4px;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -1415,12 +1425,12 @@
 <body class="hardware-disconnected">
 
 <div class="container">
-  <!-- 1. TOP CRITICAL STATUS BAR (REQ 1 & 2) -->
+  <!-- 1. TOP CRITICAL STATUS BAR -->
   <header>
     <div class="header-branding">
       <div class="rover-logo-icon">🚀</div>
       <div class="rover-title-block">
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
           <h1>ROBOT 2 DASHBOARD</h1>
           <span class="version-tag">IIT-RB2 • v2.4 PRO</span>
         </div>
@@ -1442,7 +1452,7 @@
         </select>
       </div>
 
-      <!-- BATTERY (REQ 3) -->
+      <!-- BATTERY -->
       <div class="status-badge battery" id="badgeBattery">
         <span>⚡</span> 11.8V (2S Li-ion)
       </div>
@@ -1452,7 +1462,7 @@
         <span>🕹️</span> MANUAL TELEOP
       </div>
 
-      <!-- ENHANCED E-STOP (REQ 2) -->
+      <!-- COMPACT E-STOP -->
       <button class="btn-estop" id="btnEstop" onclick="toggleEStop()">
         <span class="estop-icon">🛑</span>
         <div class="estop-labels">
@@ -1471,27 +1481,27 @@
     <div class="hw-interlock-text">
       <span class="hw-lock-icon">🔒</span>
       <div>
-        <strong>HARDWARE SAFETY INTERLOCK ENGAGED</strong>
-        <p>Telemetry & controls locked until linked. Connect via direct USB on localhost, use the Wi-Fi Server Bridge, or toggle Simulation Mode.</p>
+        <strong>SAFETY INTERLOCK:</strong>
+        <p>Controls locked until linked. Connect direct USB on localhost, use the Wi-Fi Bridge, or start Simulation.</p>
       </div>
     </div>
     <div class="hw-interlock-actions">
-      <button class="btn-interlock-connect" onclick="connectSerial()" title="Direct USB connection via Web Serial (runs on localhost or HTTPS)">⚡ Connect USB</button>
-      <button class="btn-interlock-wifi" onclick="connectNetworkBridge()" title="Connect wirelessly via server gateway on COM7">🌐 Connect Wi-Fi Bridge</button>
+      <button class="btn-interlock-connect" onclick="connectSerial()" title="Direct USB connection via Web Serial">⚡ Connect USB</button>
+      <button class="btn-interlock-wifi" onclick="connectNetworkBridge()" title="Connect wirelessly via server gateway">🌐 Wi-Fi Bridge</button>
       <button class="btn-interlock-bypass" onclick="toggleBypassInterlock()" title="Bypass interlock to test UI controls and simulation">🧪 Simulation Mode</button>
     </div>
   </div>
 
-  <!-- CONSISTENT FAULT / WARNING BANNER (REQ 10) -->
+  <!-- FAULT / WARNING BANNER -->
   <div class="warning-banner alert-warning" id="systemWarningBanner">
-    <div style="display: flex; align-items: center; gap: 8px;">
+    <div style="display: flex; align-items: center; gap: 6px;">
       <span id="warnIcon">⚠</span>
       <span id="warnMessage">HARDWARE OFFLINE: Connect Arduino Uno / Nano USB to enable controls</span>
     </div>
-    <span style="font-size: 0.68rem; color: inherit; opacity: 0.8;" id="warnTimestamp">AWAITING USB LINK</span>
+    <span style="font-size: 0.62rem; color: inherit; opacity: 0.8;" id="warnTimestamp">AWAITING USB LINK</span>
   </div>
 
-  <!-- SCRIPT EXECUTION POPUP BANNER (WHEN SCRIPT IS RUNNING) -->
+  <!-- SCRIPT EXECUTION POPUP BANNER -->
   <div class="script-banner" id="scriptBanner">
     <div class="script-info">
       <div class="script-title">
@@ -1500,7 +1510,7 @@
       </div>
       <div class="script-step" id="bannerScriptStep">Phase 1/4: Driving Forward (+160 PWM)</div>
     </div>
-    <div style="display: flex; align-items: center; gap: 14px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
       <div class="script-progress-bar-bg">
         <div class="script-progress-bar-fill" id="bannerProgressFill"></div>
       </div>
@@ -1510,85 +1520,85 @@
 
   <!-- 2. PRIMARY COCKPIT GRID: FLIGHT CONTROLS & CHASSIS -->
   <div class="cockpit-grid">
-    <!-- FLIGHT CONTROLS & JOYSTICK (REQ 8 & 11) -->
+    <!-- FLIGHT CONTROLS & JOYSTICK -->
     <div class="card teleop-card">
       <div class="card-title">
         <span class="card-title-icon">🎮 Flight Controls & Teleoperation</span>
-        <span style="font-size: 0.72rem; color: var(--text-muted);">Arrow Keys or WASD</span>
+        <span style="font-size: 0.64rem; color: var(--text-muted);">WASD / Arrow Keys</span>
       </div>
 
-        <!-- MODE SELECTOR -->
-        <div class="mode-selector-bar">
-          <button class="mode-tab active" id="tabManual" onclick="setMode('manual')">
-            🕹️ Manual Teleop
-          </button>
-          <button class="mode-tab" id="tabAuto" onclick="setMode('auto')">
-            🤖 Autonomous AI
-          </button>
-          <button class="mode-tab" id="tabSpin" onclick="setMode('spin')">
-            🔄 360° Benchmark
-          </button>
-          <button class="mode-tab" id="tabMission" onclick="setMode('mission')">
-            🎯 Mission
-          </button>
-        </div>
+      <!-- MODE SELECTOR -->
+      <div class="mode-selector-bar">
+        <button class="mode-tab active" id="tabManual" onclick="setMode('manual')">
+          🕹️ Manual Teleop
+        </button>
+        <button class="mode-tab" id="tabAuto" onclick="setMode('auto')">
+          🤖 Autonomous AI
+        </button>
+        <button class="mode-tab" id="tabSpin" onclick="setMode('spin')">
+          🔄 360° Benchmark
+        </button>
+        <button class="mode-tab" id="tabMission" onclick="setMode('mission')">
+          🎯 Mission
+        </button>
+      </div>
 
-        <div class="controls-split">
-          <!-- VIRTUAL JOYSTICK WITH NUMERICAL FEEDBACK (REQ 8) -->
-          <div class="joystick-wrapper">
-            <div class="joystick-base" id="joyBase">
-              <div class="joystick-ring-inner"></div>
-              <div class="joystick-puck" id="joyPuck"></div>
-            </div>
-            <!-- JOYSTICK DEBUG NUMERICAL READOUT -->
-            <div class="joystick-telemetry-row">
-              <span>X: <strong id="joyValX" style="color: #fff;">0.00</strong></span>
-              <span>Y: <strong id="joyValY" style="color: #fff;">0.00</strong></span>
-              <span>L: <strong id="joyPwmL" style="color: var(--accent-cyan);">0</strong></span>
-              <span>R: <strong id="joyPwmR" style="color: var(--accent-cyan);">0</strong></span>
-            </div>
+      <div class="controls-split">
+        <!-- VIRTUAL JOYSTICK -->
+        <div class="joystick-wrapper">
+          <div class="joystick-base" id="joyBase">
+            <div class="joystick-ring-inner"></div>
+            <div class="joystick-puck" id="joyPuck"></div>
           </div>
-
-          <!-- DIGITAL D-PAD -->
-          <div class="dpad-container">
-            <button class="dpad-btn dpad-up" id="btnUp" title="Drive Forward (Up / W)">
-              ▲<span class="key-hint">W / ↑</span>
-            </button>
-            <button class="dpad-btn dpad-left" id="btnLeft" title="Pivot Left (Left / A)">
-              ◀<span class="key-hint">A / ←</span>
-            </button>
-            <button class="dpad-btn dpad-center" id="btnStop" title="Brake (Space)">
-              STOP<span class="key-hint">SPACE</span>
-            </button>
-            <button class="dpad-btn dpad-right" id="btnRight" title="Pivot Right (Right / D)">
-              ▶<span class="key-hint">D / →</span>
-            </button>
-            <button class="dpad-btn dpad-down" id="btnDown" title="Drive Reverse (Down / S)">
-              ▼<span class="key-hint">S / ↓</span>
-            </button>
+          <!-- JOYSTICK NUMERICAL READOUT -->
+          <div class="joystick-telemetry-row">
+            <span>X: <strong id="joyValX" style="color: #fff;">0.00</strong></span>
+            <span>Y: <strong id="joyValY" style="color: #fff;">0.00</strong></span>
+            <span>L: <strong id="joyPwmL" style="color: var(--accent-cyan);">0</strong></span>
+            <span>R: <strong id="joyPwmR" style="color: var(--accent-cyan);">0</strong></span>
           </div>
         </div>
 
-        <!-- THROTTLE LIMITER -->
-        <div class="speed-slider-row">
-          <span>THROTTLE: <strong id="throttleVal">160</strong> PWM</span>
-          <input type="range" min="80" max="220" value="160" class="throttle-range" id="throttleSlider" oninput="updateThrottle(this.value)">
-        </div>
-
-        <!-- KEYBOARD SHORTCUTS REFERENCE BAR -->
-        <div class="shortcut-legend-strip">
-          <div class="shortcut-pill"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Drive / Pivot</span></div>
-          <div class="shortcut-pill"><kbd>SPACE</kbd><span>Brake</span></div>
-          <div class="shortcut-pill"><kbd>1</kbd>-<kbd>4</kbd><span>Modes</span></div>
-          <div class="shortcut-pill"><kbd>ESC</kbd><span>E-Stop</span></div>
+        <!-- DIGITAL D-PAD -->
+        <div class="dpad-container">
+          <button class="dpad-btn dpad-up" id="btnUp" title="Drive Forward (Up / W)">
+            ▲<span class="key-hint">W / ↑</span>
+          </button>
+          <button class="dpad-btn dpad-left" id="btnLeft" title="Pivot Left (Left / A)">
+            ◀<span class="key-hint">A / ←</span>
+          </button>
+          <button class="dpad-btn dpad-center" id="btnStop" title="Brake (Space)">
+            STOP<span class="key-hint">SPACE</span>
+          </button>
+          <button class="dpad-btn dpad-right" id="btnRight" title="Pivot Right (Right / D)">
+            ▶<span class="key-hint">D / →</span>
+          </button>
+          <button class="dpad-btn dpad-down" id="btnDown" title="Drive Reverse (Down / S)">
+            ▼<span class="key-hint">S / ↓</span>
+          </button>
         </div>
       </div>
 
-    <!-- RIGHT: 4WD CHASSIS & POWERTRAIN LIVE STATE (REQ 6) -->
+      <!-- THROTTLE LIMITER -->
+      <div class="speed-slider-row">
+        <span>THROTTLE: <strong id="throttleVal">160</strong> PWM</span>
+        <input type="range" min="80" max="220" value="160" class="throttle-range" id="throttleSlider" oninput="updateThrottle(this.value)">
+      </div>
+
+      <!-- KEYBOARD SHORTCUTS REFERENCE BAR -->
+      <div class="shortcut-legend-strip">
+        <div class="shortcut-pill"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Drive/Pivot</span></div>
+        <div class="shortcut-pill"><kbd>SPACE</kbd><span>Brake</span></div>
+        <div class="shortcut-pill"><kbd>1</kbd>-<kbd>4</kbd><span>Modes</span></div>
+        <div class="shortcut-pill"><kbd>ESC</kbd><span>E-Stop</span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: 4WD CHASSIS & POWERTRAIN LIVE STATE -->
     <div class="card">
       <div class="card-title">
         <span class="card-title-icon">🧭 4WD Skid-Steer Powertrain Live State</span>
-        <span style="font-size: 0.72rem; color: var(--accent-cyan); font-family: 'Fira Code';" id="chassisSubState">PWM: 0</span>
+        <span style="font-size: 0.66rem; color: var(--accent-cyan); font-family: 'Fira Code';" id="chassisSubState">PWM: 0</span>
       </div>
 
       <div class="chassis-visual-box">
@@ -1614,7 +1624,7 @@
         </div>
       </div>
 
-      <!-- MOTOR BREAKDOWN: COMMAND VS MEASURED (REQ 6) -->
+      <!-- MOTOR BREAKDOWN: COMMAND VS MEASURED -->
       <div class="motor-metrics-grid">
         <!-- MOTOR 1 FL -->
         <div class="motor-cell" id="cellBox1">
@@ -1663,7 +1673,7 @@
     </div>
   </div>
 
-  <!-- 3. SENSOR & TELEMETRY STRIP (COMPASS, TOF, ODOMETRY, BATTERY) -->
+  <!-- 3. SENSOR & TELEMETRY STRIP -->
   <div class="telemetry-grid">
     <!-- HARDWARE THROTTLE -->
     <div class="metric-card">
@@ -1685,7 +1695,7 @@
     <div class="metric-card">
       <div class="metric-header">
         <span>VL53L0X Laser ToF</span>
-        <span id="badgeLaserStatus" style="color: var(--text-dim); font-size: 0.65rem;">OFFLINE</span>
+        <span id="badgeLaserStatus" style="color: var(--text-dim); font-size: 0.58rem;">OFFLINE</span>
       </div>
       <div class="metric-value-row">
         <span class="metric-value" id="valDistance">—</span>
@@ -1697,7 +1707,7 @@
       <div class="metric-sub">Range Trip Threshold: 180 mm</div>
     </div>
 
-    <!-- BNO08X IMU WITH VISUAL COMPASS (REQ 5) -->
+    <!-- BNO08X IMU WITH VISUAL COMPASS -->
     <div class="metric-card">
       <div class="metric-header">
         <span>BNO08x 9-DOF IMU</span>
@@ -1724,13 +1734,13 @@
       </div>
     </div>
 
-    <!-- ODOMETRY SUMMARY (REQ 7) -->
+    <!-- ODOMETRY SUMMARY -->
     <div class="metric-card">
       <div class="metric-header">
         <span>Odometry Summary</span>
         <span>📐 Pose</span>
       </div>
-      <div class="metric-row" style="margin-top: 4px;">
+      <div class="metric-row" style="margin-top: 2px;">
         <span class="metric-label">Travel Dist:</span>
         <span class="metric-val" id="odomDistance">—</span>
       </div>
@@ -1742,12 +1752,12 @@
         <span class="metric-label">Total Ticks:</span>
         <span class="metric-val" id="valTotalTicks" style="color: var(--accent-cyan);">0</span>
       </div>
-      <div class="metric-bar-bg" style="margin-top: 6px;">
+      <div class="metric-bar-bg" style="margin-top: 3px;">
         <div class="metric-bar-fill" id="barTicks" style="background: linear-gradient(90deg, #f59e0b, #ef4444);"></div>
       </div>
     </div>
 
-    <!-- DETAILED BATTERY SUBSYSTEM (REQ 3) -->
+    <!-- DETAILED BATTERY SUBSYSTEM -->
     <div class="metric-card">
       <div class="metric-header">
         <span>Power Subsystem</span>
@@ -1757,7 +1767,7 @@
         <span class="metric-value" id="valBatteryVolt">11.8</span>
         <span class="metric-unit">V</span>
       </div>
-      <div class="metric-row" style="margin-top: 2px;">
+      <div class="metric-row" style="margin-top: 1px;">
         <span class="metric-label">State of Charge:</span>
         <span class="metric-val" id="valBatteryPct">—</span>
       </div>
@@ -1774,14 +1784,14 @@
 
   <!-- 4. BOTTOM TIER: SYSTEM HEALTH, HARDWARE TESTS & UART TERMINAL -->
   <div class="bottom-split">
-    <!-- PREDEFINED TEST SCRIPTS & SYSTEM HEALTH (REQ 9 & 12) -->
+    <!-- PREDEFINED TEST SCRIPTS & SYSTEM HEALTH -->
     <div class="card">
       <div class="card-title">
         <span class="card-title-icon">🧪 Predefined Hardware Test Scripts</span>
-        <span style="font-size: 0.72rem; color: var(--accent-cyan); font-family: 'Fira Code';">Tool 03 Suite</span>
+        <span style="font-size: 0.66rem; color: var(--accent-cyan); font-family: 'Fira Code';">Tool 03 Suite</span>
       </div>
 
-      <!-- COMPACT SYSTEM HEALTH MATRIX (REQ 9) -->
+      <!-- COMPACT SYSTEM HEALTH MATRIX -->
       <div class="health-grid">
         <div class="health-cell">
           <div class="health-name">● MCU</div>
@@ -1813,7 +1823,7 @@
         </div>
       </div>
 
-      <!-- TEST CARDS WITH STATUS BADGES (REQ 12) -->
+      <!-- TEST CARDS WITH STATUS BADGES -->
       <div class="script-grid">
         <!-- TEST 1: 4WD COMBINED DRIVE CYCLE -->
         <div class="script-card" id="cardScriptCombined">
@@ -1877,11 +1887,11 @@
       </div>
     </div>
 
-    <!-- UART TELEMETRY TERMINAL WITH CONTROLS (REQ 13) -->
+    <!-- UART TELEMETRY TERMINAL WITH CONTROLS -->
     <div class="card terminal-card">
       <div class="card-title">
         <span class="card-title-icon">📟 Telemetry UART Stream</span>
-        <span style="font-size: 0.72rem; color: #64748b; font-family: 'Fira Code';">115200 Baud</span>
+        <span style="font-size: 0.66rem; color: #64748b; font-family: 'Fira Code';">115200 Baud</span>
       </div>
 
       <!-- TERMINAL TOOLBAR -->
@@ -1966,10 +1976,10 @@
     startY: 0,
     dx: 0,
     dy: 0,
-    radius: 42
+    radius: 34
   };
 
-  // ================= LOG & TERMINAL MANAGEMENT (REQ 13) =================
+  // ================= LOG & TERMINAL MANAGEMENT =================
   function logTerm(msg, type = 'info') {
     if (isLogPaused) return;
 
@@ -2050,15 +2060,14 @@
 
   async function checkNetworkAndAutoDetect() {
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const isSecure = window.isSecureContext;
 
     if (!isLocalhost) {
       const netBar = document.getElementById('networkNoticeBar');
       if (netBar) {
         netBar.style.display = 'flex';
         netBar.innerHTML = `
-          <div>🌐 <strong>NETWORK ACCESS (${window.location.host})</strong> — Chrome/Edge requires localhost or HTTPS for direct USB Web Serial.</div>
-          <div style="display:flex; gap:8px; align-items:center;">
+          <div>🌐 <strong>NETWORK ACCESS (${window.location.host})</strong> — Direct USB Web Serial requires localhost or HTTPS.</div>
+          <div style="display:flex; gap:6px; align-items:center;">
             <button class="btn-mini-action" onclick="connectNetworkBridge()">⚡ Connect Wi-Fi Bridge</button>
             <button class="btn-mini-action" onclick="window.location.href='http://localhost:' + window.location.port + '/'">💻 Switch to Localhost</button>
           </div>
@@ -2189,7 +2198,6 @@
 
     try {
       logTerm("[SERIAL] Opening USB COM Port picker for Arduino Uno / Nano...", "tx");
-      // Request USB port from user
       serialPort = await navigator.serial.requestPort();
       await serialPort.open({ baudRate: serialBaud });
 
@@ -2214,12 +2222,10 @@
       logTerm(`[SERIAL OK] Connected to Arduino Uno/Nano at ${serialBaud} Baud!`, 'info');
       updateSystemWarning('nominal', 'ARDUINO UNO/NANO ONLINE • CONTROLS UNLOCKED');
 
-      // Setup TextEncoderStream writer
       const textEncoder = new TextEncoderStream();
       textEncoder.readable.pipeTo(serialPort.writable).catch(e => console.warn('Serial write pipe closed:', e));
       serialWriter = textEncoder.writable.getWriter();
 
-      // Listen for USB unplug/disconnect
       navigator.serial.addEventListener('disconnect', (event) => {
         if (event.port === serialPort) {
           logTerm('[SERIAL WARN] Arduino USB disconnected physically.', 'warn');
@@ -2227,7 +2233,6 @@
         }
       });
 
-      // Start asynchronous read loop
       readSerialLoop();
     } catch (err) {
       logTerm(`[SERIAL ERR] Connection cancelled or failed: ${err.message}`, 'crit');
@@ -2250,7 +2255,7 @@
           if (value) {
             buffer += value;
             const lines = buffer.split('\n');
-            buffer = lines.pop(); // Keep partial line for next iteration
+            buffer = lines.pop();
             for (const line of lines) {
               const trimmed = line.trim();
               if (trimmed.length > 0) {
@@ -2273,7 +2278,6 @@
   }
 
   function parseIncomingTelemetry(line) {
-    // Determine log level
     let lvl = 'info';
     if (line.includes('[WARN]') || line.includes('WARN')) lvl = 'warn';
     else if (line.includes('[ERR]') || line.includes('ERR') || line.includes('FAIL')) lvl = 'crit';
@@ -2282,8 +2286,6 @@
 
     logTerm(line, lvl);
 
-    // Auto-parse Robot_Master telemetry:
-    // Format: "Dist: 450 mm | Yaw: 12.3 deg | Ticks [FL:120 FR:120 RL:120 RR:120]"
     const distMatch = line.match(/Dist:\s*(\d+)/i);
     if (distMatch) {
       currentDistanceMm = parseInt(distMatch[1]);
@@ -2393,7 +2395,7 @@
     updateSystemWarning('warning', 'HARDWARE OFFLINE: Connect Arduino Uno / Nano USB to enable controls');
   }
 
-  // ================= WARNING SYSTEM (REQ 10) =================
+  // ================= WARNING SYSTEM =================
   function updateSystemWarning(type, message) {
     const banner = document.getElementById('systemWarningBanner');
     const icon = document.getElementById('warnIcon');
@@ -2415,7 +2417,7 @@
     time.innerText = new Date().toTimeString().split(' ')[0];
   }
 
-  // ================= E-STOP SYSTEM (REQ 2) =================
+  // ================= E-STOP SYSTEM =================
   function toggleEStop() {
     if (!isEStopActive) {
       executeEStop();
@@ -2442,8 +2444,8 @@
 
     const btn = document.getElementById('btnEstop');
     btn.classList.add('active');
-    document.getElementById('estopMainText').innerText = '🛑 E-STOP ACTIVE';
-    document.getElementById('estopSubText').innerText = 'ROVER HALTED • CLICK RESET';
+    document.getElementById('estopMainText').innerText = '🛑 E-STOP';
+    document.getElementById('estopSubText').innerText = 'HALTED • CLICK RESET';
 
     updateSystemWarning('critical', 'E-STOP ACTIVE: ALL MOTORS SHUT OFF BY SAFETY INTERLOCK');
     logTerm('[ESTOP] EMERGENCY STOP ACTIVATED: Powertrain de-energized', 'crit');
@@ -2463,7 +2465,7 @@
     sendSerialCommand('RESUME');
   }
 
-  // ================= KEYBOARD INPUT (PRESERVED) =================
+  // ================= KEYBOARD INPUT =================
   window.addEventListener('keydown', (e) => {
     if (e.key === ' ') {
       e.preventDefault();
@@ -2546,7 +2548,7 @@
     updateDpadVisuals();
   });
 
-  // ================= VIRTUAL JOYSTICK (PRESERVED) =================
+  // ================= VIRTUAL JOYSTICK =================
   const joyBase = document.getElementById('joyBase');
   const joyPuck = document.getElementById('joyPuck');
 
@@ -2600,7 +2602,7 @@
   });
   window.addEventListener('touchend', handleJoyEnd);
 
-  // ================= MODE SWITCHING (REQ 11) =================
+  // ================= MODE SWITCHING =================
   function setMode(mode) {
     if (isEStopActive) return;
     if (!isSerialConnected) {
@@ -2640,7 +2642,7 @@
     }
   }
 
-  // ================= PREDEFINED TEST SCRIPTS ENGINE (REQ 12) =================
+  // ================= PREDEFINED TEST SCRIPTS ENGINE =================
   const SCRIPT_DEFINITIONS = {
     combined: {
       name: "4WD Combined Drive Cycle",
@@ -2704,7 +2706,6 @@
     rover.driveMode = 'script';
     document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
 
-    // Highlight card & update status badge to RUNNING (REQ 12)
     document.querySelectorAll('.script-card').forEach(c => c.classList.remove('active-running'));
     document.querySelectorAll('.script-status-badge').forEach(b => {
       if (b.innerText === 'RUNNING') b.innerText = 'READY';
@@ -2719,7 +2720,6 @@
       badge.innerText = 'RUNNING';
     }
 
-    // Show banner
     const banner = document.getElementById('scriptBanner');
     banner.style.display = 'flex';
     document.getElementById('bannerScriptName').innerText = script.name;
@@ -2833,7 +2833,7 @@
     } else if (rover.driveMode === 'auto') {
       autoTimer += dt * 1000;
 
-      if (autoState === 0) { // FORWARD
+      if (autoState === 0) {
         rover.targetSpeed = rover.maxSpeed * 0.75;
         rover.targetTurn = 0;
         if (autoTimer > 2800) {
@@ -2841,21 +2841,21 @@
           autoTimer = 0;
           updateSystemWarning('warning', 'TOF ALERT: Obstacle detected within 180mm. Executing avoidance.');
         }
-      } else if (autoState === 1) { // STOP
+      } else if (autoState === 1) {
         rover.targetSpeed = 0;
         rover.targetTurn = 0;
         if (autoTimer >= 300) {
           autoState = 2;
           autoTimer = 0;
         }
-      } else if (autoState === 2) { // BACKWARD
+      } else if (autoState === 2) {
         rover.targetSpeed = -rover.maxSpeed * 0.65;
         rover.targetTurn = 0;
         if (autoTimer >= 600) {
           autoState = 3;
           autoTimer = 0;
         }
-      } else if (autoState === 3) { // TURN
+      } else if (autoState === 3) {
         rover.targetSpeed = 0;
         rover.targetTurn = rover.maxTurn * 0.85;
         if (autoTimer >= 800) {
@@ -2881,7 +2881,7 @@
 
     rover.heading += rover.turnRate;
 
-    // 3. SKID-STEER DIFFERENTIAL PWM CALCULATION (REQ 8)
+    // 3. SKID-STEER DIFFERENTIAL PWM CALCULATION
     const absSpeed = Math.abs(rover.speed);
     const absTurn = Math.abs(rover.turnRate);
     rover.pwm = Math.round(Math.min(220, (absSpeed / rover.maxSpeed) * userThrottle + (absTurn / rover.maxTurn) * (userThrottle * 0.4)));
@@ -2896,19 +2896,18 @@
     } else if (rover.speed < -0.08) {
       flDir = frDir = rlDir = rrDir = -1;
       leftPwm = rightPwm = -rover.pwm;
-    } else if (rover.turnRate > 0.01) { // Turn Right
+    } else if (rover.turnRate > 0.01) {
       flDir = rlDir = 1;
       frDir = rrDir = -1;
       leftPwm = rover.pwm;
       rightPwm = -rover.pwm;
-    } else if (rover.turnRate < -0.01) { // Turn Left
+    } else if (rover.turnRate < -0.01) {
       flDir = rlDir = -1;
       frDir = rrDir = 1;
       leftPwm = -rover.pwm;
       rightPwm = rover.pwm;
     }
 
-    // Odometry pulse integration
     const tickDelta = (absSpeed * 0.9 + absTurn * 32);
     if (flDir !== 0) encTicks.m1 += Math.round(tickDelta);
     if (frDir !== 0) encTicks.m2 += Math.round(tickDelta);
@@ -2923,7 +2922,6 @@
 
   // ================= TELEMETRY & HUD SYNCHRONIZATION =================
   function updateHUD(flDir, frDir, rlDir, rrDir, leftPwm, rightPwm) {
-    // State Text
     const stateText = document.getElementById('chassisStateText');
     const pwmText = document.getElementById('chassisPwmText');
     const subState = document.getElementById('chassisSubState');
@@ -2949,13 +2947,11 @@
     pwmText.innerText = `${rover.pwm} PWM (${pct}%)`;
     subState.innerText = `PWM: ${rover.pwm}`;
 
-    // Apply wheel animated classes
     applyWheelClass('wheelFL', flDir);
     applyWheelClass('wheelFR', frDir);
     applyWheelClass('wheelRL', rlDir);
     applyWheelClass('wheelRR', rrDir);
 
-    // Wheel breakdown: Target PWM vs Actual (REQ 6)
     document.getElementById('m1TargetPwm').innerText = flDir !== 0 ? `${leftPwm > 0 ? '+' : ''}${leftPwm}` : '0';
     document.getElementById('m2TargetPwm').innerText = frDir !== 0 ? `${rightPwm > 0 ? '+' : ''}${rightPwm}` : '0';
     document.getElementById('m3TargetPwm').innerText = rlDir !== 0 ? `${leftPwm > 0 ? '+' : ''}${leftPwm}` : '0';
@@ -2971,7 +2967,6 @@
     document.getElementById('m3Ticks').innerText = `${encTicks.m3.toLocaleString()} ticks`;
     document.getElementById('m4Ticks').innerText = `${encTicks.m4.toLocaleString()} ticks`;
 
-    // Joystick Numerical Readout (REQ 8)
     const normX = joyState.active ? (joyState.dx / joyState.radius).toFixed(2) : (keys.left ? -1.0 : keys.right ? 1.0 : 0.0).toFixed(2);
     const normY = joyState.active ? (-joyState.dy / joyState.radius).toFixed(2) : (keys.up ? 1.0 : keys.down ? -1.0 : 0.0).toFixed(2);
     document.getElementById('joyValX').innerText = normX;
@@ -2979,7 +2974,6 @@
     document.getElementById('joyPwmL').innerText = leftPwm;
     document.getElementById('joyPwmR').innerText = rightPwm;
 
-    // Send periodic serial drive telemetry to Arduino if connected (throttled to 10 Hz)
     const nowP = performance.now();
     if (isSerialConnected && (nowP - lastSerialSendTime > 100)) {
       if (leftPwm !== lastSentLeftPwm || rightPwm !== lastSentRightPwm || leftPwm !== 0 || rightPwm !== 0) {
@@ -2990,12 +2984,10 @@
       }
     }
 
-    // Metrics Cards
     document.getElementById('valSpeed').innerText = rover.pwm;
     document.getElementById('valDuty').innerText = `${pct}%`;
     document.getElementById('barSpeed').style.width = pct + '%';
 
-    // Laser Distance simulation (only when moving and connected)
     if (isSerialConnected) {
       if (rover.speed > 0.5) {
         currentDistanceMm = Math.max(120, currentDistanceMm - Math.round(rover.speed * 4));
@@ -3022,7 +3014,6 @@
       laserBadge.style.color = 'var(--accent-green)';
     }
 
-    // Heading Yaw & Visual Compass (REQ 5)
     let deg = Math.round((rover.heading * 180 / Math.PI) % 360);
     if (deg > 180) deg -= 360;
     if (deg < -180) deg += 360;
@@ -3030,7 +3021,6 @@
     document.getElementById('odomHeading').innerText = `${deg.toFixed(1)}°`;
     document.getElementById('compassNeedle').style.transform = `rotate(${deg}deg)`;
 
-    // Odometry Summary (REQ 7)
     const totalTicks = encTicks.m1 + encTicks.m2 + encTicks.m3 + encTicks.m4;
     document.getElementById('valTotalTicks').innerText = totalTicks.toLocaleString();
     document.getElementById('barTicks').style.width = (totalTicks % 1000) / 10 + '%';
@@ -3043,7 +3033,6 @@
     else if (dir < 0) el.classList.add('rolling-rev');
   }
 
-  // INITIALIZE NETWORK AUTO-DETECTION & LOOP
   checkNetworkAndAutoDetect();
   requestAnimationFrame(update);
 </script>
