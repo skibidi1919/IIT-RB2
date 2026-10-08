@@ -106,13 +106,13 @@ Write-Host "============================================================" -Foreg
 Write-Host "       IIT-RB2: ROBOT 2 DASHBOARD NETWORK HTTP SERVER       " -ForegroundColor Yellow
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  🖥️  LOCAL PC URL:     http://localhost:$Port/" -ForegroundColor Green
-Write-Host "  🌐  OTHER COMPUTERS:  http://${localIP}:$Port/" -ForegroundColor Cyan
+Write-Host "  [LOCAL PC]     http://localhost:$Port/" -ForegroundColor Green
+Write-Host "  [NETWORK/LAN]  http://${localIP}:$Port/" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  FEATURES ACTIVE:" -ForegroundColor White
-Write-Host "  ✓ Web Serial Direct USB on Localhost" -ForegroundColor Gray
-Write-Host "  ✓ Wi-Fi Server Bridge: Control Arduino wirelessly from any device!" -ForegroundColor Gray
-Write-Host "  ✓ Auto Hardware Diagnostic Test Suite" -ForegroundColor Gray
+Write-Host "  * Web Serial Direct USB on Localhost" -ForegroundColor Gray
+Write-Host "  * Wi-Fi Server Bridge: Control Arduino wirelessly from any device!" -ForegroundColor Gray
+Write-Host "  * Auto Hardware Diagnostic Test Suite" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  Press Ctrl+C in this window to stop the server." -ForegroundColor Yellow
 Write-Host "============================================================" -ForegroundColor Cyan
@@ -169,13 +169,14 @@ while ($true) {
                 $sendJsonResponse = {
                     param ($jsonString, [int]$statusCode = 200)
                     $jsonBytes = [System.Text.Encoding]::UTF8.GetBytes($jsonString)
-                    $respHeader = "HTTP/1.1 $statusCode OK`r`n" +
-                                  "Content-Type: application/json; charset=utf-8`r`n" +
-                                  "Content-Length: $($jsonBytes.Length)`r`n" +
-                                  "Access-Control-Allow-Origin: *`r`n" +
-                                  "Access-Control-Allow-Methods: GET, POST, OPTIONS`r`n" +
-                                  "Access-Control-Allow-Headers: Content-Type`r`n" +
-                                  "Connection: close`r`n`r`n"
+                    $crlf = "`r`n"
+                    $respHeader = "HTTP/1.1 $statusCode OK" + $crlf +
+                                  "Content-Type: application/json; charset=utf-8" + $crlf +
+                                  "Content-Length: " + $jsonBytes.Length + $crlf +
+                                  "Access-Control-Allow-Origin: *" + $crlf +
+                                  "Access-Control-Allow-Methods: GET, POST, OPTIONS" + $crlf +
+                                  "Access-Control-Allow-Headers: Content-Type" + $crlf +
+                                  "Connection: close" + $crlf + $crlf
                     $respBytes = [System.Text.Encoding]::ASCII.GetBytes($respHeader)
                     $stream.Write($respBytes, 0, $respBytes.Length)
                     $stream.Write($jsonBytes, 0, $jsonBytes.Length)
@@ -183,11 +184,12 @@ while ($true) {
 
                 # Handle CORS Preflight
                 if ($method -eq "OPTIONS") {
-                    $optHeader = "HTTP/1.1 204 No Content`r`n" +
-                                 "Access-Control-Allow-Origin: *`r`n" +
-                                 "Access-Control-Allow-Methods: GET, POST, OPTIONS`r`n" +
-                                 "Access-Control-Allow-Headers: Content-Type`r`n" +
-                                 "Connection: close`r`n`r`n"
+                    $crlf = "`r`n"
+                    $optHeader = "HTTP/1.1 204 No Content" + $crlf +
+                                 "Access-Control-Allow-Origin: *" + $crlf +
+                                 "Access-Control-Allow-Methods: GET, POST, OPTIONS" + $crlf +
+                                 "Access-Control-Allow-Headers: Content-Type" + $crlf +
+                                 "Connection: close" + $crlf + $crlf
                     $optBytes = [System.Text.Encoding]::ASCII.GetBytes($optHeader)
                     $stream.Write($optBytes, 0, $optBytes.Length)
                     $stream.Close(); $client.Close(); continue
@@ -216,10 +218,20 @@ while ($true) {
                 elseif ($path -eq "/api/connect") {
                     $reqPort = "COM7"
                     $reqBaud = 115200
-                    if ($query -match 'port=([^&]+)') { $reqPort = $matches[1] }
-                    if ($query -match 'baud=([^&]+)') { $reqBaud = [int]$matches[1] }
-                    if ($postBody -match '"port"\s*:\s*"([^"]+)"') { $reqPort = $matches[1] }
-                    if ($postBody -match '"baud"\s*:\s*(\d+)') { $reqBaud = [int]$matches[1] }
+
+                    if ($query) {
+                        foreach ($part in $query.Split('&')) {
+                            if ($part.StartsWith("port=")) { $reqPort = $part.Substring(5) }
+                            if ($part.StartsWith("baud=")) { $reqBaud = [int]$part.Substring(5) }
+                        }
+                    }
+                    if ($postBody -and $postBody.Trim().StartsWith("{")) {
+                        try {
+                            $parsed = $postBody | ConvertFrom-Json
+                            if ($parsed.port) { $reqPort = $parsed.port }
+                            if ($parsed.baud) { $reqBaud = [int]$parsed.baud }
+                        } catch {}
+                    }
 
                     $ok = Open-SerialPort $reqPort $reqBaud
                     $json = @{
@@ -236,9 +248,23 @@ while ($true) {
                 }
                 elseif ($path -eq "/api/cmd") {
                     $cmd = ""
-                    if ($query -match 'c=([^&]+)') { $cmd = [System.Uri]::UnescapeDataString($matches[1]) }
-                    if ($postBody -match '"c(md)?"\s*:\s*"([^"]+)"') { $cmd = $matches[2] }
-                    elseif ($postBody.Length -gt 0 -and -not $postBody.StartsWith("{")) { $cmd = $postBody.Trim() }
+                    if ($query) {
+                        foreach ($part in $query.Split('&')) {
+                            if ($part.StartsWith("c=")) { $cmd = [System.Uri]::UnescapeDataString($part.Substring(2)) }
+                        }
+                    }
+                    if ($postBody) {
+                        $pTrim = $postBody.Trim()
+                        if ($pTrim.StartsWith("{")) {
+                            try {
+                                $parsed = $pTrim | ConvertFrom-Json
+                                if ($parsed.cmd) { $cmd = $parsed.cmd }
+                                elseif ($parsed.c) { $cmd = $parsed.c }
+                            } catch {}
+                        } else {
+                            $cmd = $pTrim
+                        }
+                    }
 
                     $sent = Send-SerialCmd $cmd
                     $json = @{
@@ -271,18 +297,23 @@ while ($true) {
                         $contentType = if ($mimeTypes.ContainsKey($ext)) { $mimeTypes[$ext] } else { "application/octet-stream" }
                         $bytes = [System.IO.File]::ReadAllBytes($filePath)
                         
-                        $header = "HTTP/1.1 200 OK`r`n" +
-                                  "Content-Type: $contentType`r`n" +
-                                  "Content-Length: $($bytes.Length)`r`n" +
-                                  "Access-Control-Allow-Origin: *`r`n" +
-                                  "Connection: close`r`n`r`n"
+                        $crlf = "`r`n"
+                        $header = "HTTP/1.1 200 OK" + $crlf +
+                                  "Content-Type: " + $contentType + $crlf +
+                                  "Content-Length: " + $bytes.Length + $crlf +
+                                  "Access-Control-Allow-Origin: *" + $crlf +
+                                  "Connection: close" + $crlf + $crlf
                         $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
                         $stream.Write($headerBytes, 0, $headerBytes.Length)
                         $stream.Write($bytes, 0, $bytes.Length)
                     } else {
                         $msg = "404 Not Found: $path"
                         $msgBytes = [System.Text.Encoding]::UTF8.GetBytes($msg)
-                        $header = "HTTP/1.1 404 Not Found`r`nContent-Type: text/plain`r`nContent-Length: $($msgBytes.Length)`r`nConnection: close`r`n`r`n"
+                        $crlf = "`r`n"
+                        $header = "HTTP/1.1 404 Not Found" + $crlf +
+                                  "Content-Type: text/plain" + $crlf +
+                                  "Content-Length: " + $msgBytes.Length + $crlf +
+                                  "Connection: close" + $crlf + $crlf
                         $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
                         $stream.Write($headerBytes, 0, $headerBytes.Length)
                         $stream.Write($msgBytes, 0, $msgBytes.Length)
