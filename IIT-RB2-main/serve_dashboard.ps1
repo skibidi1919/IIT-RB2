@@ -39,7 +39,7 @@ $global:maxBufferLines = 40
 
 function Open-SerialPort([string]$portName, [int]$baud) {
     try {
-        if ($global:serialPort -ne $null -and $global:serialPort.IsOpen) {
+        if ($null -ne $global:serialPort -and $global:serialPort.IsOpen) {
             $global:serialPort.Close()
             $global:serialPort.Dispose()
         }
@@ -61,7 +61,7 @@ function Open-SerialPort([string]$portName, [int]$baud) {
 
 function Close-SerialPort() {
     try {
-        if ($global:serialPort -ne $null -and $global:serialPort.IsOpen) {
+        if ($null -ne $global:serialPort -and $global:serialPort.IsOpen) {
             $global:serialPort.Close()
             $global:serialPort.Dispose()
             $global:serialPort = $null
@@ -71,7 +71,7 @@ function Close-SerialPort() {
 }
 
 function Send-SerialCmd([string]$cmd) {
-    if ($global:serialPort -ne $null -and $global:serialPort.IsOpen) {
+    if ($null -ne $global:serialPort -and $global:serialPort.IsOpen) {
         try {
             $global:serialPort.WriteLine($cmd)
             return $true
@@ -83,7 +83,7 @@ function Send-SerialCmd([string]$cmd) {
 }
 
 function Read-SerialTelemetry() {
-    if ($global:serialPort -ne $null -and $global:serialPort.IsOpen) {
+    if ($null -ne $global:serialPort -and $global:serialPort.IsOpen) {
         try {
             $data = $global:serialPort.ReadExisting()
             if ($data) {
@@ -203,7 +203,7 @@ while ($true) {
                     & $sendJsonResponse $json
                 }
                 elseif ($path -eq "/api/status") {
-                    $isConnected = ($global:serialPort -ne $null -and $global:serialPort.IsOpen)
+                    $isConnected = ($null -ne $global:serialPort -and $global:serialPort.IsOpen)
                     $ports = [System.IO.Ports.SerialPort]::GetPortNames()
                     $json = @{
                         connected = $isConnected
@@ -270,7 +270,7 @@ while ($true) {
                     $json = @{
                         success = $sent
                         cmd = $cmd
-                        connected = ($global:serialPort -ne $null -and $global:serialPort.IsOpen)
+                        connected = ($null -ne $global:serialPort -and $global:serialPort.IsOpen)
                     } | ConvertTo-Json -Compress
                     & $sendJsonResponse $json
                 }
@@ -279,7 +279,7 @@ while ($true) {
                     $telemetryLines = [string[]]$global:telemetryBuffer.ToArray()
                     $global:telemetryBuffer.Clear()
                     $json = @{
-                        connected = ($global:serialPort -ne $null -and $global:serialPort.IsOpen)
+                        connected = ($null -ne $global:serialPort -and $global:serialPort.IsOpen)
                         lines = $telemetryLines
                     } | ConvertTo-Json -Compress
                     & $sendJsonResponse $json
