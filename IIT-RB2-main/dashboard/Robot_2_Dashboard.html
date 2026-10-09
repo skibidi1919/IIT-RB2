@@ -6,15 +6,15 @@
   <title>Robot 2 Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #060913;
-      --bg-card: rgba(13, 20, 36, 0.92);
-      --bg-card-hover: rgba(18, 28, 50, 0.98);
+      --bg-dark: #050814;
+      --bg-card: rgba(11, 18, 33, 0.94);
+      --bg-card-inner: rgba(18, 28, 52, 0.7);
       --accent-cyan: #00e5ff;
-      --accent-blue: #2563eb;
-      --accent-indigo: #4f46e5;
+      --accent-blue: #3b82f6;
+      --accent-indigo: #6366f1;
       --accent-green: #10b981;
       --accent-amber: #f59e0b;
       --accent-red: #ef4444;
@@ -22,8 +22,8 @@
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
-      --border-card: rgba(255, 255, 255, 0.08);
-      --border-focus: rgba(0, 229, 255, 0.4);
+      --border-card: rgba(255, 255, 255, 0.1);
+      --border-focus: rgba(0, 229, 255, 0.45);
     }
 
     * {
@@ -34,56 +34,59 @@
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: radial-gradient(circle at 18% 12%, #0f172a 0%, #03060d 100%);
+      background: radial-gradient(circle at 20% 10%, #0d1a38 0%, #03060f 100%);
       color: var(--text-main);
       min-height: 100vh;
-      line-height: 1.3;
-      padding: 6px 12px 14px;
+      line-height: 1.35;
+      padding: 8px 14px 16px;
       user-select: none;
       overflow-x: hidden;
     }
 
     .container {
-      max-width: 1540px;
+      max-width: 1560px;
       margin: 0 auto;
     }
 
-    /* ================= 1. COMPACT TOP HEADER & STATUS BAR ================= */
+    /* ================= 1. HEADER & TOP CONTROLS ================= */
     header {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 8px;
-      padding: 4px 8px 6px;
-      border-bottom: 1px solid var(--border-card);
-      margin-bottom: 6px;
+      gap: 10px;
+      padding: 6px 12px 8px;
+      background: rgba(11, 18, 33, 0.8);
+      border: 1px solid var(--border-card);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      backdrop-filter: blur(10px);
     }
 
     .header-branding {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
     .rover-logo-icon {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      border-radius: 6px;
+      border-radius: 7px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 15px;
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+      font-size: 16px;
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.4);
       flex-shrink: 0;
     }
 
     .rover-title-block h1 {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.96rem;
+      font-size: 1.05rem;
       font-weight: 800;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       background: linear-gradient(90deg, #ffffff, #93c5fd);
       -webkit-background-clip: text;
       background-clip: text;
@@ -93,106 +96,103 @@
 
     .version-tag {
       font-family: 'Fira Code', monospace;
-      font-size: 0.54rem;
+      font-size: 0.60rem;
       font-weight: 700;
       color: var(--accent-cyan);
-      background: rgba(0, 229, 255, 0.1);
-      border: 1px solid rgba(0, 229, 255, 0.28);
-      padding: 1px 5px;
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      padding: 2px 6px;
       border-radius: 4px;
       letter-spacing: 0.03em;
       white-space: nowrap;
     }
 
     .rover-title-block p {
-      font-size: 0.62rem;
+      font-size: 0.66rem;
       color: var(--text-muted);
       letter-spacing: 0.01em;
-      line-height: 1.1;
     }
 
     .critical-bar {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
     .status-badge {
       font-family: 'Fira Code', monospace;
-      font-size: 0.64rem;
+      font-size: 0.70rem;
       font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 5px;
+      padding: 5px 10px;
+      border-radius: 6px;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      background: rgba(255, 255, 255, 0.04);
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--border-card);
       color: var(--text-muted);
       white-space: nowrap;
     }
 
     .status-badge.connected {
-      background: rgba(16, 185, 129, 0.12);
-      border-color: rgba(16, 185, 129, 0.35);
-      color: var(--accent-green);
-    }
-
-    /* ARDUINO UNO / NANO USB SERIAL BUTTON */
-    .serial-control-group {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-card);
-      border-radius: 5px;
-      padding: 2px 4px;
-      transition: all 0.2s ease;
-    }
-
-    .serial-control-group:hover {
-      border-color: rgba(0, 229, 255, 0.35);
-    }
-
-    .btn-serial-connect {
-      background: rgba(0, 229, 255, 0.1);
-      border: 1px solid rgba(0, 229, 255, 0.3);
-      color: var(--accent-cyan);
-      font-family: 'Fira Code', monospace;
-      font-size: 0.64rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.2s ease;
-    }
-
-    .btn-serial-connect:hover {
-      background: rgba(0, 229, 255, 0.2);
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
-    }
-
-    .btn-serial-connect.connected {
       background: rgba(16, 185, 129, 0.15);
       border-color: rgba(16, 185, 129, 0.45);
       color: var(--accent-green);
     }
 
+    .serial-control-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-card);
+      border-radius: 6px;
+      padding: 3px 6px;
+      transition: all 0.2s ease;
+    }
+
+    .serial-control-group:hover {
+      border-color: rgba(0, 229, 255, 0.4);
+    }
+
+    .btn-serial-connect {
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid rgba(0, 229, 255, 0.35);
+      color: var(--accent-cyan);
+      font-family: 'Fira Code', monospace;
+      font-size: 0.70rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-serial-connect:hover {
+      background: rgba(0, 229, 255, 0.25);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+    }
+
+    .btn-serial-connect.connected {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--accent-green);
+    }
+
     .btn-serial-connect.connected:hover {
-      background: rgba(239, 68, 68, 0.15);
-      border-color: rgba(239, 68, 68, 0.45);
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
       color: var(--accent-red);
     }
 
     .serial-status-dot {
-      font-size: 0.64rem;
+      font-size: 0.70rem;
       color: var(--text-dim);
-      transition: color 0.2s ease;
     }
 
     .btn-serial-connect.connected .serial-status-dot {
@@ -202,16 +202,16 @@
 
     @keyframes pulse-dot {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(1.25); }
+      50% { opacity: 0.4; transform: scale(1.3); }
     }
 
     .serial-baud-select {
-      background: #03060f;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text-muted);
+      background: #020612;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-main);
       font-family: 'Fira Code', monospace;
-      font-size: 0.62rem;
-      padding: 2px 4px;
+      font-size: 0.68rem;
+      padding: 3px 6px;
       border-radius: 4px;
       outline: none;
       cursor: pointer;
@@ -219,64 +219,63 @@
 
     .serial-baud-select:focus {
       border-color: var(--accent-cyan);
-      color: #fff;
     }
 
     .status-badge.battery {
       background: rgba(0, 229, 255, 0.08);
-      border-color: rgba(0, 229, 255, 0.25);
+      border-color: rgba(0, 229, 255, 0.3);
       color: var(--accent-cyan);
     }
 
     .status-badge.mode {
-      background: rgba(99, 102, 241, 0.12);
-      border-color: rgba(99, 102, 241, 0.3);
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.35);
       color: #a5b4fc;
     }
 
-    /* COMPACT E-STOP BUTTON */
+    /* COMPACT BOLD E-STOP BUTTON */
     .btn-estop {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(185, 28, 28, 0.35));
-      border: 1.5px solid var(--accent-red);
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.45));
+      border: 2px solid var(--accent-red);
       color: #fff;
       font-family: 'Orbitron', sans-serif;
-      padding: 3px 10px;
-      border-radius: 5px;
+      padding: 4px 12px;
+      border-radius: 6px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
-      height: 28px;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+      height: 32px;
     }
 
     .btn-estop .estop-icon {
-      font-size: 0.90rem;
+      font-size: 1.0rem;
     }
 
     .btn-estop .estop-labels {
       display: flex;
       flex-direction: column;
       text-align: left;
-      line-height: 1.0;
+      line-height: 1.05;
     }
 
     .btn-estop .estop-main {
-      font-size: 0.70rem;
+      font-size: 0.74rem;
       font-weight: 800;
       letter-spacing: 0.04em;
     }
 
     .btn-estop .estop-sub {
-      font-size: 0.52rem;
+      font-size: 0.54rem;
       font-family: 'Fira Code', monospace;
       color: #fca5a5;
     }
 
     .btn-estop:hover {
       background: var(--accent-red);
-      box-shadow: 0 0 16px rgba(239, 68, 68, 0.7);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
       transform: scale(1.02);
     }
 
@@ -291,212 +290,108 @@
       to { box-shadow: 0 0 25px rgba(239, 68, 68, 1); }
     }
 
-    /* SLIM WARNING / STATUS BANNER */
-    .warning-banner {
+    /* ================= UNIFIED COMPACT STATUS BANNER ================= */
+    .unified-status-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 3px 10px;
-      border-radius: 5px;
-      font-size: 0.64rem;
-      font-weight: 600;
-      font-family: 'Fira Code', monospace;
-      margin-bottom: 6px;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      background: rgba(16, 185, 129, 0.08);
-      color: var(--accent-green);
-      transition: all 0.25s ease;
-    }
-
-    .warning-banner.alert-warning {
-      border-color: rgba(245, 158, 11, 0.4);
-      background: rgba(245, 158, 11, 0.1);
-      color: var(--accent-amber);
-    }
-
-    .warning-banner.alert-critical {
-      border-color: rgba(239, 68, 68, 0.5);
-      background: rgba(239, 68, 68, 0.15);
-      color: #fca5a5;
-    }
-
-    /* CARD SYSTEM */
-    .card {
-      background: var(--bg-card);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--border-card);
-      border-radius: 8px;
-      padding: 8px 10px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
-      position: relative;
-    }
-
-    .card-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.72rem;
-      letter-spacing: 0.04em;
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: #e2e8f0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      padding-bottom: 4px;
-    }
-
-    .card-title-icon {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    /* SLIM HARDWARE INTERLOCK BAR */
-    .hw-interlock-notice {
+      gap: 10px;
+      padding: 6px 12px;
       background: rgba(245, 158, 11, 0.08);
       border: 1px solid rgba(245, 158, 11, 0.35);
-      border-radius: 6px;
-      padding: 4px 10px;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      border-radius: 7px;
+      margin-bottom: 8px;
+      font-size: 0.72rem;
       transition: all 0.25s ease;
     }
 
-    .hw-interlock-notice.hidden {
-      display: none !important;
-    }
-
-    .hw-interlock-text {
+    .unified-status-left {
       display: flex;
       align-items: center;
       gap: 8px;
-      flex: 1;
     }
 
-    .hw-lock-icon {
-      font-size: 1.0rem;
+    .unified-status-left .status-beacon {
+      font-size: 0.85rem;
     }
 
-    .hw-interlock-text strong {
+    .unified-status-left strong {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       color: var(--accent-amber);
       letter-spacing: 0.03em;
-      display: inline-block;
-      margin-right: 6px;
     }
 
-    .hw-interlock-text p {
-      font-size: 0.62rem;
+    .unified-status-left span.status-desc {
       color: #cbd5e1;
-      display: inline;
+      font-size: 0.68rem;
     }
 
-    .hw-interlock-actions {
+    .unified-status-actions {
       display: flex;
-      gap: 5px;
+      gap: 6px;
       align-items: center;
       flex-wrap: wrap;
     }
 
-    .btn-interlock-connect {
+    .btn-action-pill {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.66rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: none;
+    }
+
+    .btn-action-cyan {
       background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      border: none;
       color: #030712;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.62rem;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s ease;
-      box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
     }
-
-    .btn-interlock-connect:hover {
-      box-shadow: 0 0 14px rgba(0, 229, 255, 0.6);
+    .btn-action-cyan:hover {
+      box-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
       transform: translateY(-1px);
     }
 
-    .btn-interlock-wifi {
+    .btn-action-wifi {
       background: linear-gradient(135deg, #0ea5e9, #2563eb);
-      color: #ffffff;
-      border: none;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.62rem;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s ease;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(14, 165, 233, 0.35);
     }
-
-    .btn-interlock-wifi:hover {
-      box-shadow: 0 0 12px rgba(14, 165, 233, 0.5);
+    .btn-action-wifi:hover {
+      box-shadow: 0 0 16px rgba(14, 165, 233, 0.65);
       transform: translateY(-1px);
     }
 
-    .btn-interlock-bypass {
+    .btn-action-sim {
       background: rgba(255, 255, 255, 0.08);
-      color: #94a3b8;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.18);
       font-family: 'Fira Code', monospace;
-      font-size: 0.60rem;
-      font-weight: 600;
-      padding: 3px 6px;
-      border-radius: 4px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s ease;
+      font-size: 0.65rem;
     }
-
-    .btn-interlock-bypass:hover {
-      color: #f8fafc;
+    .btn-action-sim:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
       border-color: rgba(255, 255, 255, 0.35);
     }
 
-    .network-notice-bar {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 4px 10px;
-      background: linear-gradient(90deg, rgba(14, 165, 233, 0.18), rgba(59, 130, 246, 0.12));
-      border: 1px solid rgba(14, 165, 233, 0.45);
-      border-radius: 5px;
-      margin-bottom: 6px;
-      font-size: 0.64rem;
-      color: #bae6fd;
-    }
-
-    .btn-mini-action {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.60rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 3px;
-      border: 1px solid rgba(14, 165, 233, 0.5);
-      background: rgba(14, 165, 233, 0.2);
-      color: #fff;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .btn-mini-action:hover {
-      background: rgba(14, 165, 233, 0.45);
-    }
+    /* Keep compatibility hooks for JS */
+    .hw-interlock-notice.hidden { display: none !important; }
+    .warning-banner { display: none; }
+    .network-notice-bar { display: none; }
 
     /* HARDWARE DISCONNECTED INTERLOCK STATE */
     body.hardware-disconnected .teleop-card,
     body.hardware-disconnected .script-card {
-      opacity: 0.55;
-      filter: grayscale(40%);
-      position: relative;
+      opacity: 0.65;
+      filter: grayscale(30%);
     }
 
     body.hardware-disconnected .dpad-btn,
@@ -508,26 +403,57 @@
       cursor: not-allowed !important;
     }
 
+    /* CARD STYLING */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-card);
+      border-radius: 9px;
+      padding: 10px 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      position: relative;
+    }
+
+    .card-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #f1f5f9;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 5px;
+    }
+
+    .card-title-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     /* ================= 2. PRIMARY COCKPIT GRID ================= */
     .cockpit-grid {
       display: grid;
-      grid-template-columns: 1.05fr 1.35fr;
-      gap: 8px;
-      margin-bottom: 8px;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 10px;
+      margin-bottom: 10px;
       align-items: stretch;
     }
 
-    @media (max-width: 1040px) {
+    @media (max-width: 1080px) {
       .cockpit-grid {
         grid-template-columns: 1fr;
       }
     }
 
-    /* FLIGHT CONTROL & JOYSTICK */
+    /* TELEOPERATION CARD */
     .teleop-card {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       justify-content: space-between;
     }
 
@@ -535,26 +461,26 @@
       display: flex;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border-card);
-      border-radius: 5px;
-      padding: 2px;
-      gap: 2px;
+      border-radius: 6px;
+      padding: 3px;
+      gap: 3px;
     }
 
     .mode-tab {
       flex: 1;
-      padding: 3px 4px;
-      border-radius: 4px;
+      padding: 5px 6px;
+      border-radius: 5px;
       border: none;
       background: transparent;
       color: var(--text-muted);
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.60rem;
+      font-size: 0.68rem;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 5px;
       transition: all 0.2s ease;
       white-space: nowrap;
     }
@@ -562,14 +488,18 @@
     .mode-tab.active {
       background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
       color: #030712;
-      box-shadow: 0 0 10px rgba(0, 229, 255, 0.35);
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
     }
 
     .controls-split {
       display: grid;
-      grid-template-columns: 1fr 1.05fr;
-      gap: 8px;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
       align-items: center;
+      background: var(--bg-card-inner);
+      border-radius: 8px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
     }
 
     @media (max-width: 520px) {
@@ -582,18 +512,18 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
     }
 
     .joystick-base {
-      width: 100px;
-      height: 100px;
-      background: radial-gradient(circle, #0e172a 0%, #03060f 100%);
-      border: 1.5px solid rgba(0, 229, 255, 0.35);
+      width: 115px;
+      height: 115px;
+      background: radial-gradient(circle, #0e1b38 0%, #030612 100%);
+      border: 2px solid rgba(0, 229, 255, 0.4);
       border-radius: 50%;
       position: relative;
       touch-action: none;
-      box-shadow: 0 0 14px rgba(0, 229, 255, 0.12), inset 0 0 12px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 0 18px rgba(0, 229, 255, 0.15), inset 0 0 16px rgba(0, 0, 0, 0.85);
       cursor: grab;
       display: flex;
       align-items: center;
@@ -606,22 +536,22 @@
 
     .joystick-ring-inner {
       position: absolute;
-      width: 50px;
-      height: 50px;
-      border: 1px dashed rgba(255, 255, 255, 0.15);
+      width: 58px;
+      height: 58px;
+      border: 1px dashed rgba(255, 255, 255, 0.2);
       border-radius: 50%;
       pointer-events: none;
     }
 
     .joystick-puck {
-      width: 36px;
-      height: 36px;
+      width: 42px;
+      height: 42px;
       background: radial-gradient(circle at 35% 35%, #00e5ff 0%, #1d4ed8 100%);
       border-radius: 50%;
       position: absolute;
-      top: 32px;
-      left: 32px;
-      box-shadow: 0 2px 8px rgba(0, 229, 255, 0.55), inset 0 1px 3px rgba(255, 255, 255, 0.6);
+      top: 36.5px;
+      left: 36.5px;
+      box-shadow: 0 3px 10px rgba(0, 229, 255, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.7);
       transition: transform 0.05s ease-out;
       pointer-events: none;
       display: flex;
@@ -631,40 +561,40 @@
 
     .joystick-puck::after {
       content: '';
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       background: rgba(255, 255, 255, 0.95);
       border-radius: 50%;
-      box-shadow: 0 0 4px #fff;
+      box-shadow: 0 0 6px #fff;
     }
 
     .joystick-telemetry-row {
       display: flex;
-      gap: 6px;
+      gap: 8px;
       font-family: 'Fira Code', monospace;
-      font-size: 0.58rem;
+      font-size: 0.66rem;
       color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.03);
-      padding: 2px 5px;
-      border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .dpad-container {
       display: grid;
-      grid-template-columns: repeat(3, 34px);
-      grid-template-rows: repeat(3, 34px);
-      gap: 4px;
+      grid-template-columns: repeat(3, 40px);
+      grid-template-rows: repeat(3, 40px);
+      gap: 5px;
       justify-content: center;
       align-content: center;
     }
 
     .dpad-btn {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 7px;
       color: var(--text-main);
-      font-size: 0.82rem;
+      font-size: 0.95rem;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -675,56 +605,18 @@
     }
 
     .dpad-btn span.key-hint {
-      font-size: 0.48rem;
-      font-weight: 600;
+      font-size: 0.54rem;
+      font-weight: 700;
       color: #93c5fd;
-      background: rgba(0, 0, 0, 0.4);
-      padding: 0 3px;
-      border-radius: 2px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.5);
+      padding: 1px 4px;
+      border-radius: 3px;
       font-family: 'Fira Code', monospace;
       margin-top: 1px;
-      letter-spacing: 0.02em;
-    }
-
-    .shortcut-legend-strip {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 4px;
-      padding: 3px 6px;
-      background: rgba(255, 255, 255, 0.025);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 4px;
-      margin-top: 2px;
-      flex-wrap: wrap;
-    }
-
-    .shortcut-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      font-size: 0.54rem;
-      color: var(--text-dim);
-    }
-
-    .shortcut-pill kbd {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 2px;
-      padding: 0 3px;
-      font-family: 'Fira Code', monospace;
-      font-size: 0.52rem;
-      color: #93c5fd;
-    }
-
-    .shortcut-pill span {
-      font-size: 0.54rem;
-      color: var(--text-muted);
     }
 
     .dpad-btn:hover {
-      background: rgba(0, 229, 255, 0.15);
+      background: rgba(0, 229, 255, 0.18);
       border-color: var(--accent-cyan);
       color: var(--accent-cyan);
     }
@@ -734,17 +626,17 @@
       border-color: #fff;
       color: #030712;
       transform: scale(0.94);
-      box-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.65);
     }
 
     .dpad-btn.pressed span.key-hint {
       color: #030712;
-      font-weight: 700;
+      font-weight: 800;
     }
 
     .dpad-up    { grid-column: 2; grid-row: 1; }
     .dpad-left  { grid-column: 1; grid-row: 2; }
-    .dpad-center{ grid-column: 2; grid-row: 2; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #f87171; font-size: 0.62rem; font-weight: 800; font-family: 'Orbitron'; }
+    .dpad-center{ grid-column: 2; grid-row: 2; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.45); color: #f87171; font-size: 0.70rem; font-weight: 800; font-family: 'Orbitron'; }
     .dpad-center:hover { background: var(--accent-red); color: #fff; }
     .dpad-right { grid-column: 3; grid-row: 2; }
     .dpad-down  { grid-column: 2; grid-row: 3; }
@@ -752,170 +644,205 @@
     .speed-slider-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 3px 8px;
+      gap: 10px;
+      padding: 5px 10px;
       background: rgba(255, 255, 255, 0.03);
-      border-radius: 5px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .speed-slider-row span {
-      font-size: 0.62rem;
+      font-size: 0.70rem;
       font-family: 'Fira Code', monospace;
       color: var(--text-muted);
-      min-width: 85px;
+      min-width: 100px;
     }
 
     .throttle-range {
       flex: 1;
       accent-color: var(--accent-cyan);
       cursor: pointer;
-      height: 4px;
+      height: 5px;
     }
 
-    /* RIGHT: 4WD CHASSIS & POWERTRAIN LIVE STATE */
+    .shortcut-legend-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 8px;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 5px;
+      flex-wrap: wrap;
+    }
+
+    .shortcut-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.62rem;
+      color: var(--text-dim);
+    }
+
+    .shortcut-pill kbd {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      padding: 1px 4px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.60rem;
+      color: #93c5fd;
+    }
+
+    .shortcut-pill span {
+      font-size: 0.62rem;
+      color: var(--text-muted);
+    }
+
+    /* ================= 4WD CHASSIS & POWERTRAIN CARD ================= */
     .chassis-visual-box {
-      background: radial-gradient(circle at 50% 50%, #0b1324 0%, #040711 100%);
-      border: 1px solid rgba(0, 229, 255, 0.2);
+      background: radial-gradient(circle at 50% 50%, #0c1834 0%, #030612 100%);
+      border: 1px solid rgba(0, 229, 255, 0.25);
       border-radius: 8px;
-      padding: 10px 32px;
+      padding: 14px 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       position: relative;
-      min-height: 140px;
-      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.75);
+      min-height: 155px;
+      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.8);
     }
 
     .rover-body {
-      width: 154px;
-      height: 96px;
-      background: linear-gradient(145deg, #1e293b, #0f172a);
-      border: 1.5px solid #3b82f6;
+      width: 190px;
+      height: 108px;
+      background: linear-gradient(145deg, #1e2e4a, #0d1728);
+      border: 2px solid #3b82f6;
       border-radius: 12px;
       position: relative;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8), 0 0 12px rgba(59, 130, 246, 0.2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85), 0 0 16px rgba(59, 130, 246, 0.3);
     }
 
     .front-arrow {
       position: absolute;
-      top: 5px;
-      font-size: 0.52rem;
+      top: 6px;
+      font-size: 0.58rem;
       font-weight: 800;
       font-family: 'Orbitron', sans-serif;
       color: var(--accent-cyan);
-      letter-spacing: 0.10em;
+      letter-spacing: 0.12em;
       white-space: nowrap;
     }
 
     .rover-center-status {
       text-align: center;
-      margin-top: 6px;
+      margin-top: 8px;
     }
 
     .rover-state-badge {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.74rem;
+      font-size: 0.82rem;
       font-weight: 800;
       color: #fff;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
     }
 
     .rover-speed-badge {
       font-family: 'Fira Code', monospace;
-      font-size: 0.62rem;
+      font-size: 0.70rem;
       color: var(--accent-cyan);
       margin-top: 2px;
     }
 
-    /* 4 WHEELS WITH ANIMATED TREADS */
+    /* 4 WHEELS WITH REAL-TIME ANIMATED TREADS */
     .wheel {
-      width: 18px;
-      height: 38px;
-      background: repeating-linear-gradient(0deg, #111827 0px, #111827 3px, #374151 3px, #374151 6px);
-      background-size: 100% 12px;
-      border: 1.5px solid #4b5563;
-      border-radius: 4px;
+      width: 22px;
+      height: 44px;
+      background: repeating-linear-gradient(0deg, #111827 0px, #111827 3px, #374151 3px, #374151 7px);
+      background-size: 100% 14px;
+      border: 2px solid #4b5563;
+      border-radius: 5px;
       position: absolute;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     @keyframes roll-fwd {
       from { background-position: 0 0; }
-      to { background-position: 0 -12px; }
+      to { background-position: 0 -14px; }
     }
     @keyframes roll-rev {
       from { background-position: 0 0; }
-      to { background-position: 0 12px; }
+      to { background-position: 0 14px; }
     }
 
     .wheel.rolling-fwd {
       animation: roll-fwd 0.32s linear infinite;
       border-color: var(--accent-cyan);
-      box-shadow: 0 0 10px rgba(0, 229, 255, 0.55);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.6);
     }
     .wheel.rolling-rev {
       animation: roll-rev 0.32s linear infinite;
       border-color: var(--accent-amber);
-      box-shadow: 0 0 10px rgba(245, 158, 11, 0.55);
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
     }
 
-    .wheel.w-fl { left: -12px; top: -6px; }
-    .wheel.w-fr { right: -12px; top: -6px; }
-    .wheel.w-rl { left: -12px; bottom: -6px; }
-    .wheel.w-rr { right: -12px; bottom: -6px; }
+    .wheel.w-fl { left: -15px; top: -6px; }
+    .wheel.w-fr { right: -15px; top: -6px; }
+    .wheel.w-rl { left: -15px; bottom: -6px; }
+    .wheel.w-rr { right: -15px; bottom: -6px; }
 
     .wheel-lbl {
       position: absolute;
       font-family: 'Fira Code', monospace;
-      font-size: 0.50rem;
-      font-weight: 600;
+      font-size: 0.58rem;
+      font-weight: 700;
       color: #93c5fd;
-      background: rgba(3, 7, 18, 0.94);
-      padding: 1px 4px;
-      border-radius: 3px;
-      border: 1px solid rgba(59, 130, 246, 0.35);
+      background: rgba(3, 7, 18, 0.95);
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid rgba(59, 130, 246, 0.4);
       white-space: nowrap;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
       letter-spacing: 0.02em;
     }
 
-    .w-fl-lbl { left: -56px; top: 8px; }
-    .w-fr-lbl { right: -56px; top: 8px; }
-    .w-rl-lbl { left: -56px; bottom: 8px; }
-    .w-rr-lbl { right: -56px; bottom: 8px; }
+    .w-fl-lbl { left: -68px; top: 8px; }
+    .w-fr-lbl { right: -68px; top: 8px; }
+    .w-rl-lbl { left: -68px; bottom: 8px; }
+    .w-rr-lbl { right: -68px; bottom: 8px; }
 
-    /* MOTOR POWERTRAIN BREAKDOWN: COMMAND VS MEASURED */
+    /* MOTOR POWERTRAIN BREAKDOWN */
     .motor-metrics-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
-      margin-top: 6px;
+      gap: 6px;
+      margin-top: 8px;
     }
 
     .motor-cell {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 5px;
-      padding: 4px 6px;
+      background: var(--bg-card-inner);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 6px;
+      padding: 5px 8px;
       display: flex;
       flex-direction: column;
       gap: 2px;
     }
 
     .motor-cell-header {
-      font-size: 0.56rem;
+      font-size: 0.64rem;
       font-weight: 700;
-      color: var(--text-muted);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      padding-bottom: 2px;
-      margin-bottom: 1px;
+      color: var(--text-main);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 3px;
+      margin-bottom: 2px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -926,55 +853,31 @@
       justify-content: space-between;
       align-items: baseline;
       font-family: 'Fira Code', monospace;
-      font-size: 0.56rem;
-      color: #cbd5e1;
-      line-height: 1.25;
+      font-size: 0.64rem;
+      color: #e2e8f0;
+      line-height: 1.3;
     }
 
     .motor-data-line span.label {
       color: var(--text-dim);
-      font-size: 0.52rem;
+      font-size: 0.58rem;
       letter-spacing: 0.02em;
-    }
-
-    /* TELEMETRY METRIC KEY-VALUE ROWS */
-    .metric-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.58rem;
-      color: var(--text-muted);
-      padding: 1px 0;
-      line-height: 1.25;
-    }
-
-    .metric-row .metric-label {
-      color: var(--text-dim);
-      font-size: 0.54rem;
-      letter-spacing: 0.01em;
-    }
-
-    .metric-row .metric-val {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.58rem;
-      font-weight: 600;
-      color: #f1f5f9;
     }
 
     /* ================= 3. SENSOR & TELEMETRY STRIP ================= */
     .telemetry-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 6px;
-      margin-bottom: 8px;
+      gap: 8px;
+      margin-bottom: 10px;
     }
 
-    @media (max-width: 1040px) {
+    @media (max-width: 1100px) {
       .telemetry-grid {
         grid-template-columns: repeat(3, 1fr);
       }
     }
-    @media (max-width: 640px) {
+    @media (max-width: 680px) {
       .telemetry-grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -983,18 +886,18 @@
     .metric-card {
       background: var(--bg-card);
       border: 1px solid var(--border-card);
-      border-radius: 6px;
-      padding: 6px 8px;
+      border-radius: 8px;
+      padding: 8px 10px;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
     }
 
     .metric-header {
-      font-size: 0.58rem;
+      font-size: 0.66rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
       color: var(--text-muted);
       display: flex;
       justify-content: space-between;
@@ -1004,36 +907,36 @@
     .metric-value-row {
       display: flex;
       align-items: baseline;
-      gap: 3px;
+      gap: 4px;
     }
 
     .metric-value {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.05rem;
+      font-size: 1.15rem;
       font-weight: 800;
       color: #fff;
       line-height: 1.1;
     }
 
     .metric-unit {
-      font-size: 0.60rem;
+      font-size: 0.68rem;
       color: var(--text-muted);
       font-family: 'Inter', sans-serif;
     }
 
     .metric-sub {
-      font-size: 0.54rem;
+      font-size: 0.62rem;
       font-family: 'Fira Code', monospace;
       color: var(--text-dim);
       margin-top: 1px;
     }
 
     .metric-bar-bg {
-      height: 3px;
-      background: rgba(255, 255, 255, 0.08);
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
       border-radius: 9999px;
       overflow: hidden;
-      margin-top: 2px;
+      margin-top: 3px;
     }
 
     .metric-bar-fill {
@@ -1048,27 +951,27 @@
     .compass-container {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 1px;
+      gap: 10px;
+      margin-top: 2px;
     }
 
     .compass-dial {
-      width: 34px;
-      height: 34px;
-      border: 1.5px solid rgba(0, 229, 255, 0.3);
+      width: 38px;
+      height: 38px;
+      border: 1.5px solid rgba(0, 229, 255, 0.35);
       border-radius: 50%;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.45);
       flex-shrink: 0;
     }
 
     .compass-needle {
       position: absolute;
       width: 2px;
-      height: 24px;
+      height: 28px;
       background: linear-gradient(to bottom, #ef4444 50%, #38bdf8 50%);
       border-radius: 1px;
       transform: rotate(0deg);
@@ -1084,30 +987,52 @@
       height: 6px;
       border-radius: 50%;
       background: #ef4444;
-      box-shadow: 0 0 4px #ef4444;
+      box-shadow: 0 0 6px #ef4444;
     }
 
     .compass-labels {
       position: absolute;
       inset: 1px;
       pointer-events: none;
-      font-size: 0.46rem;
+      font-size: 0.50rem;
       font-weight: 700;
       color: var(--text-muted);
     }
     .c-n { position: absolute; top: 0; left: 50%; transform: translateX(-50%); color: #ef4444; }
     .c-s { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
-    .c-w { position: absolute; left: 1px; top: 50%; transform: translateY(-50%); }
-    .c-e { position: absolute; right: 1px; top: 50%; transform: translateY(-50%); }
+    .c-w { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); }
+    .c-e { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); }
 
-    /* ================= 4. SYSTEM HEALTH & DIAGNOSTIC TESTS ================= */
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.66rem;
+      color: var(--text-muted);
+      padding: 1px 0;
+      line-height: 1.3;
+    }
+
+    .metric-row .metric-label {
+      color: var(--text-dim);
+      font-size: 0.60rem;
+    }
+
+    .metric-row .metric-val {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.66rem;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    /* ================= 4. BOTTOM TIER ================= */
     .bottom-split {
       display: grid;
       grid-template-columns: 1.25fr 1fr;
-      gap: 8px;
+      gap: 10px;
     }
 
-    @media (max-width: 960px) {
+    @media (max-width: 980px) {
       .bottom-split {
         grid-template-columns: 1fr;
       }
@@ -1117,8 +1042,8 @@
     .health-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      margin-bottom: 6px;
+      gap: 5px;
+      margin-bottom: 8px;
     }
 
     @media (max-width: 760px) {
@@ -1128,40 +1053,39 @@
     }
 
     .health-cell {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 4px;
-      padding: 3px 4px;
+      background: var(--bg-card-inner);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 5px;
+      padding: 4px 6px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1px;
+      gap: 2px;
       transition: all 0.2s ease;
     }
 
     .health-name {
-      font-size: 0.54rem;
+      font-size: 0.60rem;
       color: var(--text-dim);
       font-weight: 600;
       white-space: nowrap;
-      letter-spacing: 0.02em;
     }
 
     .health-val {
       font-family: 'Fira Code', monospace;
-      font-size: 0.60rem;
+      font-size: 0.68rem;
       font-weight: 700;
       color: var(--accent-green);
     }
 
-    /* HARDWARE TEST SUITE WITH STATUS BADGES */
+    /* HARDWARE TEST SUITE CARDS */
     .script-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 4px;
-      margin-top: 4px;
+      gap: 6px;
+      margin-top: 6px;
     }
 
     @media (max-width: 580px) {
@@ -1171,78 +1095,78 @@
     }
 
     .script-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      border-radius: 6px;
-      padding: 5px 8px;
+      background: var(--bg-card-inner);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 7px;
+      padding: 7px 10px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 4px;
+      gap: 5px;
       transition: all 0.2s ease;
     }
 
     .script-card:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(0, 229, 255, 0.3);
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(0, 229, 255, 0.35);
     }
 
     .script-card.active-running {
       border-color: var(--accent-cyan);
-      box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
-      background: rgba(0, 229, 255, 0.06);
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+      background: rgba(0, 229, 255, 0.08);
     }
 
     .script-header-line {
       display: flex;
       align-items: flex-start;
-      gap: 6px;
+      gap: 8px;
     }
 
     .script-icon {
-      width: 22px;
-      height: 22px;
-      border-radius: 4px;
-      background: rgba(0, 229, 255, 0.1);
-      border: 1px solid rgba(0, 229, 255, 0.25);
+      width: 26px;
+      height: 26px;
+      border-radius: 5px;
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid rgba(0, 229, 255, 0.3);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.78rem;
+      font-size: 0.90rem;
       flex-shrink: 0;
     }
 
     .script-name {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.64rem;
+      font-size: 0.70rem;
       font-weight: 700;
       color: #fff;
-      line-height: 1.1;
+      line-height: 1.15;
     }
 
     .script-desc {
-      font-size: 0.56rem;
+      font-size: 0.62rem;
       color: var(--text-muted);
-      margin-top: 1px;
-      line-height: 1.15;
+      margin-top: 2px;
+      line-height: 1.25;
     }
 
     .script-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 4px;
-      padding-top: 3px;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      gap: 6px;
+      padding-top: 5px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .script-status-badge {
       font-family: 'Fira Code', monospace;
-      font-size: 0.52rem;
+      font-size: 0.58rem;
       font-weight: 700;
-      padding: 1px 4px;
-      border-radius: 3px;
-      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
       color: var(--text-muted);
     }
     .script-status-badge.running { background: rgba(0, 229, 255, 0.2); color: var(--accent-cyan); }
@@ -1254,23 +1178,23 @@
       color: #030712;
       border: none;
       border-radius: 4px;
-      padding: 2px 7px;
+      padding: 3px 9px;
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.58rem;
+      font-size: 0.64rem;
       font-weight: 800;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
       transition: all 0.2s ease;
     }
 
     .btn-run-script:hover {
-      box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.55);
       transform: scale(1.02);
     }
 
-    /* TELEMETRY TERMINAL WITH CONTROLS */
+    /* TELEMETRY TERMINAL */
     .terminal-card {
       display: flex;
       flex-direction: column;
@@ -1280,65 +1204,65 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 4px;
-      gap: 4px;
+      margin-bottom: 6px;
+      gap: 6px;
       flex-wrap: wrap;
     }
 
     .term-filters {
       display: flex;
-      gap: 2px;
+      gap: 3px;
     }
 
     .term-filter-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-dim);
-      font-size: 0.54rem;
-      padding: 1px 4px;
-      border-radius: 3px;
+      font-size: 0.60rem;
+      padding: 2px 6px;
+      border-radius: 4px;
       cursor: pointer;
       font-family: 'Fira Code', monospace;
     }
 
     .term-filter-btn.active {
-      background: rgba(0, 229, 255, 0.15);
+      background: rgba(0, 229, 255, 0.18);
       border-color: var(--accent-cyan);
       color: var(--accent-cyan);
     }
 
     .term-actions {
       display: flex;
-      gap: 3px;
+      gap: 4px;
     }
 
     .term-btn {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-muted);
-      font-size: 0.54rem;
-      padding: 1px 5px;
-      border-radius: 3px;
+      font-size: 0.60rem;
+      padding: 2px 7px;
+      border-radius: 4px;
       cursor: pointer;
       font-family: 'Fira Code', monospace;
     }
 
     .term-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.12);
       color: #fff;
     }
 
     .terminal-box {
       font-family: 'Fira Code', monospace;
-      font-size: 0.62rem;
+      font-size: 0.68rem;
       background: #02050f;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 6px;
-      padding: 6px 8px;
-      height: 128px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 7px;
+      padding: 8px 10px;
+      height: 140px;
       overflow-y: auto;
       color: #94a3b8;
-      line-height: 1.35;
+      line-height: 1.4;
     }
 
     .term-rx { color: #34d399; }
@@ -1350,14 +1274,14 @@
     .script-banner {
       background: rgba(14, 22, 42, 0.98);
       border: 1px solid var(--accent-cyan);
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
-      border-radius: 6px;
-      padding: 4px 10px;
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.4);
+      border-radius: 7px;
+      padding: 6px 12px;
       display: none;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
+      gap: 10px;
+      margin-bottom: 8px;
       animation: bannerSlide 0.25s ease;
     }
 
@@ -1369,29 +1293,29 @@
     .script-info {
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      gap: 2px;
     }
 
     .script-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.68rem;
+      font-size: 0.74rem;
       font-weight: 700;
       color: var(--accent-cyan);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
     }
 
     .script-step {
-      font-size: 0.60rem;
+      font-size: 0.66rem;
       color: #e2e8f0;
       font-family: 'Fira Code', monospace;
     }
 
     .script-progress-bar-bg {
-      width: 120px;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.1);
+      width: 140px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.12);
       border-radius: 9999px;
       overflow: hidden;
     }
@@ -1407,10 +1331,10 @@
       background: rgba(239, 68, 68, 0.25);
       border: 1px solid var(--accent-red);
       color: #fca5a5;
-      font-size: 0.60rem;
+      font-size: 0.64rem;
       font-family: 'Orbitron', sans-serif;
       font-weight: 800;
-      padding: 2px 7px;
+      padding: 3px 8px;
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.2s;
@@ -1430,7 +1354,7 @@
     <div class="header-branding">
       <div class="rover-logo-icon">🚀</div>
       <div class="rover-title-block">
-        <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
           <h1>ROBOT 2 DASHBOARD</h1>
           <span class="version-tag">IIT-RB2 • v2.4 PRO</span>
         </div>
@@ -1473,33 +1397,25 @@
     </div>
   </header>
 
-  <!-- NETWORK ACCESS & ROUTING BANNER -->
-  <div class="network-notice-bar" id="networkNoticeBar"></div>
-
-  <!-- HARDWARE DISCONNECTED INTERLOCK BANNER -->
-  <div class="hw-interlock-notice" id="hwInterlockNotice">
-    <div class="hw-interlock-text">
-      <span class="hw-lock-icon">🔒</span>
+  <!-- UNIFIED STATUS & INTERLOCK BAR -->
+  <div class="unified-status-bar" id="hwInterlockNotice">
+    <div class="unified-status-left">
+      <span class="status-beacon" id="warnIcon">🔒</span>
       <div>
-        <strong>SAFETY INTERLOCK:</strong>
-        <p>Controls locked until linked. Connect direct USB on localhost, use the Wi-Fi Bridge, or start Simulation.</p>
+        <strong id="warnMessage">SAFETY INTERLOCK ACTIVE:</strong>
+        <span class="status-desc" id="warnTimestamp">Controls locked until linked. Connect via Direct USB, Wi-Fi Bridge, or start Simulation.</span>
       </div>
     </div>
-    <div class="hw-interlock-actions">
-      <button class="btn-interlock-connect" onclick="connectSerial()" title="Direct USB connection via Web Serial">⚡ Connect USB</button>
-      <button class="btn-interlock-wifi" onclick="connectNetworkBridge()" title="Connect wirelessly via server gateway">🌐 Wi-Fi Bridge</button>
-      <button class="btn-interlock-bypass" onclick="toggleBypassInterlock()" title="Bypass interlock to test UI controls and simulation">🧪 Simulation Mode</button>
+    <div class="unified-status-actions">
+      <button class="btn-action-pill btn-action-cyan" onclick="connectSerial()" title="Direct USB connection via Web Serial">⚡ Connect USB</button>
+      <button class="btn-action-pill btn-action-wifi" onclick="connectNetworkBridge()" title="Connect wirelessly via server gateway">🌐 Wi-Fi Bridge</button>
+      <button class="btn-action-pill btn-action-sim" onclick="toggleBypassInterlock()" title="Bypass interlock to test UI controls and simulation">🧪 Simulation Mode</button>
     </div>
   </div>
 
-  <!-- FAULT / WARNING BANNER -->
-  <div class="warning-banner alert-warning" id="systemWarningBanner">
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <span id="warnIcon">⚠</span>
-      <span id="warnMessage">HARDWARE OFFLINE: Connect Arduino Uno / Nano USB to enable controls</span>
-    </div>
-    <span style="font-size: 0.62rem; color: inherit; opacity: 0.8;" id="warnTimestamp">AWAITING USB LINK</span>
-  </div>
+  <!-- COMPATIBILITY HOOKS (HIDDEN) -->
+  <div class="network-notice-bar" id="networkNoticeBar"></div>
+  <div class="warning-banner" id="systemWarningBanner"></div>
 
   <!-- SCRIPT EXECUTION POPUP BANNER -->
   <div class="script-banner" id="scriptBanner">
@@ -1510,7 +1426,7 @@
       </div>
       <div class="script-step" id="bannerScriptStep">Phase 1/4: Driving Forward (+160 PWM)</div>
     </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
       <div class="script-progress-bar-bg">
         <div class="script-progress-bar-fill" id="bannerProgressFill"></div>
       </div>
@@ -1524,7 +1440,7 @@
     <div class="card teleop-card">
       <div class="card-title">
         <span class="card-title-icon">🎮 Flight Controls & Teleoperation</span>
-        <span style="font-size: 0.64rem; color: var(--text-muted);">WASD / Arrow Keys</span>
+        <span style="font-size: 0.68rem; color: var(--text-muted);">WASD / Arrow Keys</span>
       </div>
 
       <!-- MODE SELECTOR -->
@@ -1598,7 +1514,7 @@
     <div class="card">
       <div class="card-title">
         <span class="card-title-icon">🧭 4WD Skid-Steer Powertrain Live State</span>
-        <span style="font-size: 0.66rem; color: var(--accent-cyan); font-family: 'Fira Code';" id="chassisSubState">PWM: 0</span>
+        <span style="font-size: 0.70rem; color: var(--accent-cyan); font-family: 'Fira Code';" id="chassisSubState">PWM: 0</span>
       </div>
 
       <div class="chassis-visual-box">
@@ -1695,7 +1611,7 @@
     <div class="metric-card">
       <div class="metric-header">
         <span>VL53L0X Laser ToF</span>
-        <span id="badgeLaserStatus" style="color: var(--text-dim); font-size: 0.58rem;">OFFLINE</span>
+        <span id="badgeLaserStatus" style="color: var(--text-dim); font-size: 0.62rem;">OFFLINE</span>
       </div>
       <div class="metric-value-row">
         <span class="metric-value" id="valDistance">—</span>
@@ -1740,7 +1656,7 @@
         <span>Odometry Summary</span>
         <span>📐 Pose</span>
       </div>
-      <div class="metric-row" style="margin-top: 2px;">
+      <div class="metric-row" style="margin-top: 3px;">
         <span class="metric-label">Travel Dist:</span>
         <span class="metric-val" id="odomDistance">—</span>
       </div>
@@ -1752,7 +1668,7 @@
         <span class="metric-label">Total Ticks:</span>
         <span class="metric-val" id="valTotalTicks" style="color: var(--accent-cyan);">0</span>
       </div>
-      <div class="metric-bar-bg" style="margin-top: 3px;">
+      <div class="metric-bar-bg" style="margin-top: 4px;">
         <div class="metric-bar-fill" id="barTicks" style="background: linear-gradient(90deg, #f59e0b, #ef4444);"></div>
       </div>
     </div>
@@ -1767,7 +1683,7 @@
         <span class="metric-value" id="valBatteryVolt">11.8</span>
         <span class="metric-unit">V</span>
       </div>
-      <div class="metric-row" style="margin-top: 1px;">
+      <div class="metric-row" style="margin-top: 2px;">
         <span class="metric-label">State of Charge:</span>
         <span class="metric-val" id="valBatteryPct">—</span>
       </div>
@@ -1788,7 +1704,7 @@
     <div class="card">
       <div class="card-title">
         <span class="card-title-icon">🧪 Predefined Hardware Test Scripts</span>
-        <span style="font-size: 0.66rem; color: var(--accent-cyan); font-family: 'Fira Code';">Tool 03 Suite</span>
+        <span style="font-size: 0.70rem; color: var(--accent-cyan); font-family: 'Fira Code';">Tool 03 Suite</span>
       </div>
 
       <!-- COMPACT SYSTEM HEALTH MATRIX -->
@@ -1891,7 +1807,7 @@
     <div class="card terminal-card">
       <div class="card-title">
         <span class="card-title-icon">📟 Telemetry UART Stream</span>
-        <span style="font-size: 0.66rem; color: #64748b; font-family: 'Fira Code';">115200 Baud</span>
+        <span style="font-size: 0.70rem; color: #64748b; font-family: 'Fira Code';">115200 Baud</span>
       </div>
 
       <!-- TERMINAL TOOLBAR -->
@@ -1976,7 +1892,7 @@
     startY: 0,
     dx: 0,
     dy: 0,
-    radius: 34
+    radius: 38
   };
 
   // ================= LOG & TERMINAL MANAGEMENT =================
@@ -2075,7 +1991,6 @@
       }
     }
 
-    // Auto-check if host server already has serial port connected
     try {
       const res = await fetch('/api/status');
       if (res.ok) {
@@ -2085,9 +2000,7 @@
           activateBridgeUI(data.port, data.baud);
         }
       }
-    } catch (e) {
-      // Running directly from file:// or without bridge
-    }
+    } catch (e) {}
   }
 
   async function connectNetworkBridge() {
@@ -2397,24 +2310,21 @@
 
   // ================= WARNING SYSTEM =================
   function updateSystemWarning(type, message) {
-    const banner = document.getElementById('systemWarningBanner');
     const icon = document.getElementById('warnIcon');
     const msg = document.getElementById('warnMessage');
     const time = document.getElementById('warnTimestamp');
 
-    banner.className = 'warning-banner';
-    if (type === 'critical') {
-      banner.classList.add('alert-critical');
-      icon.innerText = '🛑';
-    } else if (type === 'warning') {
-      banner.classList.add('alert-warning');
-      icon.innerText = '⚠';
-    } else {
-      icon.innerText = '✓';
+    if (icon && msg && time) {
+      if (type === 'critical') {
+        icon.innerText = '🛑';
+      } else if (type === 'warning') {
+        icon.innerText = '⚠';
+      } else {
+        icon.innerText = '✓';
+      }
+      msg.innerText = message;
+      time.innerText = new Date().toTimeString().split(' ')[0];
     }
-
-    msg.innerText = message;
-    time.innerText = new Date().toTimeString().split(' ')[0];
   }
 
   // ================= E-STOP SYSTEM =================
