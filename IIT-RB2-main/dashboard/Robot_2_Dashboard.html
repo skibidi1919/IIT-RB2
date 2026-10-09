@@ -3,38 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TITAN-RB2 | Next-Gen Ground Control Station</title>
+  <title>TITAN-RB2 | Ground Control Station</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-base: #06090f;
-      --bg-card: rgba(13, 19, 33, 0.78);
-      --bg-card-hover: rgba(18, 27, 46, 0.92);
-      --bg-elevated: rgba(22, 33, 56, 0.85);
-      --bg-glass: rgba(10, 15, 28, 0.65);
+      --bg-base: #07090e;
+      --bg-panel: rgba(13, 17, 28, 0.82);
+      --bg-panel-elevated: rgba(19, 25, 42, 0.90);
+      --bg-glass-subtle: rgba(255, 255, 255, 0.03);
       
-      --accent-cyan: #00f0ff;
-      --accent-cyan-glow: rgba(0, 240, 255, 0.35);
-      --accent-blue: #3b82f6;
-      --accent-indigo: #6366f1;
-      --accent-emerald: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-rose: #f43f5e;
-      --accent-purple: #a855f7;
+      --cyan: #00f2fe;
+      --cyan-glow: rgba(0, 242, 254, 0.35);
+      --blue: #38bdf8;
+      --indigo: #6366f1;
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.35);
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --rose-glow: rgba(244, 63, 94, 0.4);
+      --purple: #a855f7;
 
       --text-bright: #ffffff;
-      --text-main: #f8fafc;
+      --text-main: #f1f5f9;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
 
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-glass: rgba(56, 189, 248, 0.22);
-      --border-active: rgba(0, 240, 255, 0.6);
-      
-      --card-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.7), 0 4px 16px -2px rgba(0, 0, 0, 0.5);
-      --glow-cyan: 0 0 24px rgba(0, 240, 255, 0.3);
+      --border-light: rgba(255, 255, 255, 0.09);
+      --border-accent: rgba(0, 242, 254, 0.3);
+      --border-focus: rgba(0, 242, 254, 0.7);
+
+      --card-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.4);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
     }
 
     * {
@@ -47,148 +50,129 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: var(--bg-base);
       background-image: 
-        radial-gradient(circle at 10% 10%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 90% 85%, rgba(99, 102, 241, 0.1) 0%, transparent 45%),
-        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+        radial-gradient(ellipse at 15% 10%, rgba(0, 242, 254, 0.08) 0%, transparent 45%),
+        radial-gradient(ellipse at 85% 85%, rgba(99, 102, 241, 0.09) 0%, transparent 50%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
       color: var(--text-main);
       min-height: 100vh;
-      line-height: 1.4;
-      padding: 10px 14px 20px;
+      line-height: 1.45;
+      padding: 12px 18px 24px;
       user-select: none;
       overflow-x: hidden;
+      letter-spacing: -0.01em;
     }
 
-    .app-container {
-      max-width: 1620px;
+    .app-layout {
+      max-width: 1640px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
 
-    /* ================= 1. ULTRA-MODERN COMMAND HEADER ================= */
-    .command-header {
+    /* ================= 1. HEADER HUD ================= */
+    .top-navbar {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       padding: 10px 18px;
-      background: var(--bg-card);
+      background: var(--bg-panel);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-glass);
-      border-radius: 14px;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
       box-shadow: var(--card-shadow);
       position: relative;
     }
 
-    .brand-cluster {
+    .brand-group {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
-    .brand-beacon {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #00f0ff 0%, #3b82f6 100%);
-      border-radius: 10px;
+    .brand-icon-hex {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(99, 102, 241, 0.35));
+      border: 1px solid rgba(0, 242, 254, 0.5);
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.45);
-      flex-shrink: 0;
+      box-shadow: 0 0 20px var(--cyan-glow);
       position: relative;
     }
 
-    .brand-beacon::after {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border-radius: 13px;
-      border: 1px solid rgba(0, 240, 255, 0.65);
-      animation: beacon-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    .brand-icon-hex svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: var(--cyan);
+      stroke-width: 2;
     }
 
-    @keyframes beacon-pulse {
-      0%, 100% { opacity: 0.8; transform: scale(1); }
-      50% { opacity: 0.2; transform: scale(1.18); }
-    }
-
-    .brand-title-wrap h1 {
-      font-family: 'Orbitron', 'Space Grotesk', sans-serif;
-      font-size: 1.22rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      background: linear-gradient(90deg, #ffffff 30%, #38bdf8 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .brand-text-block h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text-bright);
       line-height: 1.1;
-    }
-
-    .brand-meta {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 2px;
     }
 
-    .brand-meta span.sub {
-      font-size: 0.70rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .system-pill-pro {
+    .brand-text-block .badge-ver {
       font-family: 'Fira Code', monospace;
-      font-size: 0.64rem;
-      font-weight: 700;
-      color: var(--accent-cyan);
-      background: rgba(0, 240, 255, 0.1);
-      border: 1px solid rgba(0, 240, 255, 0.35);
-      padding: 1px 8px;
-      border-radius: 5px;
-      letter-spacing: 0.04em;
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--cyan);
+      background: rgba(0, 242, 254, 0.1);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
     }
 
-    .header-quick-stats {
+    .brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    /* RIGHT HUD ACTION CONTROLS */
+    .header-actions-group {
       display: flex;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
     }
 
-    /* TELEMETRY CONNECTION GROUP */
-    .connection-capsule {
-      display: inline-flex;
+    .serial-box {
+      display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       background: rgba(0, 0, 0, 0.45);
-      border: 1px solid var(--border-glass);
-      border-radius: 10px;
-      padding: 4px 8px;
-      transition: all 0.2s ease;
-    }
-
-    .connection-capsule:hover {
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
+      border: 1px solid var(--border-light);
+      padding: 4px 6px;
+      border-radius: var(--radius-md);
     }
 
     .btn-connect-usb {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.18), rgba(59, 130, 246, 0.28));
-      border: 1px solid rgba(0, 240, 255, 0.45);
-      color: var(--accent-cyan);
-      font-family: 'Orbitron', monospace;
-      font-size: 0.72rem;
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.15), rgba(56, 189, 248, 0.25));
+      border: 1px solid rgba(0, 242, 254, 0.4);
+      color: var(--cyan);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.75rem;
       font-weight: 700;
       padding: 7px 14px;
-      border-radius: 7px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -197,22 +181,16 @@
     }
 
     .btn-connect-usb:hover {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.35), rgba(59, 130, 246, 0.45));
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 18px rgba(0, 240, 255, 0.5);
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.3), rgba(56, 189, 248, 0.4));
+      border-color: var(--cyan);
+      box-shadow: 0 0 18px var(--cyan-glow);
       transform: translateY(-1px);
     }
 
     .btn-connect-usb.connected {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.4));
-      border-color: rgba(16, 185, 129, 0.7);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35));
+      border-color: rgba(16, 185, 129, 0.6);
       color: #34d399;
-    }
-
-    .btn-connect-usb.connected:hover {
-      background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(225, 29, 72, 0.4));
-      border-color: rgba(244, 63, 94, 0.7);
-      color: #fda4af;
     }
 
     .live-dot {
@@ -222,111 +200,111 @@
 
     .btn-connect-usb.connected .live-dot {
       color: #10b981;
-      animation: dot-glow 1.2s infinite alternate;
+      animation: dot-pulse 1.4s infinite alternate;
     }
 
-    @keyframes dot-glow {
-      from { transform: scale(1); opacity: 0.7; }
-      to { transform: scale(1.4); opacity: 1; filter: drop-shadow(0 0 8px #10b981); }
+    @keyframes dot-pulse {
+      from { transform: scale(0.9); opacity: 0.7; }
+      to { transform: scale(1.3); opacity: 1; filter: drop-shadow(0 0 6px #10b981); }
     }
 
     .baud-select {
       background: #020617;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid var(--border-light);
       color: #e2e8f0;
       font-family: 'Fira Code', monospace;
       font-size: 0.72rem;
       padding: 6px 10px;
-      border-radius: 7px;
+      border-radius: var(--radius-sm);
       outline: none;
       cursor: pointer;
     }
 
     .baud-select:focus {
-      border-color: var(--accent-cyan);
+      border-color: var(--cyan);
     }
 
-    /* STATUS CAPSULES */
-    .status-pill {
+    .status-badge-chip {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
       font-family: 'Fira Code', monospace;
       font-size: 0.74rem;
       font-weight: 600;
-      padding: 6px 12px;
-      border-radius: 8px;
+      padding: 7px 12px;
+      border-radius: var(--radius-md);
       background: rgba(0, 0, 0, 0.45);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-light);
       color: var(--text-muted);
       white-space: nowrap;
     }
 
-    .status-pill.battery {
-      background: rgba(0, 240, 255, 0.08);
-      border-color: rgba(0, 240, 255, 0.3);
-      color: var(--accent-cyan);
+    .status-badge-chip.battery {
+      background: rgba(0, 242, 254, 0.08);
+      border-color: rgba(0, 242, 254, 0.25);
+      color: var(--cyan);
     }
 
-    .status-pill.mode {
+    .status-badge-chip.mode {
       background: rgba(99, 102, 241, 0.12);
-      border-color: rgba(99, 102, 241, 0.4);
+      border-color: rgba(99, 102, 241, 0.35);
       color: #a5b4fc;
     }
 
     /* PROMINENT E-STOP */
-    .btn-estop-neo {
+    .btn-estop-main {
       background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-      border: 2px solid #fca5a5;
+      border: 1px solid #fca5a5;
       color: #ffffff;
       font-family: 'Orbitron', sans-serif;
       padding: 6px 18px;
-      border-radius: 9px;
+      border-radius: var(--radius-md);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 9px;
+      gap: 10px;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 0 18px rgba(239, 68, 68, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-      height: 38px;
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      height: 40px;
     }
 
-    .btn-estop-neo .estop-icon {
-      font-size: 1.15rem;
+    .btn-estop-main .estop-icon {
+      font-size: 1.2rem;
     }
 
-    .btn-estop-neo .estop-labels {
+    .btn-estop-main .estop-label-wrap {
       display: flex;
       flex-direction: column;
       text-align: left;
       line-height: 1.0;
     }
 
-    .btn-estop-neo .estop-main {
-      font-size: 0.80rem;
-      font-weight: 900;
-      letter-spacing: 0.05em;
+    .btn-estop-main .estop-head {
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
     }
 
-    .btn-estop-neo .estop-sub {
+    .btn-estop-main .estop-sub {
       font-size: 0.58rem;
       font-family: 'Fira Code', monospace;
       color: #fee2e2;
+      margin-top: 2px;
     }
 
-    .btn-estop-neo:hover {
+    .btn-estop-main:hover {
       background: linear-gradient(135deg, #f43f5e 0%, #dc2626 100%);
       box-shadow: 0 0 28px rgba(244, 63, 94, 0.9);
       transform: scale(1.02);
     }
 
-    .btn-estop-neo.active {
+    .btn-estop-main.active {
       background: #dc2626;
       border-color: #fff;
-      animation: estop-strobe 0.8s infinite alternate;
+      animation: estop-glow 0.8s infinite alternate;
     }
 
-    @keyframes estop-strobe {
+    @keyframes estop-glow {
       from { box-shadow: 0 0 14px rgba(239, 68, 68, 0.8); }
       to { box-shadow: 0 0 36px rgba(239, 68, 68, 1), 0 0 70px rgba(239, 68, 68, 0.6); }
     }
@@ -337,11 +315,11 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 8px 16px;
+      padding: 9px 18px;
       background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.88));
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      border-radius: 10px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: var(--radius-md);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
       transition: all 0.25s ease;
     }
 
@@ -356,17 +334,18 @@
     }
 
     .ribbon-text strong {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.78rem;
-      color: var(--accent-amber);
-      letter-spacing: 0.04em;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--amber);
+      letter-spacing: 0.02em;
       display: inline-block;
       margin-right: 6px;
     }
 
     .ribbon-text span {
       color: #cbd5e1;
-      font-size: 0.74rem;
+      font-size: 0.76rem;
     }
 
     .link-ribbon-actions {
@@ -377,11 +356,11 @@
     }
 
     .btn-pill {
-      font-family: 'Space Grotesk', 'Orbitron', sans-serif;
-      font-size: 0.72rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.74rem;
       font-weight: 700;
       padding: 6px 14px;
-      border-radius: 7px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -392,12 +371,12 @@
     }
 
     .btn-pill-cyan {
-      background: linear-gradient(135deg, #00f0ff 0%, #2563eb 100%);
+      background: linear-gradient(135deg, #00f2fe 0%, #2563eb 100%);
       color: #030712;
-      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+      box-shadow: 0 0 16px var(--cyan-glow);
     }
     .btn-pill-cyan:hover {
-      box-shadow: 0 0 24px rgba(0, 240, 255, 0.75);
+      box-shadow: 0 0 24px rgba(0, 242, 254, 0.8);
       transform: translateY(-1px);
     }
 
@@ -414,14 +393,14 @@
     .btn-pill-ghost {
       background: rgba(255, 255, 255, 0.08);
       color: #e2e8f0;
-      border: 1px solid rgba(255, 255, 255, 0.22);
+      border: 1px solid var(--border-light);
       font-family: 'Fira Code', monospace;
       font-size: 0.70rem;
     }
     .btn-pill-ghost:hover {
-      background: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.16);
       color: #fff;
-      border-color: rgba(255, 255, 255, 0.45);
+      border-color: rgba(255, 255, 255, 0.35);
     }
 
     /* Hidden hooks for JS backward-compatibility */
@@ -430,222 +409,208 @@
     .network-notice-bar { display: none; }
 
     /* HARDWARE DISCONNECTED INTERLOCK STATE */
-    body.hardware-disconnected .teleop-card,
+    body.hardware-disconnected .teleop-panel,
     body.hardware-disconnected .script-card {
       opacity: 0.75;
       filter: grayscale(20%);
     }
 
     body.hardware-disconnected .dpad-btn,
-    body.hardware-disconnected .joystick-base,
+    body.hardware-disconnected .joystick-surface,
     body.hardware-disconnected .mode-tab,
     body.hardware-disconnected .btn-run-script,
-    body.hardware-disconnected .throttle-range {
+    body.hardware-disconnected .throttle-slider-input {
       pointer-events: none !important;
       cursor: not-allowed !important;
     }
 
-    /* CARD DESIGN */
-    .neo-card {
-      background: var(--bg-card);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid var(--border-glass);
-      border-radius: 14px;
-      padding: 12px 16px;
-      box-shadow: var(--card-shadow);
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.25s ease, transform 0.2s ease;
-    }
-
-    .neo-card:hover {
-      border-color: var(--border-active);
-    }
-
-    .card-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .card-title {
-      font-family: 'Orbitron', 'Space Grotesk', sans-serif;
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: #e2e8f0;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-
-    .card-title span.icon {
-      font-size: 0.95rem;
-    }
-
-    .card-badge {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.64rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 5px;
-      background: rgba(255, 255, 255, 0.07);
-      color: var(--text-muted);
-    }
-
-    /* ================= 2. TOP TELEMETRY 5-KPI METRIC STRIP ================= */
-    .metrics-grid-top {
+    /* ================= 2. 5-KPI METRIC CARDS ROW ================= */
+    .kpi-row-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
+      gap: 12px;
     }
 
-    @media (max-width: 1200px) {
-      .metrics-grid-top {
-        grid-template-columns: repeat(3, 1fr);
-      }
+    @media (max-width: 1280px) {
+      .kpi-row-grid { grid-template-columns: repeat(3, 1fr); }
     }
-
     @media (max-width: 768px) {
-      .metrics-grid-top {
-        grid-template-columns: repeat(2, 1fr);
-      }
+      .kpi-row-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
-    .metric-card-pro {
-      background: var(--bg-card);
+    .kpi-card {
+      background: var(--bg-panel);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      border: 1px solid var(--border-glass);
-      border-radius: 12px;
-      padding: 10px 14px;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 6px;
+      gap: 8px;
       box-shadow: var(--card-shadow);
       position: relative;
       overflow: hidden;
       transition: all 0.25s ease;
     }
 
-    .metric-card-pro:hover {
-      border-color: var(--accent-cyan);
+    .kpi-card:hover {
+      border-color: var(--border-accent);
       transform: translateY(-2px);
-      box-shadow: 0 12px 28px -4px rgba(0, 240, 255, 0.18);
+      box-shadow: 0 12px 28px -4px rgba(0, 242, 254, 0.18);
     }
 
-    .metric-top {
+    .kpi-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .metric-label {
+    .kpi-label {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.70rem;
+      font-size: 0.74rem;
       font-weight: 600;
       color: var(--text-muted);
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
     }
 
-    .metric-icon-badge {
-      font-size: 0.85rem;
+    .kpi-icon-svg {
+      width: 18px;
+      height: 18px;
       opacity: 0.85;
+      stroke: var(--cyan);
+      fill: none;
+      stroke-width: 2;
     }
 
-    .metric-body {
+    .kpi-val-group {
       display: flex;
       align-items: baseline;
       gap: 6px;
     }
 
-    .metric-val {
+    .kpi-number {
       font-family: 'Orbitron', 'Fira Code', monospace;
-      font-size: 1.45rem;
+      font-size: 1.55rem;
       font-weight: 800;
-      color: #ffffff;
-      line-height: 1;
+      color: var(--text-bright);
+      line-height: 1.1;
       letter-spacing: -0.02em;
     }
 
-    .metric-unit {
+    .kpi-unit {
       font-family: 'Fira Code', monospace;
-      font-size: 0.70rem;
+      font-size: 0.72rem;
       color: var(--text-dim);
       font-weight: 500;
     }
 
-    .metric-progress-wrap {
+    .kpi-meter-track {
       width: 100%;
-      height: 4px;
+      height: 5px;
       background: rgba(255, 255, 255, 0.08);
-      border-radius: 2px;
+      border-radius: 3px;
       overflow: hidden;
-      margin-top: 2px;
     }
 
-    .metric-progress-bar {
+    .kpi-meter-fill {
       height: 100%;
       width: 0%;
-      border-radius: 2px;
-      transition: width 0.2s ease;
+      border-radius: 3px;
+      transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .bar-cyan { background: linear-gradient(90deg, #00f0ff, #3b82f6); box-shadow: 0 0 8px #00f0ff; }
-    .bar-emerald { background: linear-gradient(90deg, #10b981, #059669); box-shadow: 0 0 8px #10b981; }
-    .bar-amber { background: linear-gradient(90deg, #f59e0b, #d97706); box-shadow: 0 0 8px #f59e0b; }
-    .bar-purple { background: linear-gradient(90deg, #a855f7, #6366f1); box-shadow: 0 0 8px #a855f7; }
+    .meter-cyan { background: linear-gradient(90deg, #00f2fe, #38bdf8); box-shadow: 0 0 10px #00f2fe; }
+    .meter-emerald { background: linear-gradient(90deg, #10b981, #059669); box-shadow: 0 0 10px #10b981; }
+    .meter-purple { background: linear-gradient(90deg, #a855f7, #6366f1); box-shadow: 0 0 10px #a855f7; }
+    .meter-amber { background: linear-gradient(90deg, #f59e0b, #d97706); box-shadow: 0 0 10px #f59e0b; }
 
-    .metric-footer-text {
+    .kpi-foot-info {
       display: flex;
       justify-content: space-between;
       font-family: 'Fira Code', monospace;
-      font-size: 0.62rem;
+      font-size: 0.66rem;
       color: var(--text-dim);
     }
 
-    /* ================= 3. MAIN COCKPIT 3-COLUMN GRID ================= */
-    .cockpit-grid {
+    /* ================= 3. COCKPIT 3-COLUMN LAYOUT ================= */
+    .cockpit-layout {
       display: grid;
-      grid-template-columns: 360px 1fr 390px;
+      grid-template-columns: 370px 1fr 400px;
       gap: 12px;
       align-items: start;
     }
 
-    @media (max-width: 1300px) {
-      .cockpit-grid {
-        grid-template-columns: 320px 1fr 340px;
-      }
+    @media (max-width: 1380px) {
+      .cockpit-layout { grid-template-columns: 330px 1fr 360px; }
+    }
+    @media (max-width: 1080px) {
+      .cockpit-layout { grid-template-columns: 1fr; }
     }
 
-    @media (max-width: 1024px) {
-      .cockpit-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* ================= LEFT COLUMN: TELEOPERATION ================= */
-    .teleop-column {
+    /* PANEL BASE */
+    .hud-panel {
+      background: var(--bg-panel);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      box-shadow: var(--card-shadow);
+      position: relative;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    /* DRIVE MODE TABS */
-    .mode-tab-bar {
+    .panel-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .panel-heading {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-heading svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--cyan);
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .panel-tag {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.64rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+    }
+
+    /* ================= LEFT: TELEOPERATION ================= */
+    .mode-tab-strip {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 4px;
       background: rgba(0, 0, 0, 0.4);
       padding: 4px;
-      border-radius: 10px;
-      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light);
     }
 
     .mode-tab {
@@ -653,10 +618,10 @@
       border: 1px solid transparent;
       color: var(--text-muted);
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.68rem;
+      font-size: 0.70rem;
       font-weight: 700;
-      padding: 6px 4px;
-      border-radius: 7px;
+      padding: 7px 4px;
+      border-radius: 6px;
       cursor: pointer;
       text-align: center;
       transition: all 0.2s ease;
@@ -669,14 +634,14 @@
     }
 
     .mode-tab.active {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(59, 130, 246, 0.3));
-      border-color: rgba(0, 240, 255, 0.5);
-      color: var(--accent-cyan);
-      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.18), rgba(56, 189, 248, 0.25));
+      border-color: rgba(0, 242, 254, 0.5);
+      color: var(--cyan);
+      box-shadow: 0 0 14px var(--cyan-glow);
     }
 
     /* TACTILE D-PAD */
-    .dpad-container {
+    .dpad-hud-wrap {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -690,14 +655,14 @@
     }
 
     .dpad-btn {
-      width: 70px;
-      height: 52px;
-      background: linear-gradient(145deg, rgba(25, 36, 62, 0.9), rgba(12, 19, 36, 0.95));
+      width: 76px;
+      height: 54px;
+      background: linear-gradient(145deg, rgba(25, 34, 58, 0.95), rgba(12, 17, 32, 0.98));
       border: 1px solid rgba(56, 189, 248, 0.3);
-      border-radius: 10px;
+      border-radius: var(--radius-md);
       color: #e2e8f0;
-      font-family: 'Orbitron', 'Space Grotesk', sans-serif;
-      font-size: 0.74rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.76rem;
       font-weight: 700;
       display: flex;
       flex-direction: column;
@@ -705,67 +670,66 @@
       justify-content: center;
       gap: 2px;
       cursor: pointer;
-      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
       transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .dpad-btn span.arrow {
-      font-size: 1.1rem;
+    .dpad-btn .arrow-symbol {
+      font-size: 1.15rem;
       line-height: 1;
-      color: var(--accent-cyan);
+      color: var(--cyan);
     }
 
-    .dpad-btn span.key-badge {
+    .dpad-btn .key-hint {
       font-family: 'Fira Code', monospace;
-      font-size: 0.56rem;
+      font-size: 0.58rem;
       color: var(--text-dim);
     }
 
     .dpad-btn:hover {
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 18px rgba(0, 240, 255, 0.45);
+      border-color: var(--cyan);
+      box-shadow: 0 0 20px var(--cyan-glow);
       transform: translateY(-2px);
       color: #fff;
     }
 
     .dpad-btn:active, .dpad-btn.pressed {
-      background: linear-gradient(145deg, rgba(0, 240, 255, 0.35), rgba(37, 99, 235, 0.45));
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 24px rgba(0, 240, 255, 0.8), inset 0 2px 6px rgba(0, 0, 0, 0.6);
+      background: linear-gradient(145deg, rgba(0, 242, 254, 0.35), rgba(37, 99, 235, 0.45));
+      border-color: var(--cyan);
+      box-shadow: 0 0 24px var(--cyan-glow), inset 0 2px 6px rgba(0, 0, 0, 0.6);
       transform: translateY(1px);
       color: #fff;
     }
 
-    .dpad-btn.stop {
-      width: 70px;
-      height: 52px;
+    .dpad-btn.stop-btn {
+      width: 76px;
+      height: 54px;
       background: linear-gradient(145deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.35));
       border-color: rgba(239, 68, 68, 0.5);
       color: #fca5a5;
     }
 
-    .dpad-btn.stop:hover {
+    .dpad-btn.stop-btn:hover {
       border-color: #ef4444;
-      box-shadow: 0 0 18px rgba(239, 68, 68, 0.6);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
     }
 
     /* VIRTUAL JOYSTICK */
-    .joystick-section {
+    .joystick-panel-wrap {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      margin-top: 4px;
     }
 
-    .joystick-base {
-      width: 140px;
-      height: 140px;
-      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.95) 100%);
+    .joystick-surface {
+      width: 146px;
+      height: 146px;
+      background: radial-gradient(circle at center, rgba(16, 24, 44, 0.95) 0%, rgba(3, 7, 18, 0.98) 100%);
       border: 2px solid rgba(56, 189, 248, 0.35);
       border-radius: 50%;
       position: relative;
-      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.6);
+      box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.85), 0 8px 24px rgba(0, 0, 0, 0.6);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -773,71 +737,69 @@
       cursor: grab;
     }
 
-    .joystick-crosshair-h, .joystick-crosshair-v {
+    .joy-crosshair-x, .joy-crosshair-y {
       position: absolute;
       background: rgba(255, 255, 255, 0.08);
       pointer-events: none;
     }
-    .joystick-crosshair-h { width: 80%; height: 1px; }
-    .joystick-crosshair-v { height: 80%; width: 1px; }
+    .joy-crosshair-x { width: 85%; height: 1px; }
+    .joy-crosshair-y { height: 85%; width: 1px; }
 
-    .joystick-puck {
-      width: 52px;
-      height: 52px;
-      background: linear-gradient(135deg, #00f0ff 0%, #2563eb 100%);
+    .joystick-puck-handle {
+      width: 54px;
+      height: 54px;
+      background: linear-gradient(135deg, #00f2fe 0%, #2563eb 100%);
       border: 2px solid #ffffff;
       border-radius: 50%;
       position: absolute;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.75), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+      box-shadow: 0 0 22px var(--cyan-glow), inset 0 2px 4px rgba(255, 255, 255, 0.6);
       transform: translate(0px, 0px);
-      transition: box-shadow 0.15s ease;
       cursor: grab;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
     }
 
-    .joystick-puck:active {
+    .joystick-puck-handle:active {
       cursor: grabbing;
-      box-shadow: 0 0 32px rgba(0, 240, 255, 1);
+      box-shadow: 0 0 34px rgba(0, 242, 254, 1);
     }
 
-    .joystick-stats {
+    .joystick-readout-row {
       font-family: 'Fira Code', monospace;
-      font-size: 0.66rem;
+      font-size: 0.68rem;
       color: var(--text-muted);
       display: flex;
-      gap: 12px;
+      gap: 14px;
     }
 
     /* THROTTLE SLIDER */
-    .throttle-wrap {
+    .throttle-control-box {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border-subtle);
+      background: rgba(0, 0, 0, 0.35);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
     }
 
-    .throttle-header {
+    .throttle-header-line {
       display: flex;
       justify-content: space-between;
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.70rem;
+      font-size: 0.74rem;
       font-weight: 600;
       color: var(--text-muted);
     }
 
-    .throttle-header span.val {
+    .throttle-header-line .val-glow {
       font-family: 'Fira Code', monospace;
-      color: var(--accent-cyan);
+      color: var(--cyan);
       font-weight: 700;
     }
 
-    .throttle-range {
+    .throttle-slider-input {
       -webkit-appearance: none;
       width: 100%;
       height: 6px;
@@ -847,36 +809,36 @@
       cursor: pointer;
     }
 
-    .throttle-range::-webkit-slider-thumb {
+    .throttle-slider-input::-webkit-slider-thumb {
       -webkit-appearance: none;
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      background: #00f0ff;
-      box-shadow: 0 0 12px #00f0ff;
+      background: var(--cyan);
+      box-shadow: 0 0 14px var(--cyan);
       cursor: pointer;
       border: 2px solid #ffffff;
       transition: transform 0.1s ease;
     }
 
-    .throttle-range::-webkit-slider-thumb:hover {
+    .throttle-slider-input::-webkit-slider-thumb:hover {
       transform: scale(1.2);
     }
 
-    .preset-chips {
+    .throttle-chip-row {
       display: flex;
       gap: 4px;
       justify-content: space-between;
       margin-top: 4px;
     }
 
-    .btn-chip {
+    .throttle-chip-btn {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-muted);
       font-family: 'Fira Code', monospace;
-      font-size: 0.62rem;
-      padding: 2px 6px;
+      font-size: 0.64rem;
+      padding: 3px 6px;
       border-radius: 5px;
       cursor: pointer;
       flex: 1;
@@ -884,20 +846,14 @@
       transition: all 0.15s ease;
     }
 
-    .btn-chip:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: rgba(0, 240, 255, 0.4);
-      color: var(--accent-cyan);
+    .throttle-chip-btn:hover {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: rgba(0, 242, 254, 0.4);
+      color: var(--cyan);
     }
 
-    /* ================= CENTER COLUMN: ROVER CHASSIS VISUALIZER ================= */
-    .visualizer-column {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .chassis-card {
+    /* ================= CENTER: 4WD CHASSIS VISUALIZER ================= */
+    .chassis-view-card {
       min-height: 480px;
       display: flex;
       flex-direction: column;
@@ -905,51 +861,105 @@
       position: relative;
     }
 
-    .chassis-stage {
+    .chassis-view-viewport {
       position: relative;
       width: 100%;
       height: 380px;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: radial-gradient(circle at center, rgba(14, 21, 38, 0.6) 0%, rgba(3, 7, 18, 0.9) 100%);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      overflow: hidden;
     }
 
-    /* ROVER SVG / CSS 4WD CHASSIS */
-    .rover-chassis-box {
-      width: 260px;
-      height: 320px;
+    /* SVG Blueprint Chassis */
+    .rover-svg-chassis-wrap {
+      width: 280px;
+      height: 330px;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    /* LIDAR SCAN ARC */
-    .lidar-scan-beam {
+    /* FRONT LIDAR BEAM */
+    .lidar-radar-cone {
       position: absolute;
-      top: -10px;
-      width: 160px;
-      height: 80px;
-      background: radial-gradient(ellipse at bottom, rgba(0, 240, 255, 0.3) 0%, rgba(0, 240, 255, 0) 70%);
+      top: -12px;
+      width: 180px;
+      height: 90px;
+      background: radial-gradient(ellipse at bottom, rgba(0, 242, 254, 0.35) 0%, rgba(0, 242, 254, 0) 75%);
       clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
       transform-origin: bottom center;
-      animation: lidar-sweep 3s ease-in-out infinite alternate;
+      animation: lidar-cone-sweep 3.2s ease-in-out infinite alternate;
       pointer-events: none;
     }
 
-    @keyframes lidar-sweep {
-      0% { transform: rotate(-30deg); }
-      100% { transform: rotate(30deg); }
+    @keyframes lidar-cone-sweep {
+      0% { transform: rotate(-32deg); }
+      100% { transform: rotate(32deg); }
     }
 
-    /* ROVER BODY */
-    .rover-body-hull {
-      width: 150px;
-      height: 220px;
+    /* 4 WHEEL UNITS */
+    .chassis-wheel-unit {
+      position: absolute;
+      width: 48px;
+      height: 80px;
+      background: linear-gradient(90deg, #1e293b 0%, #475569 50%, #1e293b 100%);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.62rem;
+      color: #fff;
+      transition: all 0.2s ease;
+      z-index: 1;
+    }
+
+    .chassis-wheel-unit.fl { top: 22px; left: 8px; }
+    .chassis-wheel-unit.fr { top: 22px; right: 8px; }
+    .chassis-wheel-unit.rl { bottom: 22px; left: 8px; }
+    .chassis-wheel-unit.rr { bottom: 22px; right: 8px; }
+
+    .chassis-wheel-unit.rolling-fwd {
+      border-color: var(--cyan);
+      box-shadow: 0 0 22px var(--cyan-glow);
+      animation: wheel-spin-fwd 0.4s linear infinite;
+    }
+
+    .chassis-wheel-unit.rolling-rev {
+      border-color: var(--amber);
+      box-shadow: 0 0 22px rgba(245, 158, 11, 0.6);
+      animation: wheel-spin-rev 0.4s linear infinite;
+    }
+
+    @keyframes wheel-spin-fwd {
+      0% { transform: translateY(-2px); }
+      100% { transform: translateY(2px); }
+    }
+
+    @keyframes wheel-spin-rev {
+      0% { transform: translateY(2px); }
+      100% { transform: translateY(-2px); }
+    }
+
+    .chassis-wheel-unit .wheel-tag { font-weight: 700; color: var(--cyan); }
+    .chassis-wheel-unit .wheel-pin { font-size: 0.52rem; color: #94a3b8; }
+
+    /* HULL BOX */
+    .rover-hull-structure {
+      width: 156px;
+      height: 230px;
       background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-      border: 2px solid rgba(56, 189, 248, 0.4);
+      border: 2px solid rgba(56, 189, 248, 0.45);
       border-radius: 20px;
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      box-shadow: 0 0 32px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 242, 254, 0.12);
       position: relative;
       display: flex;
       flex-direction: column;
@@ -959,331 +969,271 @@
       z-index: 2;
     }
 
-    .rover-front-sensor {
-      width: 44px;
-      height: 14px;
+    .rover-lidar-head {
+      width: 48px;
+      height: 16px;
       background: #0284c7;
-      border-radius: 7px;
-      box-shadow: 0 0 12px #00f0ff;
+      border-radius: 8px;
+      box-shadow: 0 0 14px var(--cyan);
       border: 1px solid #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.55rem;
-      font-weight: 900;
+      font-size: 0.58rem;
+      font-weight: 800;
       color: #fff;
     }
 
-    .rover-center-badge {
+    .rover-center-insignia {
       text-align: center;
     }
 
-    .rover-center-badge .logo {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 900;
+    .rover-center-insignia .insignia-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 800;
       color: #ffffff;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
     }
 
-    .rover-center-badge .sub {
+    .rover-center-insignia .insignia-sub {
       font-family: 'Fira Code', monospace;
-      font-size: 0.58rem;
-      color: var(--accent-cyan);
+      font-size: 0.60rem;
+      color: var(--cyan);
     }
 
-    .rover-mcu-chip {
-      width: 70px;
-      height: 40px;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(0, 240, 255, 0.4);
-      border-radius: 6px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Fira Code', monospace;
-      font-size: 0.56rem;
-      color: #94a3b8;
-    }
-
-    /* 4 WHEELS */
-    .rover-wheel {
-      position: absolute;
-      width: 44px;
-      height: 76px;
-      background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%);
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      border-radius: 10px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    .rover-mcu-badge {
+      width: 80px;
+      height: 42px;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(0, 242, 254, 0.4);
+      border-radius: 7px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       font-family: 'Fira Code', monospace;
       font-size: 0.58rem;
-      color: #fff;
-      transition: all 0.2s ease;
-      z-index: 1;
-    }
-
-    .rover-wheel.fl { top: 20px; left: 10px; }
-    .rover-wheel.fr { top: 20px; right: 10px; }
-    .rover-wheel.rl { bottom: 20px; left: 10px; }
-    .rover-wheel.rr { bottom: 20px; right: 10px; }
-
-    .rover-wheel.rolling-fwd {
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.65);
-      animation: tread-fwd 0.4s linear infinite;
-    }
-
-    .rover-wheel.rolling-rev {
-      border-color: var(--accent-amber);
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.65);
-      animation: tread-rev 0.4s linear infinite;
-    }
-
-    @keyframes tread-fwd {
-      0% { transform: translateY(-2px); }
-      100% { transform: translateY(2px); }
-    }
-
-    @keyframes tread-rev {
-      0% { transform: translateY(2px); }
-      100% { transform: translateY(-2px); }
-    }
-
-    .wheel-label {
-      font-weight: 700;
-      color: var(--accent-cyan);
-    }
-
-    .wheel-sub {
-      font-size: 0.50rem;
       color: #94a3b8;
     }
 
-    /* CHASSIS BOTTOM TELEMETRY BAR */
-    .chassis-hud-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      padding: 8px 14px;
-      font-family: 'Fira Code', monospace;
-      font-size: 0.72rem;
-    }
-
-    .chassis-status-text {
-      font-weight: 700;
-      color: var(--accent-cyan);
-    }
-
-    /* COMPASS GIMBAL WIDGET */
-    .compass-mini-widget {
+    /* COMPASS GIMBAL OVERLAY */
+    .compass-hud-gimbal {
       position: absolute;
-      bottom: 12px;
-      right: 14px;
-      width: 64px;
-      height: 64px;
-      border: 1px solid rgba(0, 240, 255, 0.3);
+      bottom: 14px;
+      right: 16px;
+      width: 68px;
+      height: 68px;
+      border: 1px solid rgba(0, 242, 254, 0.35);
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.5);
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .compass-needle {
+    .compass-needle-rod {
       width: 2px;
-      height: 44px;
-      background: linear-gradient(180deg, #ef4444 50%, #3b82f6 50%);
+      height: 48px;
+      background: linear-gradient(180deg, #ef4444 50%, #38bdf8 50%);
       border-radius: 1px;
       transform: rotate(0deg);
       transition: transform 0.1s ease-out;
-      box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.9);
     }
 
-    /* ================= RIGHT COLUMN: DIAGNOSTICS & TEST SCRIPTS ================= */
-    .diagnostics-column {
+    .chassis-bottom-telemetry-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      padding: 9px 16px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.74rem;
+    }
+
+    .chassis-motion-title {
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    /* ================= RIGHT: DIAGNOSTICS & PROTOCOLS ================= */
+    .diagnostics-panel-group {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
 
-    /* SUBSYSTEM HEALTH MATRIX */
-    .health-matrix-grid {
+    .health-grid-matrix {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
     }
 
-    .health-node {
+    .health-cube-cell {
       background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 6px 8px;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      padding: 7px 8px;
       display: flex;
       flex-direction: column;
       gap: 2px;
-      transition: all 0.2s ease;
     }
 
-    .health-node-header {
+    .health-cube-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .health-node-name {
+    .health-cube-title {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       font-weight: 700;
       color: var(--text-muted);
     }
 
-    .health-indicator-dot {
-      width: 7px;
-      height: 7px;
+    .health-indicator-circle {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: #64748b;
     }
 
-    .health-indicator-dot.online {
+    .health-indicator-circle.online {
       background: #10b981;
       box-shadow: 0 0 8px #10b981;
     }
 
-    .health-indicator-dot.warn {
+    .health-indicator-circle.warn {
       background: #f59e0b;
       box-shadow: 0 0 8px #f59e0b;
     }
 
-    .health-indicator-dot.err {
+    .health-indicator-circle.err {
       background: #ef4444;
       box-shadow: 0 0 8px #ef4444;
     }
 
-    .health-node-val {
+    .health-cube-sub {
       font-family: 'Fira Code', monospace;
-      font-size: 0.60rem;
+      font-size: 0.62rem;
       color: var(--text-dim);
     }
 
-    /* MOTOR DETAIL TABLE */
-    .motor-table-wrap {
+    /* MOTOR TELEMETRY TABLE */
+    .motor-telemetry-table {
       width: 100%;
       border-collapse: collapse;
       font-family: 'Fira Code', monospace;
-      font-size: 0.68rem;
+      font-size: 0.70rem;
       margin-top: 4px;
     }
 
-    .motor-table-wrap th {
+    .motor-telemetry-table th {
       text-align: left;
-      padding: 5px 8px;
+      padding: 6px 8px;
       color: var(--text-dim);
-      border-bottom: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-light);
       font-weight: 600;
     }
 
-    .motor-table-wrap td {
-      padding: 5px 8px;
+    .motor-telemetry-table td {
+      padding: 6px 8px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       color: #e2e8f0;
     }
 
-    .motor-table-wrap tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
+    .motor-telemetry-table tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
     }
 
     /* TEST PROTOCOL SCRIPTS */
-    .scripts-suite-list {
+    .scripts-catalog {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
 
-    .test-card {
+    .test-protocol-item {
       background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 8px 10px;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       transition: all 0.2s ease;
     }
 
-    .test-card:hover {
-      border-color: rgba(0, 240, 255, 0.4);
-      background: rgba(0, 240, 255, 0.04);
+    .test-protocol-item:hover {
+      border-color: rgba(0, 242, 254, 0.4);
+      background: rgba(0, 242, 254, 0.04);
     }
 
-    .test-card.active-running {
-      border-color: var(--accent-cyan);
-      background: rgba(0, 240, 255, 0.1);
-      box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
+    .test-protocol-item.active-running {
+      border-color: var(--cyan);
+      background: rgba(0, 242, 254, 0.1);
+      box-shadow: 0 0 16px var(--cyan-glow);
     }
 
-    .test-card-left {
+    .protocol-left-block {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 9px;
     }
 
-    .test-card-icon {
-      font-size: 1.1rem;
+    .protocol-icon-glyph {
+      font-size: 1.15rem;
     }
 
-    .test-card-title {
+    .protocol-title {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.74rem;
+      font-size: 0.76rem;
       font-weight: 700;
       color: #ffffff;
     }
 
-    .test-card-desc {
-      font-size: 0.62rem;
+    .protocol-desc {
+      font-size: 0.64rem;
       color: var(--text-muted);
     }
 
     .btn-run-script {
       background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid var(--border-light);
       color: #ffffff;
-      font-family: 'Orbitron', monospace;
-      font-size: 0.64rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.68rem;
       font-weight: 700;
-      padding: 5px 10px;
+      padding: 6px 12px;
       border-radius: 6px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
 
     .btn-run-script:hover {
-      background: linear-gradient(135deg, #00f0ff 0%, #2563eb 100%);
+      background: linear-gradient(135deg, #00f2fe 0%, #2563eb 100%);
       color: #030712;
-      border-color: #00f0ff;
-      box-shadow: 0 0 12px #00f0ff;
+      border-color: var(--cyan);
+      box-shadow: 0 0 14px var(--cyan-glow);
     }
 
     .script-status-badge {
       font-family: 'Fira Code', monospace;
-      font-size: 0.60rem;
-      padding: 2px 6px;
+      font-size: 0.62rem;
+      padding: 2px 7px;
       border-radius: 4px;
       background: rgba(255, 255, 255, 0.06);
       color: var(--text-dim);
     }
 
     .script-status-badge.running {
-      background: rgba(0, 240, 255, 0.2);
-      color: var(--accent-cyan);
-      border: 1px solid rgba(0, 240, 255, 0.4);
+      background: rgba(0, 242, 254, 0.2);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 242, 254, 0.4);
     }
 
     .script-status-badge.passed {
@@ -1303,11 +1253,11 @@
       display: none;
       flex-direction: column;
       gap: 6px;
-      background: linear-gradient(90deg, rgba(0, 240, 255, 0.15), rgba(99, 102, 241, 0.15));
-      border: 1px solid var(--accent-cyan);
-      border-radius: 10px;
+      background: linear-gradient(90deg, rgba(0, 242, 254, 0.15), rgba(99, 102, 241, 0.15));
+      border: 1px solid var(--cyan);
+      border-radius: var(--radius-md);
       padding: 10px 14px;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+      box-shadow: 0 0 20px var(--cyan-glow);
       margin-top: 6px;
     }
 
@@ -1318,8 +1268,8 @@
     }
 
     .script-banner-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.76rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.80rem;
       font-weight: 800;
       color: #ffffff;
       display: flex;
@@ -1331,120 +1281,124 @@
       background: #ef4444;
       border: none;
       color: #fff;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.62rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.65rem;
       font-weight: 700;
-      padding: 3px 8px;
+      padding: 4px 10px;
       border-radius: 5px;
       cursor: pointer;
     }
 
-    /* ================= 4. BOTTOM COMMAND & TELEMETRY TERMINAL ================= */
-    .terminal-card {
+    /* ================= 4. TELEMETRY TERMINAL DOCK ================= */
+    .terminal-panel-dock {
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
 
-    .terminal-output {
-      height: 140px;
-      background: #02040a;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 8px 12px;
+    .terminal-console-display {
+      height: 145px;
+      background: #020409;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
       font-family: 'Fira Code', monospace;
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       color: #cbd5e1;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 4px;
-      line-height: 1.35;
-      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.8);
+      line-height: 1.4;
+      box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.85);
     }
 
     .log-line {
       display: flex;
-      gap: 8px;
+      gap: 9px;
       word-break: break-all;
     }
 
     .log-time { color: var(--text-dim); }
     .log-tag { font-weight: 700; }
-    .log-tag.info { color: var(--accent-cyan); }
-    .log-tag.warn { color: var(--accent-amber); }
-    .log-tag.crit { color: var(--accent-rose); }
+    .log-tag.info { color: var(--cyan); }
+    .log-tag.warn { color: var(--amber); }
+    .log-tag.crit { color: var(--rose); }
     .log-tag.rx { color: #34d399; }
     .log-tag.tx { color: #a78bfa; }
 
-    .terminal-input-bar {
+    .terminal-dock-input-bar {
       display: flex;
       gap: 8px;
       align-items: center;
     }
 
-    .terminal-input {
+    .terminal-command-input {
       flex: 1;
-      background: #02040a;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 7px;
-      padding: 7px 12px;
+      background: #020409;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
       color: #ffffff;
       font-family: 'Fira Code', monospace;
-      font-size: 0.74rem;
+      font-size: 0.76rem;
       outline: none;
     }
 
-    .terminal-input:focus {
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+    .terminal-command-input:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 14px var(--cyan-glow);
     }
 
-    .macro-buttons {
+    .macro-chips-row {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
     }
 
-    .btn-macro {
+    .btn-macro-chip {
       background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid var(--border-light);
       color: #cbd5e1;
       font-family: 'Fira Code', monospace;
-      font-size: 0.65rem;
-      padding: 4px 8px;
+      font-size: 0.68rem;
+      padding: 5px 10px;
       border-radius: 5px;
       cursor: pointer;
       transition: all 0.15s ease;
     }
 
-    .btn-macro:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: rgba(0, 240, 255, 0.4);
-      color: var(--accent-cyan);
+    .btn-macro-chip:hover {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: rgba(0, 242, 254, 0.4);
+      color: var(--cyan);
     }
   </style>
 </head>
 <body class="hardware-disconnected">
 
-<div class="app-container">
+<div class="app-layout">
 
-  <!-- ================= 1. ULTRA-MODERN COMMAND HEADER ================= -->
-  <header class="command-header">
-    <div class="brand-cluster">
-      <div class="brand-beacon">⚡</div>
-      <div class="brand-title-wrap">
-        <h1>TITAN-RB2 GCS</h1>
-        <div class="brand-meta">
-          <span class="sub">4WD RECON ROVER • DUAL L298N</span>
-          <span class="system-pill-pro">AEROSPACE HUD v2.5</span>
-        </div>
+  <!-- ================= 1. HEADER HUD ================= -->
+  <header class="top-navbar">
+    <div class="brand-group">
+      <div class="brand-icon-hex">
+        <svg viewBox="0 0 24 24">
+          <polygon points="12 2 2 7 2 17 12 22 22 17 22 7 12 2"></polygon>
+          <line x1="12" y1="22" x2="12" y2="12"></line>
+          <line x1="2" y1="7" x2="12" y2="12"></line>
+          <line x1="22" y1="7" x2="12" y2="12"></line>
+        </svg>
+      </div>
+      <div class="brand-text-block">
+        <h1>TITAN-RB2 <span class="badge-ver">v2.5 PRO</span></h1>
+        <div class="brand-subtitle">Autonomous 4WD Ground Control Station • Dual L298N Powertrain</div>
       </div>
     </div>
 
-    <div class="header-quick-stats">
+    <div class="header-actions-group">
       <!-- HARDWARE SERIAL LINK CONTROLS -->
-      <div class="connection-capsule">
+      <div class="serial-box">
         <button id="btnSerialConnect" class="btn-connect-usb" onclick="toggleSerialConnection()">
           <span class="live-dot">●</span>
           <span id="btnSerialConnectLabel">CONNECT ARDUINO (USB)</span>
@@ -1457,23 +1411,23 @@
       </div>
 
       <!-- STATUS BADGES -->
-      <div id="connStatus" class="status-pill">
+      <div id="connStatus" class="status-badge-chip">
         <span id="connIcon">🔌</span> <span id="connText">OFFLINE</span>
       </div>
 
-      <div class="status-pill battery" id="statBattery">
+      <div class="status-badge-chip battery" id="statBattery">
         <span>🔋</span> <span id="valVoltage">7.42 V</span> <span style="opacity: 0.6;">(2S LiPo)</span>
       </div>
 
-      <div class="status-pill mode" id="statMode">
+      <div class="status-badge-chip mode" id="statMode">
         <span id="badgeMode"><span>🕹️</span> MANUAL TELEOP</span>
       </div>
 
       <!-- PROMINENT E-STOP -->
-      <button id="btnEstop" class="btn-estop-neo" onclick="toggleEStop()" title="Spacebar Shortcut">
+      <button id="btnEstop" class="btn-estop-main" onclick="toggleEStop()" title="Spacebar Shortcut">
         <span class="estop-icon">🛑</span>
-        <div class="estop-labels">
-          <span class="estop-main" id="estopMainText">E-STOP</span>
+        <div class="estop-label-wrap">
+          <span class="estop-head" id="estopMainText">E-STOP</span>
           <span class="estop-sub" id="estopSubText">ARMED • [SPACE]</span>
         </div>
       </button>
@@ -1513,343 +1467,339 @@
   </div>
 
   <!-- ================= 2. TOP TELEMETRY 5-KPI METRIC STRIP ================= -->
-  <div class="metrics-grid-top">
+  <div class="kpi-row-grid">
     
     <!-- KPI 1: SPEED / THROTTLE -->
-    <div class="metric-card-pro">
-      <div class="metric-top">
-        <span class="metric-label">Powertrain Output</span>
-        <span class="metric-icon-badge">🏎️</span>
+    <div class="kpi-card">
+      <div class="kpi-head">
+        <span class="kpi-label">Powertrain Output</span>
+        <svg class="kpi-icon-svg" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
       </div>
-      <div class="metric-body">
-        <span class="metric-val" id="valSpeed">0</span>
-        <span class="metric-unit">PWM</span>
+      <div class="kpi-val-group">
+        <span class="kpi-number" id="valSpeed">0</span>
+        <span class="kpi-unit">PWM</span>
       </div>
-      <div class="metric-progress-wrap">
-        <div class="metric-progress-bar bar-cyan" id="barSpeed"></div>
+      <div class="kpi-meter-track">
+        <div class="kpi-meter-fill meter-cyan" id="barSpeed"></div>
       </div>
-      <div class="metric-footer-text">
+      <div class="kpi-foot-info">
         <span>DUTY CYCLE</span>
         <span id="valDuty">0%</span>
       </div>
     </div>
 
     <!-- KPI 2: LASER LIDAR DISTANCE -->
-    <div class="metric-card-pro">
-      <div class="metric-top">
-        <span class="metric-label">Laser Range (ToF)</span>
-        <span class="metric-icon-badge">🎯</span>
+    <div class="kpi-card">
+      <div class="kpi-head">
+        <span class="kpi-label">Laser Range (ToF)</span>
+        <svg class="kpi-icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
       </div>
-      <div class="metric-body">
-        <span class="metric-val" id="valDistance">—</span>
-        <span class="metric-unit">mm</span>
+      <div class="kpi-val-group">
+        <span class="kpi-number" id="valDistance">—</span>
+        <span class="kpi-unit">mm</span>
       </div>
-      <div class="metric-progress-wrap">
-        <div class="metric-progress-bar bar-emerald" id="barDistance"></div>
+      <div class="kpi-meter-track">
+        <div class="kpi-meter-fill meter-emerald" id="barDistance"></div>
       </div>
-      <div class="metric-footer-text">
+      <div class="kpi-foot-info">
         <span>STATUS</span>
-        <span id="badgeLaserStatus" style="color: var(--accent-emerald);">STANDBY</span>
+        <span id="badgeLaserStatus" style="color: var(--emerald);">STANDBY</span>
       </div>
     </div>
 
     <!-- KPI 3: AHRS YAW HEADING -->
-    <div class="metric-card-pro">
-      <div class="metric-top">
-        <span class="metric-label">AHRS IMU Compass</span>
-        <span class="metric-icon-badge">🧭</span>
+    <div class="kpi-card">
+      <div class="kpi-head">
+        <span class="kpi-label">AHRS IMU Compass</span>
+        <svg class="kpi-icon-svg" viewBox="0 0 24 24"><polygon points="12 2 19 21 12 17 5 21 12 2"></polygon></svg>
       </div>
-      <div class="metric-body">
-        <span class="metric-val" id="valYaw">0.0</span>
-        <span class="metric-unit">deg °</span>
+      <div class="kpi-val-group">
+        <span class="kpi-number" id="valYaw">0.0</span>
+        <span class="kpi-unit">deg °</span>
       </div>
-      <div class="metric-progress-wrap">
-        <div class="metric-progress-bar bar-purple" id="barYaw" style="width: 50%;"></div>
+      <div class="kpi-meter-track">
+        <div class="kpi-meter-fill meter-purple" id="barYaw" style="width: 50%;"></div>
       </div>
-      <div class="metric-footer-text">
+      <div class="kpi-foot-info">
         <span>HEADING</span>
         <span id="odomHeading">0.0°</span>
       </div>
     </div>
 
     <!-- KPI 4: ODOMETRY TICKS -->
-    <div class="metric-card-pro">
-      <div class="metric-top">
-        <span class="metric-label">Wheel Odometry</span>
-        <span class="metric-icon-badge">📐</span>
+    <div class="kpi-card">
+      <div class="kpi-head">
+        <span class="kpi-label">Wheel Odometry</span>
+        <svg class="kpi-icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
       </div>
-      <div class="metric-body">
-        <span class="metric-val" id="valTotalTicks">0</span>
-        <span class="metric-unit">TICKS</span>
+      <div class="kpi-val-group">
+        <span class="kpi-number" id="valTotalTicks">0</span>
+        <span class="kpi-unit">TICKS</span>
       </div>
-      <div class="metric-progress-wrap">
-        <div class="metric-progress-bar bar-amber" id="barTicks"></div>
+      <div class="kpi-meter-track">
+        <div class="kpi-meter-fill meter-amber" id="barTicks"></div>
       </div>
-      <div class="metric-footer-text">
+      <div class="kpi-foot-info">
         <span>DISTANCE</span>
         <span id="odomDistance">0.00 m</span>
       </div>
     </div>
 
     <!-- KPI 5: POWER & CURRENT -->
-    <div class="metric-card-pro">
-      <div class="metric-top">
-        <span class="metric-label">Power & Bus Current</span>
-        <span class="metric-icon-badge">⚡</span>
+    <div class="kpi-card">
+      <div class="kpi-head">
+        <span class="kpi-label">Power & Bus Current</span>
+        <svg class="kpi-icon-svg" viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"></rect><line x1="23" y1="11" x2="23" y2="13"></line></svg>
       </div>
-      <div class="metric-body">
-        <span class="metric-val" id="valCurrent">420</span>
-        <span class="metric-unit">mA</span>
+      <div class="kpi-val-group">
+        <span class="kpi-number" id="valCurrent">420</span>
+        <span class="kpi-unit">mA</span>
       </div>
-      <div class="metric-progress-wrap">
-        <div class="metric-progress-bar bar-cyan" style="width: 35%;"></div>
+      <div class="kpi-meter-track">
+        <div class="kpi-meter-fill meter-cyan" style="width: 35%;"></div>
       </div>
-      <div class="metric-footer-text">
+      <div class="kpi-foot-info">
         <span>5V LOGIC</span>
-        <span style="color: var(--accent-emerald);">4.98 V STABLE</span>
+        <span style="color: var(--emerald);">4.98 V STABLE</span>
       </div>
     </div>
 
   </div>
 
   <!-- ================= 3. MAIN COCKPIT 3-COLUMN GRID ================= -->
-  <div class="cockpit-grid">
+  <div class="cockpit-layout">
     
     <!-- ================= LEFT COLUMN: TELEOPERATION ================= -->
-    <div class="teleop-column">
-      
-      <!-- CARD: TELEOPERATION CONSOLE -->
-      <div class="neo-card teleop-card">
-        <div class="card-header-row">
-          <div class="card-title">
-            <span class="icon">🎮</span>
-            <span>TELEOPERATION COCKPIT</span>
-          </div>
-          <span class="card-badge">WASD / ARROWS</span>
+    <div class="hud-panel teleop-panel">
+      <div class="panel-top-bar">
+        <div class="panel-heading">
+          <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"></rect><path d="M6 12h4m-2-2v4m10-2h.01m-3-2h.01"></path></svg>
+          <span>TELEOPERATION COCKPIT</span>
         </div>
+        <span class="panel-tag">WASD / ARROWS</span>
+      </div>
 
-        <!-- DRIVE MODE TABS -->
-        <div class="mode-tab-bar">
-          <button id="tabManual" class="mode-tab active" onclick="setMode('manual')">🕹️ MANUAL</button>
-          <button id="tabAuto" class="mode-tab" onclick="setMode('auto')">🤖 AUTO</button>
-          <button id="tabSpin" class="mode-tab" onclick="setMode('spin')">🔄 PIVOT</button>
-          <button id="tabMission" class="mode-tab" onclick="setMode('mission')">🎯 WAYPOINT</button>
-        </div>
+      <!-- DRIVE MODE TABS -->
+      <div class="mode-tab-strip">
+        <button id="tabManual" class="mode-tab active" onclick="setMode('manual')">🕹️ MANUAL</button>
+        <button id="tabAuto" class="mode-tab" onclick="setMode('auto')">🤖 AUTO</button>
+        <button id="tabSpin" class="mode-tab" onclick="setMode('spin')">🔄 PIVOT</button>
+        <button id="tabMission" class="mode-tab" onclick="setMode('mission')">🎯 MISSION</button>
+      </div>
 
-        <!-- TACTILE D-PAD -->
-        <div class="dpad-container">
-          <button id="btnUp" class="dpad-btn" title="Forward (W / Up)">
-            <span class="arrow">▲</span>
-            <span class="key-badge">W / UP</span>
+      <!-- TACTILE D-PAD -->
+      <div class="dpad-hud-wrap">
+        <button id="btnUp" class="dpad-btn" title="Forward (W / Up)">
+          <span class="arrow-symbol">▲</span>
+          <span class="key-hint">W / UP</span>
+        </button>
+        <div class="dpad-row">
+          <button id="btnLeft" class="dpad-btn" title="Left (A / Left)">
+            <span class="arrow-symbol">◀</span>
+            <span class="key-hint">A / LEFT</span>
           </button>
-          <div class="dpad-row">
-            <button id="btnLeft" class="dpad-btn" title="Left (A / Left)">
-              <span class="arrow">◀</span>
-              <span class="key-badge">A / LEFT</span>
-            </button>
-            <button id="btnStop" class="dpad-btn stop" title="Brake (Stop)">
-              <span class="arrow">⏹</span>
-              <span class="key-badge">BRAKE</span>
-            </button>
-            <button id="btnRight" class="dpad-btn" title="Right (D / Right)">
-              <span class="arrow">▶</span>
-              <span class="key-badge">D / RIGHT</span>
-            </button>
-          </div>
-          <button id="btnDown" class="dpad-btn" title="Reverse (S / Down)">
-            <span class="arrow">▼</span>
-            <span class="key-badge">S / DOWN</span>
+          <button id="btnStop" class="dpad-btn stop-btn" title="Brake (Stop)">
+            <span class="arrow-symbol">⏹</span>
+            <span class="key-hint">BRAKE</span>
+          </button>
+          <button id="btnRight" class="dpad-btn" title="Right (D / Right)">
+            <span class="arrow-symbol">▶</span>
+            <span class="key-hint">D / RIGHT</span>
           </button>
         </div>
+        <button id="btnDown" class="dpad-btn" title="Reverse (S / Down)">
+          <span class="arrow-symbol">▼</span>
+          <span class="key-hint">S / DOWN</span>
+        </button>
+      </div>
 
-        <!-- VIRTUAL JOYSTICK -->
-        <div class="joystick-section">
-          <div id="joyBase" class="joystick-base">
-            <div class="joystick-crosshair-h"></div>
-            <div class="joystick-crosshair-v"></div>
-            <div id="joyPuck" class="joystick-puck">🕹️</div>
-          </div>
-          <div class="joystick-stats">
-            <span>X: <strong id="joyValX" style="color: #fff;">0.00</strong></span>
-            <span>Y: <strong id="joyValY" style="color: #fff;">0.00</strong></span>
-            <span>L: <strong id="joyPwmL" style="color: var(--accent-cyan);">0</strong></span>
-            <span>R: <strong id="joyPwmR" style="color: var(--accent-cyan);">0</strong></span>
+      <!-- VIRTUAL JOYSTICK -->
+      <div class="joystick-panel-wrap">
+        <div id="joyBase" class="joystick-surface">
+          <div class="joy-crosshair-x"></div>
+          <div class="joy-crosshair-y"></div>
+          <div id="joyPuck" class="joystick-puck-handle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 2v4m0 12v4M2 12h4m12 0h4"></path>
+            </svg>
           </div>
         </div>
-
-        <!-- THROTTLE SLIDER -->
-        <div class="throttle-wrap">
-          <div class="throttle-header">
-            <span>MAX PWM LIMIT</span>
-            <span class="val" id="throttleVal">160 PWM</span>
-          </div>
-          <input type="range" id="throttleSlider" class="throttle-range" min="60" max="255" value="160" oninput="updateThrottle(this.value)">
-          <div class="preset-chips">
-            <button class="btn-chip" onclick="setThrottlePreset(80)">LOW (80)</button>
-            <button class="btn-chip" onclick="setThrottlePreset(160)">MID (160)</button>
-            <button class="btn-chip" onclick="setThrottlePreset(220)">HIGH (220)</button>
-            <button class="btn-chip" onclick="setThrottlePreset(255)">MAX (255)</button>
-          </div>
+        <div class="joystick-readout-row">
+          <span>X: <strong id="joyValX" style="color: #fff;">0.00</strong></span>
+          <span>Y: <strong id="joyValY" style="color: #fff;">0.00</strong></span>
+          <span>L: <strong id="joyPwmL" style="color: var(--cyan);">0</strong></span>
+          <span>R: <strong id="joyPwmR" style="color: var(--cyan);">0</strong></span>
         </div>
+      </div>
 
+      <!-- THROTTLE SLIDER -->
+      <div class="throttle-control-box">
+        <div class="throttle-header-line">
+          <span>MAX PWM LIMIT</span>
+          <span class="val-glow" id="throttleVal">160 PWM</span>
+        </div>
+        <input type="range" id="throttleSlider" class="throttle-slider-input" min="60" max="255" value="160" oninput="updateThrottle(this.value)">
+        <div class="throttle-chip-row">
+          <button class="throttle-chip-btn" onclick="setThrottlePreset(80)">LOW (80)</button>
+          <button class="throttle-chip-btn" onclick="setThrottlePreset(160)">MID (160)</button>
+          <button class="throttle-chip-btn" onclick="setThrottlePreset(220)">HIGH (220)</button>
+          <button class="throttle-chip-btn" onclick="setThrottlePreset(255)">MAX (255)</button>
+        </div>
       </div>
 
     </div>
 
     <!-- ================= CENTER COLUMN: 4WD CHASSIS HUD ================= -->
-    <div class="visualizer-column">
-      
-      <div class="neo-card chassis-card">
-        <div class="card-header-row">
-          <div class="card-title">
-            <span class="icon">🛰️</span>
-            <span>4WD CHASSIS KINEMATICS & SENSORS</span>
-          </div>
-          <span class="card-badge" id="chassisSubState">PWM: 0</span>
+    <div class="hud-panel chassis-view-card">
+      <div class="panel-top-bar">
+        <div class="panel-heading">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 16 12 12 8"></polygon></svg>
+          <span>4WD CHASSIS BLUEPRINT & SENSORS</span>
         </div>
+        <span class="panel-tag" id="chassisSubState">PWM: 0</span>
+      </div>
 
-        <!-- CHASSIS STAGE -->
-        <div class="chassis-stage">
+      <!-- CHASSIS STAGE -->
+      <div class="chassis-view-viewport">
+        
+        <div class="rover-svg-chassis-wrap">
           
-          <div class="rover-chassis-box">
-            
-            <!-- LIDAR SWEEP CONE -->
-            <div class="lidar-scan-beam"></div>
+          <!-- LIDAR SWEEP CONE -->
+          <div class="lidar-radar-cone"></div>
 
-            <!-- 4 WHEEL ENGINES -->
-            <div id="wheelFL" class="rover-wheel fl">
-              <span class="wheel-label">M1 FL</span>
-              <span class="wheel-sub">D6/D2</span>
-            </div>
-
-            <div id="wheelFR" class="rover-wheel fr">
-              <span class="wheel-label">M2 FR</span>
-              <span class="wheel-sub">D9/D3</span>
-            </div>
-
-            <div id="wheelRL" class="rover-wheel rl">
-              <span class="wheel-label">M3 RL</span>
-              <span class="wheel-sub">D10/D5</span>
-            </div>
-
-            <div id="wheelRR" class="rover-wheel rr">
-              <span class="wheel-label">M4 RR</span>
-              <span class="wheel-sub">D11/D4</span>
-            </div>
-
-            <!-- HULL -->
-            <div class="rover-body-hull">
-              <div class="rover-front-sensor">LiDAR</div>
-              <div class="rover-center-badge">
-                <div class="logo">TITAN-RB2</div>
-                <div class="sub">4WD SKID STEER</div>
-              </div>
-              <div class="rover-mcu-chip">
-                <span>ARDUINO</span>
-                <span style="color: var(--accent-emerald);">NANO V3</span>
-              </div>
-            </div>
-
+          <!-- 4 WHEEL ENGINES -->
+          <div id="wheelFL" class="chassis-wheel-unit fl">
+            <span class="wheel-tag">M1 FL</span>
+            <span class="wheel-pin">D6/D2</span>
           </div>
 
-          <!-- MINI COMPASS GIMBAL OVERLAY -->
-          <div class="compass-mini-widget" title="AHRS Compass Heading">
-            <div id="compassNeedle" class="compass-needle"></div>
+          <div id="wheelFR" class="chassis-wheel-unit fr">
+            <span class="wheel-tag">M2 FR</span>
+            <span class="wheel-pin">D9/D3</span>
+          </div>
+
+          <div id="wheelRL" class="chassis-wheel-unit rl">
+            <span class="wheel-tag">M3 RL</span>
+            <span class="wheel-pin">D10/D5</span>
+          </div>
+
+          <div id="wheelRR" class="chassis-wheel-unit rr">
+            <span class="wheel-tag">M4 RR</span>
+            <span class="wheel-pin">D11/D4</span>
+          </div>
+
+          <!-- HULL -->
+          <div class="rover-hull-structure">
+            <div class="rover-lidar-head">LiDAR</div>
+            <div class="rover-center-insignia">
+              <div class="insignia-title">TITAN-RB2</div>
+              <div class="insignia-sub">4WD SKID STEER</div>
+            </div>
+            <div class="rover-mcu-badge">
+              <span>ARDUINO</span>
+              <span style="color: var(--emerald);">NANO V3</span>
+            </div>
           </div>
 
         </div>
 
-        <!-- CHASSIS BOTTOM TELEMETRY -->
-        <div class="chassis-hud-bar">
-          <div>MOTION STATE: <strong id="chassisStateText" class="chassis-status-text">STOPPED</strong></div>
-          <div>TARGET: <strong id="chassisPwmText" style="color: #ffffff;">0 PWM (0%)</strong></div>
+        <!-- MINI COMPASS GIMBAL OVERLAY -->
+        <div class="compass-hud-gimbal" title="AHRS Compass Heading">
+          <div id="compassNeedle" class="compass-needle-rod"></div>
         </div>
 
+      </div>
+
+      <!-- CHASSIS BOTTOM TELEMETRY -->
+      <div class="chassis-bottom-telemetry-strip">
+        <div>MOTION STATE: <strong id="chassisStateText" class="chassis-motion-title">STOPPED</strong></div>
+        <div>TARGET: <strong id="chassisPwmText" style="color: #ffffff;">0 PWM (0%)</strong></div>
       </div>
 
     </div>
 
     <!-- ================= RIGHT COLUMN: DIAGNOSTICS & TEST SCRIPTS ================= -->
-    <div class="diagnostics-column">
+    <div class="diagnostics-panel-group">
       
       <!-- HEALTH MATRIX & POWER RAIL -->
-      <div class="neo-card">
-        <div class="card-header-row">
-          <div class="card-title">
-            <span class="icon">🩺</span>
-            <span>HARDWARE HEALTH MATRIX</span>
+      <div class="hud-panel">
+        <div class="panel-top-bar">
+          <div class="panel-heading">
+            <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+            <span>SUBSYSTEM HEALTH MATRIX</span>
           </div>
-          <span class="card-badge">7 NODES</span>
+          <span class="panel-tag">7 NODES</span>
         </div>
 
-        <div class="health-matrix-grid">
-          <div class="health-node">
-            <div class="health-node-header">
-              <span class="health-node-name">MCU</span>
-              <div class="health-indicator-dot online" id="hMcu"></div>
+        <div class="health-grid-matrix">
+          <div class="health-cube-cell">
+            <div class="health-cube-head">
+              <span class="health-cube-title">MCU</span>
+              <div class="health-indicator-circle online" id="hMcu"></div>
             </div>
-            <span class="health-node-val">16MHz OK</span>
+            <span class="health-cube-sub">16MHz OK</span>
           </div>
 
-          <div class="health-node">
-            <div class="health-node-header">
-              <span class="health-node-name">SERIAL</span>
-              <div class="health-indicator-dot" id="hSerial"></div>
+          <div class="health-cube-cell">
+            <div class="health-cube-head">
+              <span class="health-cube-title">SERIAL</span>
+              <div class="health-indicator-circle" id="hSerial"></div>
             </div>
-            <span class="health-node-val">115.2k</span>
+            <span class="health-cube-sub">115.2k</span>
           </div>
 
-          <div class="health-node">
-            <div class="health-node-header">
-              <span class="health-node-name">WI-FI</span>
-              <div class="health-indicator-dot" id="hWifi"></div>
+          <div class="health-cube-cell">
+            <div class="health-cube-head">
+              <span class="health-cube-title">WI-FI</span>
+              <div class="health-indicator-circle" id="hWifi"></div>
             </div>
-            <span class="health-node-val">WS:8080</span>
+            <span class="health-cube-sub">WS:8080</span>
           </div>
 
-          <div class="health-node">
-            <div class="health-node-header">
-              <span class="health-node-name">IMU</span>
-              <div class="health-indicator-dot online" id="hImu"></div>
+          <div class="health-cube-cell">
+            <div class="health-cube-head">
+              <span class="health-cube-title">IMU</span>
+              <div class="health-indicator-circle online" id="hImu"></div>
             </div>
-            <span class="health-node-val">BNO085</span>
+            <span class="health-cube-sub">BNO085</span>
           </div>
 
-          <div class="health-node">
-            <div class="health-node-header">
-              <span class="health-node-name">LiDAR</span>
-              <div class="health-indicator-dot online" id="hLidar"></div>
+          <div class="health-cube-cell">
+            <div class="health-cube-head">
+              <span class="health-cube-title">LiDAR</span>
+              <div class="health-indicator-circle online" id="hLidar"></div>
             </div>
-            <span class="health-node-val">VL53L0X</span>
+            <span class="health-cube-sub">VL53L0X</span>
           </div>
 
-          <div class="health-node">
-            <div class="health-node-header">
-              <span class="health-node-name">DRV A</span>
-              <div class="health-indicator-dot online" id="hMotorL"></div>
+          <div class="health-cube-cell">
+            <div class="health-cube-head">
+              <span class="health-cube-title">DRV A</span>
+              <div class="health-indicator-circle online" id="hMotorL"></div>
             </div>
-            <span class="health-node-val">M1 + M2</span>
+            <span class="health-cube-sub">M1 + M2</span>
           </div>
 
-          <div class="health-node">
-            <div class="health-node-header">
-              <span class="health-node-name">DRV B</span>
-              <div class="health-indicator-dot online" id="hMotorR"></div>
+          <div class="health-cube-cell">
+            <div class="health-cube-head">
+              <span class="health-cube-title">DRV B</span>
+              <div class="health-indicator-circle online" id="hMotorR"></div>
             </div>
-            <span class="health-node-val">M3 + M4</span>
+            <span class="health-cube-sub">M3 + M4</span>
           </div>
 
-          <div class="health-node">
-            <div class="health-node-header">
-              <span class="health-node-name">COMM</span>
-              <div class="health-indicator-dot online" id="hComm"></div>
+          <div class="health-cube-cell">
+            <div class="health-cube-head">
+              <span class="health-cube-title">COMM</span>
+              <div class="health-indicator-circle online" id="hComm"></div>
             </div>
-            <span class="health-node-val">TX/RX 0E</span>
+            <span class="health-cube-sub">TX/RX 0E</span>
           </div>
         </div>
 
         <!-- MOTOR TELEMETRY TABLE -->
-        <table class="motor-table-wrap">
+        <table class="motor-telemetry-table">
           <thead>
             <tr>
               <th>MOTOR</th>
@@ -1893,59 +1843,59 @@
       </div>
 
       <!-- AUTOMATED COMMISSIONING TEST PROTOCOLS -->
-      <div class="neo-card script-card">
-        <div class="card-header-row">
-          <div class="card-title">
-            <span class="icon">🔬</span>
+      <div class="hud-panel script-card">
+        <div class="panel-top-bar">
+          <div class="panel-heading">
+            <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
             <span>HARDWARE TEST PROTOCOLS</span>
           </div>
-          <span class="card-badge">BENCH COMMISSIONING</span>
+          <span class="panel-tag">BENCH COMMISSIONING</span>
         </div>
 
-        <div class="scripts-suite-list">
+        <div class="scripts-catalog">
           
-          <div class="test-card" id="cardScriptCombined">
-            <div class="test-card-left">
-              <span class="test-card-icon">🏎️</span>
+          <div class="test-protocol-item" id="cardScriptCombined">
+            <div class="protocol-left-block">
+              <span class="protocol-icon-glyph">🏎️</span>
               <div>
-                <div class="test-card-title">Combined 4WD Cycle</div>
-                <div class="test-card-desc">Fwd → Rev → Skid Left → Skid Right</div>
+                <div class="protocol-title">Combined 4WD Cycle</div>
+                <div class="protocol-desc">Fwd → Rev → Skid Left → Skid Right</div>
               </div>
             </div>
             <button class="btn-run-script" onclick="startPredefinedScript('combined')">RUN TEST</button>
             <span class="script-status-badge" id="statusScriptCombined">READY</span>
           </div>
 
-          <div class="test-card" id="cardScriptFull">
-            <div class="test-card-left">
-              <span class="test-card-icon">🔬</span>
+          <div class="test-protocol-item" id="cardScriptFull">
+            <div class="protocol-left-block">
+              <span class="protocol-icon-glyph">🔬</span>
               <div>
-                <div class="test-card-title">Full System Self-Test</div>
-                <div class="test-card-desc">I2C scan + 4-motor isolation sequence</div>
+                <div class="protocol-title">Full System Self-Test</div>
+                <div class="protocol-desc">I2C scan + 4-motor isolation sequence</div>
               </div>
             </div>
             <button class="btn-run-script" onclick="startPredefinedScript('full')">RUN TEST</button>
             <span class="script-status-badge" id="statusScriptFull">READY</span>
           </div>
 
-          <div class="test-card" id="cardScriptFront">
-            <div class="test-card-left">
-              <span class="test-card-icon">⚙️</span>
+          <div class="test-protocol-item" id="cardScriptFront">
+            <div class="protocol-left-block">
+              <span class="protocol-icon-glyph">⚙️</span>
               <div>
-                <div class="test-card-title">Front Axle Isolation</div>
-                <div class="test-card-desc">Driver A (M1 FL & M2 FR)</div>
+                <div class="protocol-title">Front Axle Isolation</div>
+                <div class="protocol-desc">Driver A (M1 FL & M2 FR)</div>
               </div>
             </div>
             <button class="btn-run-script" onclick="startPredefinedScript('front')">RUN TEST</button>
             <span class="script-status-badge" id="statusScriptFront">READY</span>
           </div>
 
-          <div class="test-card" id="cardScriptRear">
-            <div class="test-card-left">
-              <span class="test-card-icon">🔧</span>
+          <div class="test-protocol-item" id="cardScriptRear">
+            <div class="protocol-left-block">
+              <span class="protocol-icon-glyph">🔧</span>
               <div>
-                <div class="test-card-title">Rear Axle Isolation</div>
-                <div class="test-card-desc">Driver B (M3 RL & M4 RR)</div>
+                <div class="protocol-title">Rear Axle Isolation</div>
+                <div class="protocol-desc">Driver B (M3 RL & M4 RR)</div>
               </div>
             </div>
             <button class="btn-run-script" onclick="startPredefinedScript('rear')">RUN TEST</button>
@@ -1963,9 +1913,9 @@
             </div>
             <button class="btn-abort-script" onclick="abortRunningScript()">ABORT</button>
           </div>
-          <div id="bannerScriptStep" style="font-family: 'Fira Code', monospace; font-size: 0.68rem; color: #ffffff;">Step 1/4</div>
-          <div class="metric-progress-wrap" style="height: 6px;">
-            <div class="metric-progress-bar bar-cyan" id="bannerProgressFill" style="width: 0%;"></div>
+          <div id="bannerScriptStep" style="font-family: 'Fira Code', monospace; font-size: 0.70rem; color: #ffffff;">Step 1/4</div>
+          <div class="kpi-meter-track" style="height: 6px;">
+            <div class="kpi-meter-fill meter-cyan" id="bannerProgressFill" style="width: 0%;"></div>
           </div>
         </div>
 
@@ -1976,22 +1926,22 @@
   </div>
 
   <!-- ================= 4. BOTTOM COMMAND & TELEMETRY TERMINAL ================= -->
-  <footer class="neo-card terminal-card">
-    <div class="card-header-row">
-      <div class="card-title">
-        <span class="icon">💻</span>
-        <span>REAL-TIME TELEMETRY & SERIAL STREAM</span>
+  <footer class="hud-panel terminal-panel-dock">
+    <div class="panel-top-bar">
+      <div class="panel-heading">
+        <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+        <span>REAL-TIME TELEMETRY STREAM & COMMAND DOCK</span>
       </div>
-      <div class="macro-buttons">
-        <button class="btn-macro" onclick="sendSerialCommand('PING')">PING</button>
-        <button class="btn-macro" onclick="sendSerialCommand('STOP')">STOP</button>
-        <button class="btn-macro" onclick="sendSerialCommand('CALIBRATE')">CALIBRATE</button>
-        <button class="btn-macro" onclick="sendSerialCommand('STATUS')">STATUS</button>
-        <button class="btn-macro" onclick="clearTerminal()">CLEAR LOG</button>
+      <div class="macro-chips-row">
+        <button class="btn-macro-chip" onclick="sendSerialCommand('PING')">PING</button>
+        <button class="btn-macro-chip" onclick="sendSerialCommand('STOP')">STOP</button>
+        <button class="btn-macro-chip" onclick="sendSerialCommand('CALIBRATE')">CALIBRATE</button>
+        <button class="btn-macro-chip" onclick="sendSerialCommand('STATUS')">STATUS</button>
+        <button class="btn-macro-chip" onclick="clearTerminal()">CLEAR LOG</button>
       </div>
     </div>
 
-    <div class="terminal-output" id="telemetryLog">
+    <div class="terminal-console-display" id="telemetryLog">
       <div class="log-line">
         <span class="log-time">[00:00:00]</span>
         <span class="log-tag info">[SYSTEM]</span>
@@ -1999,8 +1949,8 @@
       </div>
     </div>
 
-    <div class="terminal-input-bar">
-      <input type="text" id="cmdInput" class="terminal-input" placeholder="Enter Serial ASCII Command (e.g. M:160,160 or PING or TEST_MOTORS)..." onkeydown="if(event.key==='Enter') sendCustomCommand()">
+    <div class="terminal-dock-input-bar">
+      <input type="text" id="cmdInput" class="terminal-command-input" placeholder="Enter Serial ASCII Command (e.g. M:160,160 or PING or TEST_MOTORS)..." onkeydown="if(event.key==='Enter') sendCustomCommand()">
       <button class="btn-pill btn-pill-cyan" onclick="sendCustomCommand()">SEND COMMAND</button>
     </div>
   </footer>
@@ -2040,7 +1990,7 @@
     maxTurn: 0.065,
     heading: 0,
     pwm: 0,
-    driveMode: 'manual' // 'manual', 'auto', 'spin', 'mission', 'script'
+    driveMode: 'manual'
   };
 
   // Encoders
@@ -2117,16 +2067,16 @@
       document.getElementById('btnSerialConnectLabel').innerText = 'DISCONNECT ARDUINO';
 
       const connStatus = document.getElementById('connStatus');
-      connStatus.className = 'status-pill battery';
+      connStatus.className = 'status-badge-chip battery';
       document.getElementById('connIcon').innerText = '⚡';
       document.getElementById('connText').innerText = `ONLINE (${baud})`;
 
-      document.getElementById('hSerial').className = 'health-indicator-dot online';
-      document.getElementById('hMcu').className = 'health-indicator-dot online';
+      document.getElementById('hSerial').className = 'health-indicator-circle online';
+      document.getElementById('hMcu').className = 'health-indicator-circle online';
 
       document.getElementById('interlockLabel').innerText = 'SERIAL LINK ONLINE';
       document.getElementById('interlockDesc').innerText = 'Dual L298N Powertrain energized. Teleoperation active.';
-      document.querySelector('.link-ribbon').style.borderColor = 'var(--accent-cyan)';
+      document.querySelector('.link-ribbon').style.borderColor = 'var(--cyan)';
 
       logTerm(`[SERIAL] Connected to USB Port @ ${baud} Baud. Safety interlock cleared.`, 'info');
       readSerialLoop();
@@ -2157,15 +2107,15 @@
     document.getElementById('btnSerialConnectLabel').innerText = 'CONNECT ARDUINO (USB)';
 
     const connStatus = document.getElementById('connStatus');
-    connStatus.className = 'status-pill';
+    connStatus.className = 'status-badge-chip';
     document.getElementById('connIcon').innerText = '🔌';
     document.getElementById('connText').innerText = 'OFFLINE';
 
-    document.getElementById('hSerial').className = 'health-indicator-dot';
+    document.getElementById('hSerial').className = 'health-indicator-circle';
 
     document.getElementById('interlockLabel').innerText = 'SAFETY INTERLOCK ACTIVE';
     document.getElementById('interlockDesc').innerText = 'Click Connect Arduino (USB) or launch Wi-Fi Bridge to engage drive commands.';
-    document.querySelector('.link-ribbon').style.borderColor = 'rgba(245, 158, 11, 0.4)';
+    document.querySelector('.link-ribbon').style.borderColor = 'rgba(245, 158, 11, 0.35)';
 
     logTerm('[SERIAL] Port disconnected. Powertrain safe.', 'warn');
   }
@@ -2244,14 +2194,14 @@
       const ws = new WebSocket(wsUrl);
       ws.onopen = () => {
         isWifiConnected = true;
-        document.getElementById('hWifi').className = 'health-indicator-dot online';
+        document.getElementById('hWifi').className = 'health-indicator-circle online';
         logTerm('[WIFI] Bridge Connected to WebSocket @ Port 8080.', 'info');
       };
       ws.onmessage = (e) => handleIncomingTelemetry(e.data);
       ws.onerror = () => logTerm('[WIFI] Bridge Server not detected. Use Local HTTP Server on Port 8080.', 'warn');
       ws.onclose = () => {
         isWifiConnected = false;
-        document.getElementById('hWifi').className = 'health-indicator-dot';
+        document.getElementById('hWifi').className = 'health-indicator-circle';
       };
     } catch (e) {
       logTerm(`[WIFI] ${e.message}`, 'warn');
@@ -2549,7 +2499,7 @@
     rover.driveMode = 'script';
     document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
 
-    document.querySelectorAll('.test-card').forEach(c => c.classList.remove('active-running'));
+    document.querySelectorAll('.test-protocol-item').forEach(c => c.classList.remove('active-running'));
     document.querySelectorAll('.script-status-badge').forEach(b => {
       if (b.innerText === 'RUNNING') b.innerText = 'READY';
     });
@@ -2598,7 +2548,7 @@
 
     document.getElementById('tabManual').classList.add('active');
     document.getElementById('scriptBanner').style.display = 'none';
-    document.querySelectorAll('.test-card').forEach(c => c.classList.remove('active-running'));
+    document.querySelectorAll('.test-protocol-item').forEach(c => c.classList.remove('active-running'));
   }
 
   function completeRunningScript() {
@@ -2620,7 +2570,7 @@
 
     document.getElementById('tabManual').classList.add('active');
     document.getElementById('scriptBanner').style.display = 'none';
-    document.querySelectorAll('.test-card').forEach(c => c.classList.remove('active-running'));
+    document.querySelectorAll('.test-protocol-item').forEach(c => c.classList.remove('active-running'));
   }
 
   // ================= MAIN TICK (KINEMATICS & TELEMETRY) =================
@@ -2772,16 +2722,16 @@
       stateText.style.color = '#94a3b8';
     } else if (flDir > 0 && frDir > 0) {
       stateText.innerText = 'DRIVING FORWARD';
-      stateText.style.color = 'var(--accent-cyan)';
+      stateText.style.color = 'var(--cyan)';
     } else if (flDir < 0 && frDir < 0) {
       stateText.innerText = 'REVERSING';
-      stateText.style.color = 'var(--accent-amber)';
+      stateText.style.color = 'var(--amber)';
     } else if (flDir > 0 && frDir < 0) {
       stateText.innerText = 'PIVOTING RIGHT';
-      stateText.style.color = 'var(--accent-purple)';
+      stateText.style.color = 'var(--purple)';
     } else if (flDir < 0 && frDir > 0) {
       stateText.innerText = 'PIVOTING LEFT';
-      stateText.style.color = 'var(--accent-purple)';
+      stateText.style.color = 'var(--purple)';
     }
 
     const pct = Math.round((rover.pwm / 220) * 100);
@@ -2846,13 +2796,13 @@
       laserBadge.style.color = 'var(--text-dim)';
     } else if (currentDistanceMm < 180) {
       laserBadge.innerText = 'CRITICAL (<180mm)';
-      laserBadge.style.color = 'var(--accent-rose)';
+      laserBadge.style.color = 'var(--rose)';
     } else if (currentDistanceMm < 300) {
       laserBadge.innerText = 'CAUTION';
-      laserBadge.style.color = 'var(--accent-amber)';
+      laserBadge.style.color = 'var(--amber)';
     } else {
       laserBadge.innerText = 'CLEAR';
-      laserBadge.style.color = 'var(--accent-emerald)';
+      laserBadge.style.color = 'var(--emerald)';
     }
 
     let deg = Math.round((rover.heading * 180 / Math.PI) % 360);
