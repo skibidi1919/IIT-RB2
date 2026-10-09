@@ -3,20 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RB2 Test</title>
+  <title>RB2 — Youth Challenge Mission Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #12141a;
-      --panel: #1c2029;
-      --line: #2e3545;
-      --text: #e8eaf0;
-      --muted: #8b93a7;
-      --accent: #3d9cf0;
-      --go: #3ecf8e;
-      --stop: #e85d5d;
-      --warn: #e6b84d;
-      --font: "IBM Plex Sans", "Segoe UI", sans-serif;
-      --mono: "IBM Plex Mono", Consolas, monospace;
+      --bg: #0b0e14;
+      --panel: #151922;
+      --panel-accent: #1c2230;
+      --line: #262e3d;
+      --text: #f0f3fa;
+      --muted: #8390a8;
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      --go: #10b981;
+      --go-glow: rgba(16, 185, 129, 0.35);
+      --stop: #ef4444;
+      --stop-glow: rgba(239, 68, 68, 0.35);
+      --warn: #f59e0b;
+      --font: 'Inter', -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
     }
     * { box-sizing: border-box; }
     body {
@@ -24,223 +31,389 @@
       min-height: 100vh;
       font-family: var(--font);
       color: var(--text);
-      background:
-        radial-gradient(900px 500px at 10% -10%, #1a3050 0%, transparent 55%),
-        radial-gradient(700px 400px at 100% 0%, #1a2820 0%, transparent 50%),
-        var(--bg);
+      background: radial-gradient(1200px 600px at 15% -10%, #172a45 0%, transparent 60%),
+                  radial-gradient(900px 500px at 95% 0%, #122c22 0%, transparent 50%),
+                  var(--bg);
     }
     header {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 12px 20px;
-      padding: 18px 22px;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 28px;
+      background: rgba(21, 25, 34, 0.85);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    header h1 {
+    .brand h1 {
       margin: 0;
       font-size: 1.35rem;
-      letter-spacing: 0.04em;
-      font-weight: 650;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    header .sub { color: var(--muted); font-size: 0.9rem; }
+    .badge {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .brand .sub { color: var(--muted); font-size: 0.82rem; margin-top: 3px; }
     .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-    select, input[type="number"], button, input[type="range"] {
-      font: inherit;
-    }
+    select, input[type="number"], button, input[type="range"] { font: inherit; }
     select, input[type="number"] {
       background: var(--panel);
       color: var(--text);
       border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 8px 10px;
+      border-radius: 8px;
+      padding: 8px 12px;
+      outline: none;
     }
+    select:focus, input[type="number"]:focus { border-color: var(--accent); }
     button {
       border: 1px solid var(--line);
-      background: var(--panel);
+      background: var(--panel-accent);
       color: var(--text);
-      border-radius: 6px;
-      padding: 8px 14px;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-weight: 600;
       cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
-    button:hover { border-color: var(--accent); }
-    button.go { background: #1e3d30; border-color: #2f6b52; color: var(--go); }
-    button.stop { background: #3a1e1e; border-color: #7a3030; color: var(--stop); font-weight: 650; }
-    button.warn { background: #3a3218; border-color: #6b5a22; color: var(--warn); }
+    button:hover { border-color: var(--accent); transform: translateY(-1px); }
+    button.go { background: #064e3b; border-color: var(--go); color: #6ee7b7; box-shadow: 0 0 12px var(--go-glow); }
+    button.stop { background: #7f1d1d; border-color: var(--stop); color: #fca5a5; box-shadow: 0 0 12px var(--stop-glow); }
+    button.primary { background: #1e3a8a; border-color: var(--accent); color: #bfdbfe; }
+    button.warn { background: #78350f; border-color: var(--warn); color: #fde68a; }
+
     main {
       display: grid;
-      grid-template-columns: 1.1fr 1fr;
-      gap: 16px;
-      padding: 16px 22px 28px;
-      max-width: 1100px;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 20px;
+      padding: 24px 28px 40px;
+      max-width: 1400px;
+      margin: 0 auto;
     }
-    @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+    @media (max-width: 1050px) { main { grid-template-columns: 1fr; } }
     section {
-      background: color-mix(in srgb, var(--panel) 92%, black);
+      background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 14px 16px 16px;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
     }
     section h2 {
-      margin: 0 0 12px;
-      font-size: 0.78rem;
+      margin: 0 0 16px;
+      font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.12em;
       color: var(--muted);
-      font-weight: 600;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .telem {
+    .mission-hero {
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(6, 78, 59, 0.3) 100%);
+      border: 1px solid #2563eb;
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 20px;
+      grid-column: 1 / -1;
+    }
+    .mission-hero-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .mission-hero h3 { margin: 0; font-size: 1.3rem; font-weight: 700; color: #fff; }
+    .mission-hero p { margin: 4px 0 0; color: #93c5fd; font-size: 0.9rem; }
+    .btn-launch {
+      font-size: 1.05rem;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.5);
+      transition: all 0.2s;
+    }
+    .btn-launch:hover { transform: scale(1.02); box-shadow: 0 0 32px rgba(16, 185, 129, 0.7); }
+
+    .stepper {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .step-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 12px 14px;
+      position: relative;
+      transition: all 0.3s;
+    }
+    .step-card.active {
+      border-color: #38bdf8;
+      background: rgba(14, 165, 233, 0.15);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+    }
+    .step-card .num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .step-card .title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 4px;
+      color: #f1f5f9;
+    }
+    .step-card .desc {
+      font-size: 0.76rem;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+
+    .telem-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      font-family: var(--mono);
-      font-size: 0.85rem;
-    }
-    .telem div {
-      background: #141820;
-      border-radius: 6px;
-      padding: 8px 10px;
-    }
-    .telem span { display: block; color: var(--muted); font-size: 0.7rem; margin-bottom: 2px; }
-    .pad {
-      display: grid;
-      grid-template-columns: repeat(3, 72px);
-      gap: 8px;
-      justify-content: center;
-      margin: 8px 0 4px;
-    }
-    .pad button { height: 52px; font-size: 1.1rem; }
-    .pad .ghost { visibility: hidden; }
-    label.slider {
-      display: grid;
-      grid-template-columns: 70px 1fr 48px;
       gap: 10px;
-      align-items: center;
-      margin: 8px 0;
+      font-family: var(--mono);
       font-size: 0.9rem;
     }
-    input[type="range"] { width: 100%; }
-    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    .log {
-      height: 160px;
+    .telem-card {
+      background: #0f131a;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .telem-card span { display: block; color: var(--muted); font-size: 0.72rem; margin-bottom: 4px; font-family: var(--font); }
+    .telem-card b { font-size: 1.15rem; color: #fff; }
+
+    .pad-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .pad {
+      display: grid;
+      grid-template-columns: repeat(3, 76px);
+      gap: 10px;
+    }
+    .pad button { height: 56px; font-size: 1.3rem; justify-content: center; }
+    .pad .ghost { visibility: hidden; }
+
+    label.slider-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 52px;
+      gap: 12px;
+      align-items: center;
+      margin: 12px 0;
+      font-size: 0.92rem;
+    }
+    input[type="range"] {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .log-box {
+      height: 180px;
       overflow: auto;
       font-family: var(--mono);
-      font-size: 0.75rem;
-      background: #0e1116;
-      border-radius: 6px;
-      padding: 8px 10px;
-      color: #b8c0d0;
+      font-size: 0.78rem;
+      background: #090c10;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #93c5fd;
       white-space: pre-wrap;
+      line-height: 1.4;
+      margin-top: 14px;
     }
     .dot {
-      width: 9px; height: 9px; border-radius: 50%;
+      width: 10px; height: 10px; border-radius: 50%;
       display: inline-block; margin-right: 6px;
       background: var(--stop);
     }
-    .dot.on { background: var(--go); box-shadow: 0 0 8px #3ecf8e88; }
+    .dot.on { background: var(--go); box-shadow: 0 0 10px #10b981; }
   </style>
 </head>
 <body>
   <header>
-    <div>
-      <h1>RB2 Test</h1>
-      <div class="sub">Nano · L298N · PCA CH0/CH1 · BNO085 · N20 enc</div>
+    <div class="brand">
+      <h1><span>RB2 — Robot 2</span> <span class="badge">Youth Challenge 2026-2027</span></h1>
+      <div class="sub">Autonomous Containment Delivery · Closed-Loop Elevation Compensation · PCA9685 Pulley</div>
     </div>
-    <div class="row" style="margin-left:auto">
-      <span><i class="dot" id="dot"></i><span id="linkLbl">offline</span></span>
-      <select id="port"></select>
+    <div class="row">
+      <span><i class="dot" id="dot"></i><span id="linkLbl" style="font-size:0.9rem;font-weight:600">offline</span></span>
+      <select id="port"><option>Scanning ports...</option></select>
       <button id="btnConn" class="go">Connect</button>
       <button id="btnDisc">Disconnect</button>
-      <button id="btnStop" class="stop">STOP</button>
+      <button id="btnStop" class="stop">ABORT / STOP</button>
     </div>
   </header>
 
   <main>
-    <section>
-      <h2>Telemetry</h2>
-      <div class="telem">
-        <div><span>IMU</span><b id="tImu">—</b></div>
-        <div><span>YAW °</span><b id="tYaw">—</b></div>
-        <div><span>RATE °/s</span><b id="tRate">—</b></div>
-        <div><span>ENC L</span><b id="tEl">—</b></div>
-        <div><span>ENC R</span><b id="tEr">—</b></div>
-        <div><span>SCALE L/R</span><b id="tSc">—</b></div>
+    <!-- Autonomous Mission Hero Station -->
+    <div class="mission-hero">
+      <div class="mission-hero-header">
+        <div>
+          <h3>Autonomous Mission Control</h3>
+          <p>Deliver 2 Quarantine Containment Beams over left-side elevation & park in Quarantine Zone.</p>
+        </div>
+        <div class="row">
+          <button id="btnLaunchAuton" class="btn-launch">⚡ LAUNCH MISSION (AUTON)</button>
+        </div>
       </div>
-      <div class="log" id="log"></div>
+
+      <div class="stepper">
+        <div class="step-card" id="step1">
+          <div class="num">Step 1</div>
+          <div class="title">Countdown</div>
+          <div class="desc">2.5s Start Delay</div>
+        </div>
+        <div class="step-card" id="step2">
+          <div class="num">Step 2</div>
+          <div class="title">Traverse Ramp</div>
+          <div class="desc">Closed-Loop Straight</div>
+        </div>
+        <div class="step-card" id="step3">
+          <div class="num">Step 3</div>
+          <div class="title">Deploy Pulley</div>
+          <div class="desc">Lower 2 Walls Upright</div>
+        </div>
+        <div class="step-card" id="step4">
+          <div class="num">Step 4</div>
+          <div class="title">Clear & Detach</div>
+          <div class="desc">500ms Reverse Roll</div>
+        </div>
+        <div class="step-card" id="step5">
+          <div class="num">Step 5</div>
+          <div class="title">Retract Arms</div>
+          <div class="desc">Home Pulley Servos</div>
+        </div>
+        <div class="step-card" id="step6">
+          <div class="num">Step 6</div>
+          <div class="title">Parked</div>
+          <div class="desc">Locked in Zone (+70 pts)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Telemetry & Feedback -->
+    <section>
+      <h2>Live Telemetry & Diagnostics <span id="telRate" style="font-size:0.75rem;color:var(--muted)">5 Hz</span></h2>
+      <div class="telem-grid">
+        <div class="telem-card"><span>ENC LEFT (M1+M3)</span><b id="tEl">0</b></div>
+        <div class="telem-card"><span>ENC RIGHT (M2+M4)</span><b id="tEr">0</b></div>
+        <div class="telem-card"><span>AVG DISTANCE</span><b id="tDist">0 mm</b></div>
+        <div class="telem-card"><span>LEFT TRIM</span><b id="tScL">100%</b></div>
+        <div class="telem-card"><span>RIGHT TRIM</span><b id="tScR">100%</b></div>
+        <div class="telem-card"><span>ELEVATION CORR</span><b id="tCorr">0 PWM</b></div>
+      </div>
+      <div class="log-box" id="log">Waiting for connection...</div>
     </section>
 
+    <!-- Pulley / Wall Arm Controls -->
     <section>
-      <h2>Drive pad</h2>
-      <label class="slider">Speed <input id="spd" type="range" min="40" max="255" value="160" /><b id="spdV">160</b></label>
-      <div class="pad">
-        <button class="ghost"></button>
-        <button id="fwd">▲</button>
-        <button class="ghost"></button>
-        <button id="left">◀</button>
-        <button id="halt" class="stop">■</button>
-        <button id="right">▶</button>
-        <button class="ghost"></button>
-        <button id="back">▼</button>
-        <button class="ghost"></button>
+      <h2>Pulley / Wall Servos (PCA9685)</h2>
+      <div class="row" style="margin-bottom:14px">
+        <button id="btnHoldWalls" class="primary">🛡️ Transport Position (Home)</button>
+        <button id="btnDropWalls" class="warn">⬇️ Drop 2 Walls</button>
       </div>
-      <p class="sub" style="margin:8px 0 0;font-size:0.8rem">Hold buttons — auto-stops if stream drops (&lt;300 ms).</p>
+
+      <label class="slider-row">Left Pulley <input id="s0" type="range" min="0" max="180" value="20" /><b id="s0V">20°</b></label>
+      <label class="slider-row">Right Pulley <input id="s1" type="range" min="0" max="180" value="160" /><b id="s1V">160°</b></label>
+      <p style="font-size:0.8rem;color:var(--muted);margin-top:8px">Servos automatically execute smooth ramp sweeps to prevent jerking or tangling lines.</p>
     </section>
 
+    <!-- Distance & Elevation Calibrator -->
     <section>
-      <h2>Servos PCA</h2>
-      <label class="slider">CH0 <input id="s0" type="range" min="0" max="180" value="75" /><b id="s0V">75</b></label>
-      <label class="slider">CH1 <input id="s1" type="range" min="0" max="180" value="75" /><b id="s1V">75</b></label>
-      <div class="actions">
-        <button id="armsHome">Home 75°</button>
+      <h2>Distance & Drive Calibrator</h2>
+      <div class="row" style="margin-bottom:12px">
+        <input id="testDistMm" type="number" value="450" style="width:110px" placeholder="mm" /> mm
+        <button id="btnTestDist" class="primary">Drive Set Distance</button>
+        <button id="btnZeroEnc">Zero Encoders</button>
       </div>
+      <label class="slider-row">Base Speed <input id="spd" type="range" min="100" max="255" value="195" /><b id="spdV">195</b></label>
+      <p style="font-size:0.8rem;color:var(--muted)">Converts mm directly to encoder ticks based on Ø43 mm wheel circumference (4.44 counts/mm).</p>
     </section>
 
+    <!-- Manual Pit Drive Pad -->
     <section>
-      <h2>Path / cal</h2>
-      <div class="actions">
-        <button id="cal" class="warn">Motor cal (enc)</button>
-        <button id="prep">Path prepare</button>
-        <button id="gFwd" class="go">Gyro fwd 2s</button>
-        <button id="gBack">Gyro back 2s</button>
-        <button id="gL">Turn −90°</button>
-        <button id="gR">Turn +90°</button>
-        <button id="dist">Dist 600 cnt</button>
-      </div>
-      <label class="slider" style="margin-top:12px">Scale L <input id="scL" type="range" min="50" max="100" value="100" /><b id="scLV">100</b></label>
-      <label class="slider">Scale R <input id="scR" type="range" min="50" max="100" value="100" /><b id="scRV">100</b></label>
-      <div class="actions">
-        <button id="applyScale">Apply scales</button>
+      <h2>Manual Bench / Pit Pad</h2>
+      <div class="pad-box">
+        <div class="pad">
+          <button class="ghost"></button>
+          <button id="fwd">▲</button>
+          <button class="ghost"></button>
+          <button id="left">◀</button>
+          <button id="halt" class="stop">■</button>
+          <button id="right">▶</button>
+          <button class="ghost"></button>
+          <button id="back">▼</button>
+          <button class="ghost"></button>
+        </div>
+        <div class="sub" style="font-size:0.8rem;color:var(--muted)">Press and hold to drive. Auto-brakes when released.</div>
       </div>
     </section>
   </main>
 
   <script>
     const $ = (id) => document.getElementById(id);
-    let driving = null; // 'f'|'b'|'l'|'r'|null
+    let driving = null;
     let driveTimer = null;
 
     async function refreshPorts() {
-      const r = await fetch('/api/ports');
-      const ports = await r.json();
-      const sel = $('port');
-      const cur = sel.value;
-      sel.innerHTML = '';
-      for (const p of ports) {
-        const o = document.createElement('option');
-        o.value = p.device;
-        o.textContent = `${p.device} — ${p.desc}`;
-        sel.appendChild(o);
-      }
-      if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
-      else if ([...sel.options].some(o => o.value === 'COM3')) sel.value = 'COM3';
+      try {
+        const r = await fetch('/api/ports');
+        const ports = await r.json();
+        const sel = $('port');
+        const cur = sel.value;
+        sel.innerHTML = '';
+        for (const p of ports) {
+          const o = document.createElement('option');
+          o.value = p.device;
+          o.textContent = `${p.device} — ${p.desc}`;
+          sel.appendChild(o);
+        }
+        if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+      } catch (_) {}
     }
 
     async function cmd(c) {
-      await fetch('/api/cmd', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cmd: c }),
-      });
+      try {
+        await fetch('/api/cmd', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cmd: c }),
+        });
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     function spd() { return +$('spd').value; }
@@ -257,6 +430,7 @@
         else if (driving === 'r') cmd(`d ${s} ${-s}`);
       }, 80);
     }
+
     function stopDrive() {
       driving = null;
       if (driveTimer) { clearInterval(driveTimer); driveTimer = null; }
@@ -275,10 +449,8 @@
     }
 
     $('spd').oninput = () => { $('spdV').textContent = $('spd').value; };
-    $('s0').oninput = () => { $('s0V').textContent = $('s0').value; cmd(`s 0 ${$('s0').value}`); };
-    $('s1').oninput = () => { $('s1V').textContent = $('s1').value; cmd(`s 1 ${$('s1').value}`); };
-    $('scL').oninput = () => { $('scLV').textContent = $('scL').value; };
-    $('scR').oninput = () => { $('scRV').textContent = $('scR').value; };
+    $('s0').oninput = () => { $('s0V').textContent = `${$('s0').value}°`; cmd(`s 0 ${$('s0').value}`); };
+    $('s1').oninput = () => { $('s1V').textContent = `${$('s1').value}°`; cmd(`s 1 ${$('s1').value}`); };
 
     $('btnConn').onclick = async () => {
       await fetch('/api/connect', {
@@ -290,19 +462,25 @@
     $('btnDisc').onclick = () => fetch('/api/disconnect', { method: 'POST' });
     $('btnStop').onclick = () => { stopDrive(); cmd('stop'); };
     $('halt').onclick = () => stopDrive();
-    $('armsHome').onclick = () => {
-      $('s0').value = 75; $('s1').value = 75;
-      $('s0V').textContent = '75'; $('s1V').textContent = '75';
-      cmd('s 0 75'); cmd('s 1 75');
+
+    $('btnLaunchAuton').onclick = () => cmd('start');
+    $('btnHoldWalls').onclick = () => {
+      $('s0').value = 20; $('s0V').textContent = '20°';
+      $('s1').value = 160; $('s1V').textContent = '160°';
+      cmd('arms_home');
     };
-    $('cal').onclick = () => cmd('cal');
-    $('prep').onclick = () => cmd('prep');
-    $('gFwd').onclick = () => cmd(`fwd ${spd()} 2000`);
-    $('gBack').onclick = () => cmd(`back ${spd()} 2000`);
-    $('gL').onclick = () => cmd(`turn ${spd()} -90`);
-    $('gR').onclick = () => cmd(`turn ${spd()} 90`);
-    $('dist').onclick = () => cmd(`dist ${spd()} 600`);
-    $('applyScale').onclick = () => cmd(`scale ${$('scL').value} ${$('scR').value}`);
+    $('btnDropWalls').onclick = () => {
+      $('s0').value = 140; $('s0V').textContent = '140°';
+      $('s1').value = 40; $('s1V').textContent = '40°';
+      cmd('arms_drop');
+    };
+
+    $('btnTestDist').onclick = () => {
+      const mm = +$('testDistMm').value || 400;
+      const counts = Math.round(mm * 4.44);
+      cmd(`dist ${spd()} ${counts}`);
+    };
+    $('btnZeroEnc').onclick = () => cmd('prep');
 
     bindHold('fwd', 'f');
     bindHold('back', 'b');
@@ -314,20 +492,35 @@
         const r = await fetch('/api/telem');
         const t = await r.json();
         $('dot').classList.toggle('on', !!t.ok);
-        $('linkLbl').textContent = t.ok ? (t.port || 'online') : 'offline';
-        $('tImu').textContent = t.imu ? 'OK' : '—';
-        $('tYaw').textContent = Number(t.yaw).toFixed(1);
-        $('tRate').textContent = Number(t.rate).toFixed(1);
-        $('tEl').textContent = t.encL;
-        $('tEr').textContent = t.encR;
-        $('tSc').textContent = `${t.scaleL}/${t.scaleR}`;
-        if (t.log) $('log').textContent = t.log.join('\n');
+        $('linkLbl').textContent = t.ok ? (t.port || 'connected') : 'offline';
+        $('tEl').textContent = t.encL || 0;
+        $('tEr').textContent = t.encR || 0;
+        const avgTicks = Math.round(((t.encL || 0) + (t.encR || 0)) / 2);
+        $('tDist').textContent = `${Math.round(avgTicks / 4.44)} mm`;
+        $('tScL').textContent = `${t.scaleL || 100}%`;
+        $('tScR').textContent = `${t.scaleR || 100}%`;
+        $('tCorr').textContent = `${(t.encR || 0) - (t.encL || 0)} ticks`;
+        if (t.log) {
+          const logEl = $('log');
+          logEl.textContent = t.log.join('\n');
+          logEl.scrollTop = logEl.scrollHeight;
+
+          // Auto update stepper based on serial logs
+          const logText = t.log.join(' ');
+          for (let i = 1; i <= 6; i++) $(`step${i}`).classList.remove('active');
+          if (logText.includes('PARKED')) $('step6').classList.add('active');
+          else if (logText.includes('Retracting')) $('step5').classList.add('active');
+          else if (logText.includes('Backing up')) $('step4').classList.add('active');
+          else if (logText.includes('Lowering walls')) $('step3').classList.add('active');
+          else if (logText.includes('Driving through')) $('step2').classList.add('active');
+          else if (logText.includes('AUTON START')) $('step1').classList.add('active');
+        }
       } catch (_) {}
     }
 
     refreshPorts();
     setInterval(tick, 200);
-    setInterval(refreshPorts, 5000);
+    setInterval(refreshPorts, 4000);
     tick();
   </script>
 </body>
