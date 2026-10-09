@@ -72,16 +72,18 @@ def test_connect_drive_estop_disconnect():
 
         r = client.post("/api/estop", json={})
         assert r.get_json()["ok"] is True
-        assert panel._state["estop"] is True
-        assert "EMERGENCY" in panel._state["op_mode"]
-
-        # motion blocked
-        r = client.post("/api/drive", json={"left": 50, "right": 50})
-        assert r.status_code == 409
-
-        r = client.post("/api/estop/clear", json={})
-        assert r.get_json()["ok"] is True
+        # Chord hard-stop: zeros motors, never latches
         assert panel._state["estop"] is False
+        assert "EMERGENCY" not in (panel._state.get("op_mode") or "")
+
+        deadline = time.monotonic() + 1.5
+        while time.monotonic() < deadline and (bot.cmd_l != 0 or bot.cmd_r != 0):
+            time.sleep(0.02)
+        assert bot.cmd_l == 0 and bot.cmd_r == 0
+
+        # still commandable immediately
+        r = client.post("/api/drive", json={"left": 50, "right": 50})
+        assert r.status_code == 200
     finally:
         panel.disconnect()
         bot.stop()

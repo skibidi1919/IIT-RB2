@@ -8,7 +8,7 @@ Small differential-drive robot with a 3-DOF PCA9685 arm, VL53L0X ToF, optional B
 |-------|------|--------|
 | Nano firmware | `arm_ui/` | Old bootloader FQBN, 115200 text protocol |
 | Control panel | `arm_ui/app.py` | Flask @ http://127.0.0.1:5050 |
-| Docs | `docs/` | Pinout, protocol, setup |
+| Docs | `docs/` | [Pinout](docs/PINOUT.md), [Youth Challenge Rules](docs/YOUTH_CHALLENGE_RULES.md) |
 
 ```powershell
 arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old arm_ui

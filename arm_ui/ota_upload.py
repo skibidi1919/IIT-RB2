@@ -21,7 +21,6 @@ import socket
 import struct
 import subprocess
 import sys
-import tempfile
 import time
 from pathlib import Path
 
@@ -30,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from meowler_pb import meowler_pb2 as pb  # noqa: E402
 
-CHUNK = 4096
+CHUNK = 1024  # smaller chunks — hotspot drops large OTA bursts
 DEFAULT_HOST = "192.168.137.222"
 DEFAULT_PORT = 3333
 FQBN = (
@@ -126,6 +125,7 @@ def wait_ota_states(
 
 
 def compile_bin() -> Path:
+    """Incremental compile into esp_ui/build (reuses objects; -j all cores)."""
     cli = Path(os.environ.get("LOCALAPPDATA", "")) / "arduino-cli" / "arduino-cli.exe"
     if not cli.is_file():
         raise SystemExit(f"arduino-cli not found: {cli}")
@@ -144,11 +144,27 @@ def compile_bin() -> Path:
     )
     if part_src.is_file() and part_dst.parent.is_dir():
         part_dst.write_bytes(part_src.read_bytes())
-    out = Path(tempfile.mkdtemp(prefix="meowler-ota-"))
     sketch = ROOT / "esp_ui"
-    print(f"compile -> {out}")
+    out = sketch / "build"
+    cache = out / ".cache"
+    out.mkdir(parents=True, exist_ok=True)
+    cache.mkdir(parents=True, exist_ok=True)
+    print(f"compile -> {out} (cache {cache})")
     r = subprocess.run(
-        [str(cli), "compile", "--fqbn", FQBN, str(sketch), "--output-dir", str(out), *BUILD_PROPS],
+        [
+            str(cli),
+            "compile",
+            "--fqbn",
+            FQBN,
+            "-j",
+            "0",
+            "--build-path",
+            str(cache),
+            "--output-dir",
+            str(out),
+            str(sketch),
+            *BUILD_PROPS,
+        ],
         check=False,
     )
     if r.returncode != 0:

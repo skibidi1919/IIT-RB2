@@ -11,12 +11,19 @@ message Drive {
 }
 
 message Arm {
-  int32 base = 1;    // 0..180
-  int32 height = 2;  // 0..180
-  int32 grip = 3;    // 0..180
+  int32 base = 1;    // 0..180 · PCA CH0
+  int32 height = 2;  // 0..180 · PCA CH1
+  int32 grip = 3;    // 0..180 · PCA CH2
   bool set_base = 4;
   bool set_height = 5;
   bool set_grip = 6;
+  // Extra MG90s
+  int32 s13 = 7;     // 0..180 · PCA CH13
+  int32 s14 = 8;     // 0..180 · PCA CH14
+  int32 s15 = 9;     // 0..180 · PCA CH15
+  bool set_s13 = 10;
+  bool set_s14 = 11;
+  bool set_s15 = 12;
 }
 
 // PCA CH4 — SG90 360° continuous (UM conveyor belt)
@@ -29,6 +36,36 @@ message ColorCal {
   // 0=white-balance  1=teach RED  2=teach YELLOW  3=teach GREEN
   // 4=clear taught centroids  5=factory reset gains+centroids
   uint32 mode = 1;
+}
+
+// Gyro path-correct enable + Nano-style onboard maneuvers (RB1 / ESP32)
+message PathCtrl {
+  bool enable = 1;
+  // 0=enable only (legacy)
+  // 1=forward timed (arg=ms)  2=backward timed (arg=ms)
+  // 3=turn left (arg=deg, 0→90)  4=turn right (arg=deg, 0→90)
+  // 5=abort maneuver
+  uint32 action = 2;
+  int32 arg = 3;     // ms or degrees
+  int32 speed = 4;   // PWM (0 → 200 fwd/back, 175 turn)
+  int32 offset = 5;  // turn overshoot deg · fwd FF trim override (0 → default)
+}
+
+// Wheel speed match (M1 left / M2 right) via encoders
+message MotorCal {
+  // 1=run encoder match now (equal PWM burst → set scales)
+  // 2=set scales manually (scale_*_pct)
+  // 3=query current scales (log + ack)
+  // 4=reset scales to 100/100
+  uint32 action = 1;
+  uint32 scale_l_pct = 2;  // 50..100 · 100 = full PWM
+  uint32 scale_r_pct = 3;
+}
+
+// Onboard closed-loop straight run (survives panel drive=0 spam)
+message DriveDist {
+  int32 mm = 1;     // +forward / −backward · wheel odometry
+  int32 speed = 2;  // 40..255 PWM (0 → default 160)
 }
 
 // Host → robot: start/stop onboard capture. Robot streams RecEvent back.
@@ -45,9 +82,12 @@ message RecEvent {
   int32 a = 3;       // drive.left / arm.base / conveyor.speed
   int32 b = 4;       // drive.right / arm.height
   int32 c = 5;       // arm.grip
-  uint32 mask = 6;   // arm field mask: 1=base 2=height 4=grip
+  uint32 mask = 6;   // arm: 1=base 2=height 4=grip 8=s13 16=s14 32=s15
   uint32 count = 7;  // event count on begin/end
   string name = 8;
+  int32 d = 9;       // arm.s13
+  int32 e = 10;      // arm.s14
+  int32 f = 11;      // arm.s15
 }
 
 // ---- Protobuf WiFi OTA (dual ota_0 / ota_1) ----
@@ -98,6 +138,9 @@ message ClientToRobot {
     ColorCal color_cal = 9;
     RecCtrl rec = 10;
     OtaCmd ota = 11;
+    PathCtrl path = 12;
+    MotorCal motor_cal = 13;
+    DriveDist drive_dist = 14;
   }
 }
 
@@ -131,6 +174,9 @@ message Telemetry {
   uint32 color_bp = 26;
   uint32 color_cp = 27;
   int32 conveyor = 28;     // -255..255 · PCA CH4 SG90-360
+  int32 s13 = 29;          // PCA CH13 MG90 0..180
+  int32 s14 = 30;          // PCA CH14 MG90 0..180
+  int32 s15 = 31;          // PCA CH15 MG90 0..180
 }
 
 message Hello {

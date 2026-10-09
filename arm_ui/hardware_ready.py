@@ -116,15 +116,6 @@ def run_preflight(state: dict[str, Any], *, events: list[dict] | None = None) ->
             critical=True,
         ))
 
-    estop = bool(state.get("estop"))
-    checks.append(CheckResult(
-        "estop",
-        "Emergency stop clear",
-        "FAIL" if estop else "PASS",
-        "latched" if estop else "clear",
-        critical=True,
-    ))
-
     fault = bool(state.get("fault"))
     checks.append(CheckResult(
         "fault",

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RB2 Test</title>
+  <style>
+    :root {
+      --bg: #12141a;
+      --panel: #1c2029;
+      --line: #2e3545;
+      --text: #e8eaf0;
+      --muted: #8b93a7;
+      --accent: #3d9cf0;
+      --go: #3ecf8e;
+      --stop: #e85d5d;
+      --warn: #e6b84d;
+      --font: "IBM Plex Sans", "Segoe UI", sans-serif;
+      --mono: "IBM Plex Mono", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 10% -10%, #1a3050 0%, transparent 55%),
+        radial-gradient(700px 400px at 100% 0%, #1a2820 0%, transparent 50%),
+        var(--bg);
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px 20px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: 0.04em;
+      font-weight: 650;
+    }
+    header .sub { color: var(--muted); font-size: 0.9rem; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    select, input[type="number"], button, input[type="range"] {
+      font: inherit;
+    }
+    select, input[type="number"] {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); }
+    button.go { background: #1e3d30; border-color: #2f6b52; color: var(--go); }
+    button.stop { background: #3a1e1e; border-color: #7a3030; color: var(--stop); font-weight: 650; }
+    button.warn { background: #3a3218; border-color: #6b5a22; color: var(--warn); }
+    main {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+      padding: 16px 22px 28px;
+      max-width: 1100px;
+    }
+    @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+    section {
+      background: color-mix(in srgb, var(--panel) 92%, black);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px 16px;
+    }
+    section h2 {
+      margin: 0 0 12px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .telem {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+    .telem div {
+      background: #141820;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+    .telem span { display: block; color: var(--muted); font-size: 0.7rem; margin-bottom: 2px; }
+    .pad {
+      display: grid;
+      grid-template-columns: repeat(3, 72px);
+      gap: 8px;
+      justify-content: center;
+      margin: 8px 0 4px;
+    }
+    .pad button { height: 52px; font-size: 1.1rem; }
+    .pad .ghost { visibility: hidden; }
+    label.slider {
+      display: grid;
+      grid-template-columns: 70px 1fr 48px;
+      gap: 10px;
+      align-items: center;
+      margin: 8px 0;
+      font-size: 0.9rem;
+    }
+    input[type="range"] { width: 100%; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .log {
+      height: 160px;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      background: #0e1116;
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: #b8c0d0;
+      white-space: pre-wrap;
+    }
+    .dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      display: inline-block; margin-right: 6px;
+      background: var(--stop);
+    }
+    .dot.on { background: var(--go); box-shadow: 0 0 8px #3ecf8e88; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>RB2 Test</h1>
+      <div class="sub">Nano · L298N · PCA CH0/CH1 · BNO085 · N20 enc</div>
+    </div>
+    <div class="row" style="margin-left:auto">
+      <span><i class="dot" id="dot"></i><span id="linkLbl">offline</span></span>
+      <select id="port"></select>
+      <button id="btnConn" class="go">Connect</button>
+      <button id="btnDisc">Disconnect</button>
+      <button id="btnStop" class="stop">STOP</button>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Telemetry</h2>
+      <div class="telem">
+        <div><span>IMU</span><b id="tImu">—</b></div>
+        <div><span>YAW °</span><b id="tYaw">—</b></div>
+        <div><span>RATE °/s</span><b id="tRate">—</b></div>
+        <div><span>ENC L</span><b id="tEl">—</b></div>
+        <div><span>ENC R</span><b id="tEr">—</b></div>
+        <div><span>SCALE L/R</span><b id="tSc">—</b></div>
+      </div>
+      <div class="log" id="log"></div>
+    </section>
+
+    <section>
+      <h2>Drive pad</h2>
+      <label class="slider">Speed <input id="spd" type="range" min="40" max="255" value="160" /><b id="spdV">160</b></label>
+      <div class="pad">
+        <button class="ghost"></button>
+        <button id="fwd">▲</button>
+        <button class="ghost"></button>
+        <button id="left">◀</button>
+        <button id="halt" class="stop">■</button>
+        <button id="right">▶</button>
+        <button class="ghost"></button>
+        <button id="back">▼</button>
+        <button class="ghost"></button>
+      </div>
+      <p class="sub" style="margin:8px 0 0;font-size:0.8rem">Hold buttons — auto-stops if stream drops (&lt;300 ms).</p>
+    </section>
+
+    <section>
+      <h2>Servos PCA</h2>
+      <label class="slider">CH0 <input id="s0" type="range" min="0" max="180" value="75" /><b id="s0V">75</b></label>
+      <label class="slider">CH1 <input id="s1" type="range" min="0" max="180" value="75" /><b id="s1V">75</b></label>
+      <div class="actions">
+        <button id="armsHome">Home 75°</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Path / cal</h2>
+      <div class="actions">
+        <button id="cal" class="warn">Motor cal (enc)</button>
+        <button id="prep">Path prepare</button>
+        <button id="gFwd" class="go">Gyro fwd 2s</button>
+        <button id="gBack">Gyro back 2s</button>
+        <button id="gL">Turn −90°</button>
+        <button id="gR">Turn +90°</button>
+        <button id="dist">Dist 600 cnt</button>
+      </div>
+      <label class="slider" style="margin-top:12px">Scale L <input id="scL" type="range" min="50" max="100" value="100" /><b id="scLV">100</b></label>
+      <label class="slider">Scale R <input id="scR" type="range" min="50" max="100" value="100" /><b id="scRV">100</b></label>
+      <div class="actions">
+        <button id="applyScale">Apply scales</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let driving = null; // 'f'|'b'|'l'|'r'|null
+    let driveTimer = null;
+
+    async function refreshPorts() {
+      const r = await fetch('/api/ports');
+      const ports = await r.json();
+      const sel = $('port');
+      const cur = sel.value;
+      sel.innerHTML = '';
+      for (const p of ports) {
+        const o = document.createElement('option');
+        o.value = p.device;
+        o.textContent = `${p.device} — ${p.desc}`;
+        sel.appendChild(o);
+      }
+      if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+      else if ([...sel.options].some(o => o.value === 'COM3')) sel.value = 'COM3';
+    }
+
+    async function cmd(c) {
+      await fetch('/api/cmd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cmd: c }),
+      });
+    }
+
+    function spd() { return +$('spd').value; }
+
+    function startDrive(dir) {
+      driving = dir;
+      if (driveTimer) return;
+      driveTimer = setInterval(() => {
+        if (!driving) return;
+        const s = spd();
+        if (driving === 'f') cmd(`d ${s} ${s}`);
+        else if (driving === 'b') cmd(`d ${-s} ${-s}`);
+        else if (driving === 'l') cmd(`d ${-s} ${s}`);
+        else if (driving === 'r') cmd(`d ${s} ${-s}`);
+      }, 80);
+    }
+    function stopDrive() {
+      driving = null;
+      if (driveTimer) { clearInterval(driveTimer); driveTimer = null; }
+      cmd('stop');
+    }
+
+    function bindHold(id, dir) {
+      const el = $(id);
+      const down = (e) => { e.preventDefault(); startDrive(dir); };
+      const up = (e) => { e.preventDefault(); stopDrive(); };
+      el.addEventListener('mousedown', down);
+      el.addEventListener('mouseup', up);
+      el.addEventListener('mouseleave', up);
+      el.addEventListener('touchstart', down, { passive: false });
+      el.addEventListener('touchend', up);
+    }
+
+    $('spd').oninput = () => { $('spdV').textContent = $('spd').value; };
+    $('s0').oninput = () => { $('s0V').textContent = $('s0').value; cmd(`s 0 ${$('s0').value}`); };
+    $('s1').oninput = () => { $('s1V').textContent = $('s1').value; cmd(`s 1 ${$('s1').value}`); };
+    $('scL').oninput = () => { $('scLV').textContent = $('scL').value; };
+    $('scR').oninput = () => { $('scRV').textContent = $('scR').value; };
+
+    $('btnConn').onclick = async () => {
+      await fetch('/api/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ port: $('port').value }),
+      });
+    };
+    $('btnDisc').onclick = () => fetch('/api/disconnect', { method: 'POST' });
+    $('btnStop').onclick = () => { stopDrive(); cmd('stop'); };
+    $('halt').onclick = () => stopDrive();
+    $('armsHome').onclick = () => {
+      $('s0').value = 75; $('s1').value = 75;
+      $('s0V').textContent = '75'; $('s1V').textContent = '75';
+      cmd('s 0 75'); cmd('s 1 75');
+    };
+    $('cal').onclick = () => cmd('cal');
+    $('prep').onclick = () => cmd('prep');
+    $('gFwd').onclick = () => cmd(`fwd ${spd()} 2000`);
+    $('gBack').onclick = () => cmd(`back ${spd()} 2000`);
+    $('gL').onclick = () => cmd(`turn ${spd()} -90`);
+    $('gR').onclick = () => cmd(`turn ${spd()} 90`);
+    $('dist').onclick = () => cmd(`dist ${spd()} 600`);
+    $('applyScale').onclick = () => cmd(`scale ${$('scL').value} ${$('scR').value}`);
+
+    bindHold('fwd', 'f');
+    bindHold('back', 'b');
+    bindHold('left', 'l');
+    bindHold('right', 'r');
+
+    async function tick() {
+      try {
+        const r = await fetch('/api/telem');
+        const t = await r.json();
+        $('dot').classList.toggle('on', !!t.ok);
+        $('linkLbl').textContent = t.ok ? (t.port || 'online') : 'offline';
+        $('tImu').textContent = t.imu ? 'OK' : '—';
+        $('tYaw').textContent = Number(t.yaw).toFixed(1);
+        $('tRate').textContent = Number(t.rate).toFixed(1);
+        $('tEl').textContent = t.encL;
+        $('tEr').textContent = t.encR;
+        $('tSc').textContent = `${t.scaleL}/${t.scaleR}`;
+        if (t.log) $('log').textContent = t.log.join('\n');
+      } catch (_) {}
+    }
+
+    refreshPorts();
+    setInterval(tick, 200);
+    setInterval(refreshPorts, 5000);
+    tick();
+  </script>
+</body>
+</html>

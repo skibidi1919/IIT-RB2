@@ -53,15 +53,17 @@ def pack_event(ev: dict[str, Any]) -> bytes:
     if code == OP_ARM:
         mask = 0
         body = bytearray()
-        if "base" in ev:
-            mask |= 1
-            body.append(_u8(ev["base"]))
-        if "height" in ev:
-            mask |= 2
-            body.append(_u8(ev["height"]))
-        if "grip" in ev:
-            mask |= 4
-            body.append(_u8(ev["grip"]))
+        for bit, key in (
+            (1, "base"),
+            (2, "height"),
+            (4, "grip"),
+            (8, "s13"),
+            (16, "s14"),
+            (32, "s15"),
+        ):
+            if key in ev:
+                mask |= bit
+                body.append(_u8(ev[key]))
         return head + bytes([mask]) + bytes(body)
     if code == OP_CONV:
         return head + struct.pack("<h", _i16(ev.get("speed", 0)))
@@ -93,7 +95,14 @@ def unpack_events(blob: bytes, count: int) -> list[dict[str, Any]]:
                 raise ValueError("truncated arm")
             mask = blob[off]
             off += 1
-            for bit, key in ((1, "base"), (2, "height"), (4, "grip")):
+            for bit, key in (
+                (1, "base"),
+                (2, "height"),
+                (4, "grip"),
+                (8, "s13"),
+                (16, "s14"),
+                (32, "s15"),
+            ):
                 if mask & bit:
                     if off + 1 > n:
                         raise ValueError("truncated arm field")
@@ -175,13 +184,14 @@ def sanitize_timeline(events: list[dict[str, Any]], *, max_events: int = 50_000)
             except (TypeError, ValueError):
                 continue
         elif op == "arm":
-            for k in ("base", "height", "grip"):
+            joints = ("base", "height", "grip", "s13", "s14", "s15")
+            for k in joints:
                 if k in row:
                     try:
-                        row[k] = validate_joint(row[k])
+                        row[k] = validate_joint(row[k], joint=k)
                     except (TypeError, ValueError):
                         row.pop(k, None)
-            if not any(k in row for k in ("base", "height", "grip")):
+            if not any(k in row for k in joints):
                 continue
         elif op == "conveyor":
             try:
@@ -195,9 +205,24 @@ def sanitize_timeline(events: list[dict[str, Any]], *, max_events: int = 50_000)
     return cleaned
 
 
+ARM_JOINTS = ("base", "height", "grip", "s13", "s14", "s15")
+# CH13 homes at 98°; others at 90°
+ARM_DEFAULTS = {"base": 90, "height": 90, "grip": 90, "s13": 98, "s14": 90, "s15": 90}
+# Gripper mechanical limit (degrees) — host + ESP both enforce
+GRIP_MAX_DEG = 110
+JOINT_MAX_DEG = {j: 180 for j in ARM_JOINTS}
+JOINT_MAX_DEG["grip"] = GRIP_MAX_DEG
+
+
+def default_arm_pose(deg: int | None = None) -> dict[str, int]:
+    if deg is None:
+        return dict(ARM_DEFAULTS)
+    return {k: int(deg) for k in ARM_JOINTS}
+
+
 def merge_arm_pose(pose: dict[str, int], ev: dict[str, Any]) -> dict[str, int]:
     out = dict(pose)
-    for k in ("base", "height", "grip"):
+    for k in ARM_JOINTS:
         if k in ev:
             out[k] = int(ev[k])
     return out
@@ -206,7 +231,8 @@ def merge_arm_pose(pose: dict[str, int], ev: dict[str, Any]) -> dict[str, int]:
 def expand_arm_events(
     events: list[dict[str, Any]], seed: dict[str, int]
 ) -> list[dict[str, Any]]:
-    pose = dict(seed)
+    pose = dict(default_arm_pose())
+    pose.update(seed)
     out: list[dict[str, Any]] = []
     for ev in events:
         op = ev.get("op")
@@ -215,25 +241,15 @@ def expand_arm_events(
             pose = merge_arm_pose(pose, ev)
             if pose == prev and out:
                 continue
-            out.append({
-                "t_ms": int(ev.get("t_ms", 0)),
-                "op": "arm",
-                "base": pose["base"],
-                "height": pose["height"],
-                "grip": pose["grip"],
-                "_prev": prev,
-            })
+            row = {"t_ms": int(ev.get("t_ms", 0)), "op": "arm", "_prev": prev}
+            row.update({k: pose[k] for k in ARM_JOINTS})
+            out.append(row)
         elif op == "center":
             prev = dict(pose)
-            pose = {"base": 90, "height": 90, "grip": 90}
-            out.append({
-                "t_ms": int(ev.get("t_ms", 0)),
-                "op": "arm",
-                "base": 90,
-                "height": 90,
-                "grip": 90,
-                "_prev": prev,
-            })
+            pose = default_arm_pose()  # includes s13=98
+            row = {"t_ms": int(ev.get("t_ms", 0)), "op": "arm", "_prev": prev}
+            row.update(pose)
+            out.append(row)
         elif op in REPLAYABLE_OPS:
             out.append(ev)
     return out
@@ -243,8 +259,9 @@ def validate_drive(left: int, right: int) -> tuple[int, int]:
     return max(-255, min(255, int(left))), max(-255, min(255, int(right)))
 
 
-def validate_joint(deg: int) -> int:
-    return max(0, min(180, int(deg)))
+def validate_joint(deg: int, joint: str | None = None) -> int:
+    hi = JOINT_MAX_DEG.get(joint, 180) if joint else 180
+    return max(0, min(hi, int(deg)))
 
 
 def validate_conveyor(speed: int) -> int:

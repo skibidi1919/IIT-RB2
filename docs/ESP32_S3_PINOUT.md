@@ -24,6 +24,8 @@ Boot scan only finds devices that are wired. Preferred:
 
 **Do not use GPIO14 for I2C** — onboard camera FLASH LED.
 
+**GPIO48** — onboard WS2812 RGB status: **blue = OTA flashing only**, green = panel linked / waiting, amber blink = SoftAP, red = no WiFi / fault, amber solid = PCA missing. Off at boot.
+
 ## Drive / color
 
 | Function | GPIO |
@@ -42,6 +44,9 @@ Boot scan only finds devices that are wired. Preferred:
 | 1 | Arm height **MG90** — same |
 | 2 | Arm grip **MG90** — same (snap path) |
 | **4** | **UM conveyor — SG90 360°** (PWM off = stop) |
+| **13** | Aux **MG90** (`s13`) |
+| **14** | Aux **MG90** (`s14`) |
+| **15** | Aux **MG90** (`s15`) |
 
 ## WiFi
 

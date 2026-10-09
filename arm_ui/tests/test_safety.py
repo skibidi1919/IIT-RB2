@@ -15,10 +15,11 @@ def test_modes():
         connected=False, estop=False, error=False,
         recording=False, replaying=False, paused=False, ready_replay=False,
     ) == OpMode.DISCONNECTED
+    # E-stop latch removed — estop flag must not lock the panel
     assert mode_from_flags(
         connected=True, estop=True, error=False,
         recording=False, replaying=False, paused=False, ready_replay=False,
-    ) == OpMode.ESTOP
+    ) == OpMode.MANUAL
     assert mode_from_flags(
         connected=True, estop=False, error=False,
         recording=True, replaying=False, paused=False, ready_replay=False,
@@ -35,7 +36,7 @@ def test_modes():
 
 def test_record_guards():
     assert allow_record_start(connected=False, estop=False, recording=False, replaying=False)
-    assert allow_record_start(connected=True, estop=True, recording=False, replaying=False)
+    assert allow_record_start(connected=True, estop=True, recording=False, replaying=False) is None
     assert allow_record_start(connected=True, estop=False, recording=True, replaying=False)
     assert allow_record_start(connected=True, estop=False, recording=False, replaying=True)
     assert allow_record_start(connected=True, estop=False, recording=False, replaying=False) is None

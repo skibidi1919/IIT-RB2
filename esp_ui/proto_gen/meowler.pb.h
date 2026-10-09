@@ -3,7 +3,7 @@
 
 #ifndef PB_MEOWLER_MEOWLER_PB_H_INCLUDED
 #define PB_MEOWLER_MEOWLER_PB_H_INCLUDED
-#include <pb.h>
+#include "pb.h"
 
 #if PB_PROTO_HEADER_VERSION != 40
 #error Regenerate this file with the current version of nanopb generator.
@@ -16,33 +16,70 @@ typedef struct _meowler_Drive {
 } meowler_Drive;
 
 typedef struct _meowler_Arm {
-    int32_t base; /* 0..180 */
-    int32_t height; /* 0..180 */
-    int32_t grip; /* 0..180 */
+    int32_t base; /* 0..180 Â· PCA CH0 */
+    int32_t height; /* 0..180 Â· PCA CH1 */
+    int32_t grip; /* 0..180 Â· PCA CH2 */
     bool set_base;
     bool set_height;
     bool set_grip;
+    /* Extra MG90s */
+    int32_t s13; /* 0..180 Â· PCA CH13 */
+    int32_t s14; /* 0..180 Â· PCA CH14 */
+    int32_t s15; /* 0..180 Â· PCA CH15 */
+    bool set_s13;
+    bool set_s14;
+    bool set_s15;
 } meowler_Arm;
 
-/* PCA CH15 — SG90 360° continuous (UM conveyor belt) */
+/* PCA CH4 â€” SG90 360Â° continuous (UM conveyor belt) */
 typedef struct _meowler_Conveyor {
-    int32_t speed; /* -255..255 · 0 = stop */
+    int32_t speed; /* -255..255 Â· 0 = stop */
 } meowler_Conveyor;
 
-/* TCS3200 calibration / teach-in (RED·YELLOW·GREEN only) */
+/* TCS3200 calibration / teach-in (REDÂ·YELLOWÂ·GREEN only) */
 typedef struct _meowler_ColorCal {
     /* 0=white-balance  1=teach RED  2=teach YELLOW  3=teach GREEN
  4=clear taught centroids  5=factory reset gains+centroids */
     uint32_t mode;
 } meowler_ColorCal;
 
-/* Host → robot: start/stop onboard capture. Robot streams RecEvent back. */
+/* Gyro path-correct enable + Nano-style onboard maneuvers (RB1 / ESP32) */
+typedef struct _meowler_PathCtrl {
+    bool enable;
+    /* 0=enable only (legacy)
+ 1=forward timed (arg=ms)  2=backward timed (arg=ms)
+ 3=turn left (arg=deg, 0â†’90)  4=turn right (arg=deg, 0â†’90)
+ 5=abort maneuver */
+    uint32_t action;
+    int32_t arg; /* ms or degrees */
+    int32_t speed; /* PWM (0 â†’ 200 fwd/back, 175 turn) */
+    int32_t offset; /* turn overshoot deg Â· fwd FF trim override (0 â†’ default) */
+} meowler_PathCtrl;
+
+/* Wheel speed match (M1 left / M2 right) via encoders */
+typedef struct _meowler_MotorCal {
+    /* 1=run encoder match now (equal PWM burst â†’ set scales)
+ 2=set scales manually (scale_*_pct)
+ 3=query current scales (log + ack)
+ 4=reset scales to 100/100 */
+    uint32_t action;
+    uint32_t scale_l_pct; /* 50..100 Â· 100 = full PWM */
+    uint32_t scale_r_pct;
+} meowler_MotorCal;
+
+/* Onboard closed-loop straight run (survives panel drive=0 spam) */
+typedef struct _meowler_DriveDist {
+    int32_t mm; /* +forward / âˆ’backward Â· wheel odometry */
+    int32_t speed; /* 40..255 PWM (0 â†’ default 160) */
+} meowler_DriveDist;
+
+/* Host â†’ robot: start/stop onboard capture. Robot streams RecEvent back. */
 typedef struct _meowler_RecCtrl {
     uint32_t action; /* 1=start  2=stop */
     char name[32];
 } meowler_RecCtrl;
 
-/* Robot → host: one packed timeline event (same opcodes as binary .rpm).
+/* Robot â†’ host: one packed timeline event (same opcodes as binary .rpm).
  op: 0=begin  1=drive  2=arm  3=stop  4=center  5=zero  6=conveyor  7=motor_test  255=end */
 typedef struct _meowler_RecEvent {
     uint32_t t_ms;
@@ -50,19 +87,22 @@ typedef struct _meowler_RecEvent {
     int32_t a; /* drive.left / arm.base / conveyor.speed */
     int32_t b; /* drive.right / arm.height */
     int32_t c; /* arm.grip */
-    uint32_t mask; /* arm field mask: 1=base 2=height 4=grip */
+    uint32_t mask; /* arm: 1=base 2=height 4=grip 8=s13 16=s14 32=s15 */
     uint32_t count; /* event count on begin/end */
     char name[32];
+    int32_t d; /* arm.s13 */
+    int32_t e; /* arm.s14 */
+    int32_t f; /* arm.s15 */
 } meowler_RecEvent;
 
 /* ---- Protobuf WiFi OTA (dual ota_0 / ota_1) ----
- Host: OtaCmd begin → chunk* → finish → apply
+ Host: OtaCmd begin â†’ chunk* â†’ finish â†’ apply
  Robot: streams OtaStatus; on apply reboots into new partition (otadata rollback if bad) */
 typedef struct _meowler_OtaBegin {
-    uint32_t raw_size; /* uncompressed .bin bytes */
-    uint32_t raw_crc32; /* CRC-32 (zlib/binascii) of uncompressed */
-    uint32_t packed_size; /* wire payload bytes */
-    uint32_t codec; /* 0=raw  1=zlib */
+    uint32_t raw_size; /* .bin bytes (raw, no compression) */
+    uint32_t raw_crc32; /* CRC-32 of the .bin */
+    uint32_t packed_size; /* same as raw_size */
+    uint32_t codec; /* must be 0 (raw) */
     char version[24]; /* optional label */
 } meowler_OtaBegin;
 
@@ -73,7 +113,9 @@ typedef struct _meowler_OtaChunk {
 } meowler_OtaChunk;
 
 typedef struct _meowler_OtaCmd {
-    /* 1=begin  2=chunk  3=finish  4=abort  5=apply(reboot)  6=query status */
+    /* 1=begin  2=chunk  3=finish  4=abort  5=apply(reboot new slot)
+ 6=query  7=boot ota_0  8=boot ota_1
+ Running app accepts OTA into the inactive slot (no chainload). */
     uint32_t action;
     bool has_begin;
     meowler_OtaBegin begin;
@@ -105,6 +147,9 @@ typedef struct _meowler_ClientToRobot {
         meowler_ColorCal color_cal;
         meowler_RecCtrl rec;
         meowler_OtaCmd ota;
+        meowler_PathCtrl path;
+        meowler_MotorCal motor_cal;
+        meowler_DriveDist drive_dist;
     } op;
 } meowler_ClientToRobot;
 
@@ -129,7 +174,7 @@ typedef struct _meowler_Telemetry {
     int32_t roll_cdeg;
     uint32_t color; /* 0 UNKNOWN  1 RED  2 YELLOW  3 GREEN */
     uint32_t color_conf; /* internal confidence 0..99 (not a colour class) */
-    /* Fields 21–27 reserved / unused in UI — keep wire-compatible, always 0 */
+    /* Fields 21â€“27 reserved / unused in UI â€” keep wire-compatible, always 0 */
     uint32_t color_r;
     uint32_t color_g;
     uint32_t color_b;
@@ -137,7 +182,10 @@ typedef struct _meowler_Telemetry {
     uint32_t color_gp;
     uint32_t color_bp;
     uint32_t color_cp;
-    int32_t conveyor; /* -255..255 · PCA CH15 SG90-360 */
+    int32_t conveyor; /* -255..255 Â· PCA CH4 SG90-360 */
+    int32_t s13; /* PCA CH13 MG90 0..180 */
+    int32_t s14; /* PCA CH14 MG90 0..180 */
+    int32_t s15; /* PCA CH15 MG90 0..180 */
 } meowler_Telemetry;
 
 typedef struct _meowler_Hello {
@@ -148,7 +196,7 @@ typedef struct _meowler_Hello {
     bool imu_ok;
 } meowler_Hello;
 
-/* Framed on Serial (and optionally TCP) — same uint32le | payload as TCP. */
+/* Framed on Serial (and optionally TCP) â€” same uint32le | payload as TCP. */
 typedef struct _meowler_Log {
     /* 0=debug  1=info  2=warn  3=error */
     uint32_t level;
@@ -174,32 +222,38 @@ extern "C" {
 
 /* Initializer values for message structs */
 #define meowler_Drive_init_default               {0, 0}
-#define meowler_Arm_init_default                 {0, 0, 0, 0, 0, 0}
+#define meowler_Arm_init_default                 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define meowler_Conveyor_init_default            {0}
 #define meowler_ColorCal_init_default            {0}
+#define meowler_PathCtrl_init_default            {0, 0, 0, 0, 0}
+#define meowler_MotorCal_init_default            {0, 0, 0}
+#define meowler_DriveDist_init_default           {0, 0}
 #define meowler_RecCtrl_init_default             {0, ""}
-#define meowler_RecEvent_init_default            {0, 0, 0, 0, 0, 0, 0, ""}
+#define meowler_RecEvent_init_default            {0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0}
 #define meowler_OtaBegin_init_default            {0, 0, 0, 0, ""}
 #define meowler_OtaChunk_init_default            {0, {0, {0}}}
 #define meowler_OtaCmd_init_default              {0, false, meowler_OtaBegin_init_default, false, meowler_OtaChunk_init_default}
 #define meowler_OtaStatus_init_default           {0, 0, 0, 0, 0, ""}
 #define meowler_ClientToRobot_init_default       {0, {meowler_Drive_init_default}}
-#define meowler_Telemetry_init_default           {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define meowler_Telemetry_init_default           {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define meowler_Hello_init_default               {0, 0, 0, 0, 0}
 #define meowler_Log_init_default                 {0, ""}
 #define meowler_RobotToClient_init_default       {0, {meowler_Hello_init_default}}
 #define meowler_Drive_init_zero                  {0, 0}
-#define meowler_Arm_init_zero                    {0, 0, 0, 0, 0, 0}
+#define meowler_Arm_init_zero                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define meowler_Conveyor_init_zero               {0}
 #define meowler_ColorCal_init_zero               {0}
+#define meowler_PathCtrl_init_zero               {0, 0, 0, 0, 0}
+#define meowler_MotorCal_init_zero               {0, 0, 0}
+#define meowler_DriveDist_init_zero              {0, 0}
 #define meowler_RecCtrl_init_zero                {0, ""}
-#define meowler_RecEvent_init_zero               {0, 0, 0, 0, 0, 0, 0, ""}
+#define meowler_RecEvent_init_zero               {0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0}
 #define meowler_OtaBegin_init_zero               {0, 0, 0, 0, ""}
 #define meowler_OtaChunk_init_zero               {0, {0, {0}}}
 #define meowler_OtaCmd_init_zero                 {0, false, meowler_OtaBegin_init_zero, false, meowler_OtaChunk_init_zero}
 #define meowler_OtaStatus_init_zero              {0, 0, 0, 0, 0, ""}
 #define meowler_ClientToRobot_init_zero          {0, {meowler_Drive_init_zero}}
-#define meowler_Telemetry_init_zero              {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define meowler_Telemetry_init_zero              {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define meowler_Hello_init_zero                  {0, 0, 0, 0, 0}
 #define meowler_Log_init_zero                    {0, ""}
 #define meowler_RobotToClient_init_zero          {0, {meowler_Hello_init_zero}}
@@ -213,8 +267,24 @@ extern "C" {
 #define meowler_Arm_set_base_tag                 4
 #define meowler_Arm_set_height_tag               5
 #define meowler_Arm_set_grip_tag                 6
+#define meowler_Arm_s13_tag                      7
+#define meowler_Arm_s14_tag                      8
+#define meowler_Arm_s15_tag                      9
+#define meowler_Arm_set_s13_tag                  10
+#define meowler_Arm_set_s14_tag                  11
+#define meowler_Arm_set_s15_tag                  12
 #define meowler_Conveyor_speed_tag               1
 #define meowler_ColorCal_mode_tag                1
+#define meowler_PathCtrl_enable_tag              1
+#define meowler_PathCtrl_action_tag              2
+#define meowler_PathCtrl_arg_tag                 3
+#define meowler_PathCtrl_speed_tag               4
+#define meowler_PathCtrl_offset_tag              5
+#define meowler_MotorCal_action_tag              1
+#define meowler_MotorCal_scale_l_pct_tag         2
+#define meowler_MotorCal_scale_r_pct_tag         3
+#define meowler_DriveDist_mm_tag                 1
+#define meowler_DriveDist_speed_tag              2
 #define meowler_RecCtrl_action_tag               1
 #define meowler_RecCtrl_name_tag                 2
 #define meowler_RecEvent_t_ms_tag                1
@@ -225,6 +295,9 @@ extern "C" {
 #define meowler_RecEvent_mask_tag                6
 #define meowler_RecEvent_count_tag               7
 #define meowler_RecEvent_name_tag                8
+#define meowler_RecEvent_d_tag                   9
+#define meowler_RecEvent_e_tag                   10
+#define meowler_RecEvent_f_tag                   11
 #define meowler_OtaBegin_raw_size_tag            1
 #define meowler_OtaBegin_raw_crc32_tag           2
 #define meowler_OtaBegin_packed_size_tag         3
@@ -252,6 +325,9 @@ extern "C" {
 #define meowler_ClientToRobot_color_cal_tag      9
 #define meowler_ClientToRobot_rec_tag            10
 #define meowler_ClientToRobot_ota_tag            11
+#define meowler_ClientToRobot_path_tag           12
+#define meowler_ClientToRobot_motor_cal_tag      13
+#define meowler_ClientToRobot_drive_dist_tag     14
 #define meowler_Telemetry_distance_mm_tag        1
 #define meowler_Telemetry_cmd_l_tag              2
 #define meowler_Telemetry_cmd_r_tag              3
@@ -280,6 +356,9 @@ extern "C" {
 #define meowler_Telemetry_color_bp_tag           26
 #define meowler_Telemetry_color_cp_tag           27
 #define meowler_Telemetry_conveyor_tag           28
+#define meowler_Telemetry_s13_tag                29
+#define meowler_Telemetry_s14_tag                30
+#define meowler_Telemetry_s15_tag                31
 #define meowler_Hello_ip_tag                     1
 #define meowler_Hello_port_tag                   2
 #define meowler_Hello_pca_ok_tag                 3
@@ -307,7 +386,13 @@ X(a, STATIC,   SINGULAR, INT32,    height,            2) \
 X(a, STATIC,   SINGULAR, INT32,    grip,              3) \
 X(a, STATIC,   SINGULAR, BOOL,     set_base,          4) \
 X(a, STATIC,   SINGULAR, BOOL,     set_height,        5) \
-X(a, STATIC,   SINGULAR, BOOL,     set_grip,          6)
+X(a, STATIC,   SINGULAR, BOOL,     set_grip,          6) \
+X(a, STATIC,   SINGULAR, INT32,    s13,               7) \
+X(a, STATIC,   SINGULAR, INT32,    s14,               8) \
+X(a, STATIC,   SINGULAR, INT32,    s15,               9) \
+X(a, STATIC,   SINGULAR, BOOL,     set_s13,          10) \
+X(a, STATIC,   SINGULAR, BOOL,     set_s14,          11) \
+X(a, STATIC,   SINGULAR, BOOL,     set_s15,          12)
 #define meowler_Arm_CALLBACK NULL
 #define meowler_Arm_DEFAULT NULL
 
@@ -320,6 +405,28 @@ X(a, STATIC,   SINGULAR, INT32,    speed,             1)
 X(a, STATIC,   SINGULAR, UINT32,   mode,              1)
 #define meowler_ColorCal_CALLBACK NULL
 #define meowler_ColorCal_DEFAULT NULL
+
+#define meowler_PathCtrl_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, BOOL,     enable,            1) \
+X(a, STATIC,   SINGULAR, UINT32,   action,            2) \
+X(a, STATIC,   SINGULAR, INT32,    arg,               3) \
+X(a, STATIC,   SINGULAR, INT32,    speed,             4) \
+X(a, STATIC,   SINGULAR, INT32,    offset,            5)
+#define meowler_PathCtrl_CALLBACK NULL
+#define meowler_PathCtrl_DEFAULT NULL
+
+#define meowler_MotorCal_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, UINT32,   action,            1) \
+X(a, STATIC,   SINGULAR, UINT32,   scale_l_pct,       2) \
+X(a, STATIC,   SINGULAR, UINT32,   scale_r_pct,       3)
+#define meowler_MotorCal_CALLBACK NULL
+#define meowler_MotorCal_DEFAULT NULL
+
+#define meowler_DriveDist_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, INT32,    mm,                1) \
+X(a, STATIC,   SINGULAR, INT32,    speed,             2)
+#define meowler_DriveDist_CALLBACK NULL
+#define meowler_DriveDist_DEFAULT NULL
 
 #define meowler_RecCtrl_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UINT32,   action,            1) \
@@ -335,7 +442,10 @@ X(a_, STATIC,   SINGULAR, INT32,    b,                 4) \
 X(a_, STATIC,   SINGULAR, INT32,    c,                 5) \
 X(a_, STATIC,   SINGULAR, UINT32,   mask,              6) \
 X(a_, STATIC,   SINGULAR, UINT32,   count,             7) \
-X(a_, STATIC,   SINGULAR, STRING,   name,              8)
+X(a_, STATIC,   SINGULAR, STRING,   name,              8) \
+X(a_, STATIC,   SINGULAR, INT32,    d,                 9) \
+X(a_, STATIC,   SINGULAR, INT32,    e,                10) \
+X(a_, STATIC,   SINGULAR, INT32,    f,                11)
 #define meowler_RecEvent_CALLBACK NULL
 #define meowler_RecEvent_DEFAULT NULL
 
@@ -384,7 +494,10 @@ X(a, STATIC,   ONEOF,    BOOL,     (op,get_telem,op.get_telem),   7) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (op,conveyor,op.conveyor),   8) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (op,color_cal,op.color_cal),   9) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (op,rec,op.rec),  10) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (op,ota,op.ota),  11)
+X(a, STATIC,   ONEOF,    MESSAGE,  (op,ota,op.ota),  11) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (op,path,op.path),  12) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (op,motor_cal,op.motor_cal),  13) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (op,drive_dist,op.drive_dist),  14)
 #define meowler_ClientToRobot_CALLBACK NULL
 #define meowler_ClientToRobot_DEFAULT NULL
 #define meowler_ClientToRobot_op_drive_MSGTYPE meowler_Drive
@@ -393,6 +506,9 @@ X(a, STATIC,   ONEOF,    MESSAGE,  (op,ota,op.ota),  11)
 #define meowler_ClientToRobot_op_color_cal_MSGTYPE meowler_ColorCal
 #define meowler_ClientToRobot_op_rec_MSGTYPE meowler_RecCtrl
 #define meowler_ClientToRobot_op_ota_MSGTYPE meowler_OtaCmd
+#define meowler_ClientToRobot_op_path_MSGTYPE meowler_PathCtrl
+#define meowler_ClientToRobot_op_motor_cal_MSGTYPE meowler_MotorCal
+#define meowler_ClientToRobot_op_drive_dist_MSGTYPE meowler_DriveDist
 
 #define meowler_Telemetry_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UINT32,   distance_mm,       1) \
@@ -422,7 +538,10 @@ X(a, STATIC,   SINGULAR, UINT32,   color_rp,         24) \
 X(a, STATIC,   SINGULAR, UINT32,   color_gp,         25) \
 X(a, STATIC,   SINGULAR, UINT32,   color_bp,         26) \
 X(a, STATIC,   SINGULAR, UINT32,   color_cp,         27) \
-X(a, STATIC,   SINGULAR, INT32,    conveyor,         28)
+X(a, STATIC,   SINGULAR, INT32,    conveyor,         28) \
+X(a, STATIC,   SINGULAR, INT32,    s13,              29) \
+X(a, STATIC,   SINGULAR, INT32,    s14,              30) \
+X(a, STATIC,   SINGULAR, INT32,    s15,              31)
 #define meowler_Telemetry_CALLBACK NULL
 #define meowler_Telemetry_DEFAULT NULL
 
@@ -460,6 +579,9 @@ extern const pb_msgdesc_t meowler_Drive_msg;
 extern const pb_msgdesc_t meowler_Arm_msg;
 extern const pb_msgdesc_t meowler_Conveyor_msg;
 extern const pb_msgdesc_t meowler_ColorCal_msg;
+extern const pb_msgdesc_t meowler_PathCtrl_msg;
+extern const pb_msgdesc_t meowler_MotorCal_msg;
+extern const pb_msgdesc_t meowler_DriveDist_msg;
 extern const pb_msgdesc_t meowler_RecCtrl_msg;
 extern const pb_msgdesc_t meowler_RecEvent_msg;
 extern const pb_msgdesc_t meowler_OtaBegin_msg;
@@ -477,6 +599,9 @@ extern const pb_msgdesc_t meowler_RobotToClient_msg;
 #define meowler_Arm_fields &meowler_Arm_msg
 #define meowler_Conveyor_fields &meowler_Conveyor_msg
 #define meowler_ColorCal_fields &meowler_ColorCal_msg
+#define meowler_PathCtrl_fields &meowler_PathCtrl_msg
+#define meowler_MotorCal_fields &meowler_MotorCal_msg
+#define meowler_DriveDist_fields &meowler_DriveDist_msg
 #define meowler_RecCtrl_fields &meowler_RecCtrl_msg
 #define meowler_RecEvent_fields &meowler_RecEvent_msg
 #define meowler_OtaBegin_fields &meowler_OtaBegin_msg
@@ -491,21 +616,24 @@ extern const pb_msgdesc_t meowler_RobotToClient_msg;
 
 /* Maximum encoded size of messages (where known) */
 #define MEOWLER_MEOWLER_PB_H_MAX_SIZE            meowler_ClientToRobot_size
-#define meowler_Arm_size                         39
+#define meowler_Arm_size                         78
 #define meowler_ClientToRobot_size               4168
 #define meowler_ColorCal_size                    6
 #define meowler_Conveyor_size                    11
+#define meowler_DriveDist_size                   22
 #define meowler_Drive_size                       22
 #define meowler_Hello_size                       18
 #define meowler_Log_size                         127
+#define meowler_MotorCal_size                    18
 #define meowler_OtaBegin_size                    49
 #define meowler_OtaChunk_size                    4105
 #define meowler_OtaCmd_size                      4165
 #define meowler_OtaStatus_size                   79
+#define meowler_PathCtrl_size                    41
 #define meowler_RecCtrl_size                     39
-#define meowler_RecEvent_size                    90
-#define meowler_RobotToClient_size               238
-#define meowler_Telemetry_size                   235
+#define meowler_RecEvent_size                    123
+#define meowler_RobotToClient_size               274
+#define meowler_Telemetry_size                   271
 
 #ifdef __cplusplus
 } /* extern "C" */

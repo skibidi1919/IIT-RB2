@@ -32,7 +32,6 @@
 #include <VL53L0X.h>
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
-#include <SparkFun_BNO080_Arduino_Library.h>
 #include "meow_frame.h"
 #include "color_ryg.h"
 #include "ota_pb_update.h"
@@ -152,8 +151,6 @@ static const float WHEEL_DIAM_MM = 43.0f;
 static const float STEPS_PER_REV = 600.0f;
 static const float MM_PER_STEP = (WHEEL_DIAM_MM * (float)M_PI) / STEPS_PER_REV;
 
-static const uint8_t IMU_A = 0x4A, IMU_B = 0x4B;
-
 static bool pcaOk = false, tofOk = false, imuOk = false;
 /* telem mirrors — updated from Mg90Axis */
 static int curB = 90, curH = 90, curG = 90;
@@ -175,7 +172,7 @@ static volatile uint8_t prevM1 = 0, prevM2 = 0;
 static portMUX_TYPE encMux = portMUX_INITIALIZER_UNLOCKED;
 static const int8_t ENC_LUT[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
 static int32_t yawCdeg = 0, pitchCdeg = 0, rollCdeg = 0;
-static uint32_t lastTofMs = 0, lastTelemMs = 0, lastImuMs = 0, lastImuDataMs = 0, lastColorMs = 0;
+static uint32_t lastTofMs = 0, lastTelemMs = 0, lastColorMs = 0;
 
 static uint8_t colorLabel = 0;  // 0 unknown 1 R 2 Y 3 G
 static uint8_t colorConf = 0;
@@ -200,7 +197,6 @@ static uint8_t mtestPhase = 0;  /* 0 idle · 1 L · 2 R · 3 both */
 static uint32_t mtestMs = 0;
 
 static VL53L0X tof;
-static BNO080 bno;  /* SparkFun BNO080/085 — shared Wire 21/47 with PCA+VL53 */
 static TwoWire *tofBus = &Wire;
 
 static WiFiServer netServer(NET_PORT);
@@ -649,6 +645,11 @@ static void handleSerialLine(char *line) {
   }
   if (!strcmp(line, "?") || !strcmp(line, "help")) {
     serialPrintHelp();
+    return;
+  }
+  if (!strcmp(line, "a") || !strcmp(line, "auto")) {
+    meowLog(LOG_INFO, "serial: run auto sequence (no gyro)");
+    runAutoSequence();
     return;
   }
   if (!strcmp(line, "s") || !strcmp(line, "status")) {
@@ -1403,81 +1404,47 @@ static bool initTofOnce() {
   return false;
 }
 
-/* SparkFun quat = (i,j,k,real=w) — standard aerospace yaw/pitch/roll (rad). */
-static void quatYPR(float i, float j, float k, float w, float *y, float *p, float *r) {
-  *y = atan2f(2.0f * (w * k + i * j), 1.0f - 2.0f * (j * j + k * k));
-  float sinp = 2.0f * (w * j - k * i);
-  if (sinp > 1.0f) sinp = 1.0f;
-  if (sinp < -1.0f) sinp = -1.0f;
-  *p = asinf(sinp);
-  *r = atan2f(2.0f * (w * i + j * k), 1.0f - 2.0f * (i * i + j * j));
+// Open-loop Motor Control Functions (no gyro required)
+static void stopMotors() {
+  setDrive(0, 0);
 }
 
-static void enableImu3v3() {
-  pinMode(PIN_IMU_3V3, OUTPUT);
-  digitalWrite(PIN_IMU_3V3, HIGH);  /* ~3.3 V from GPIO — BNO VIN only */
-  delay(500);  /* BNO08x power-on settle */
-  meowLogf(LOG_INFO, "IMU 3V3 enable GPIO%u=HIGH", (unsigned)PIN_IMU_3V3);
+static void moveForward(int speed, int durationMillis) {
+  setupDrivePins();
+  setDrive((int16_t)speed, (int16_t)speed);
+  delay(durationMillis);
+  stopMotors();
 }
 
-static bool initImuAt(uint8_t addr) {
-  if (!i2cProbe(Wire, addr)) {
-    meowLogf(LOG_WARN, "IMU probe fail @0x%02X", addr);
-    return false;
-  }
-  Wire.setClock(100000);
-  /* SparkFun: Wire already open on 21/47; begin() soft-resets + product ID */
-  if (!bno.begin(addr, Wire)) {
-    meowLogf(LOG_WARN, "IMU SparkFun begin fail @0x%02X", addr);
-    return false;
-  }
-  /* Do not Wire.begin() again — re-init drops SHTP + glitches PCA/TOF */
-  Wire.setClock(100000);
-  bno.enableGameRotationVector(40);  /* ms between reports */
-  delay(50);
-  imuOk = true;
-  lastImuDataMs = millis();
-  meowLogf(LOG_INFO, "IMU OK SparkFun @0x%02X Wire %d/%d", addr, PIN_I2C0_SDA, PIN_I2C0_SCL);
-  return true;
+static void moveBackward(int speed, int durationMillis) {
+  setupDrivePins();
+  setDrive((int16_t)(-speed), (int16_t)(-speed));
+  delay(durationMillis);
+  stopMotors();
 }
 
-static bool initImu() {
-  imuOk = false;
-  if (initImuAt(IMU_A)) return true;
-  if (initImuAt(IMU_B)) return true;
-  return false;
+static void turnRight(int speed) {
+  setupDrivePins();
+  setDrive((int16_t)speed, (int16_t)(-speed));
 }
 
-static void updateImu() {
-  if (!imuOk) return;
-  /* Pump several SHTP frames — shared bus with PCA/VL53 drops packets if we only try once */
-  bool got = false;
-  for (uint8_t n = 0; n < 6; n++) {
-    if (!bno.dataAvailable()) break;
-    got = true;
-    float i = bno.getQuatI();
-    float j = bno.getQuatJ();
-    float k = bno.getQuatK();
-    float w = bno.getQuatReal();
-    float y, p, r;
-    quatYPR(i, j, k, w, &y, &p, &r);
-    const float s = 18000.0f / (float)M_PI;
-    yawCdeg = (int32_t)lroundf(y * s);
-    pitchCdeg = (int32_t)lroundf(p * s);
-    rollCdeg = (int32_t)lroundf(r * s);
-    lastImuDataMs = millis();
-  }
-  /* Stale >1.5s → re-enable GRV (bus glitch / FIFO stall) */
-  if (millis() - lastImuDataMs > 1500) {
-    static uint32_t lastKick;
-    if (millis() - lastKick > 1500) {
-      lastKick = millis();
-      Wire.setClock(100000);
-      bno.enableGameRotationVector(40);
-      meowLog(LOG_WARN, "IMU kick GRV");
-    }
-  }
-  (void)got;
+static void turnRight(int speed, int durationMillis) {
+  setupDrivePins();
+  setDrive((int16_t)speed, (int16_t)(-speed));
+  delay(durationMillis);
+  stopMotors();
+}
+
+static void turnLeft(int speed) {
+  setupDrivePins();
+  setDrive((int16_t)(-speed), (int16_t)speed);
+}
+
+static void turnLeft(int speed, int durationMillis) {
+  setupDrivePins();
+  setDrive((int16_t)(-speed), (int16_t)speed);
+  delay(durationMillis);
+  stopMotors();
 }
 
 static void updateTof() {
@@ -1664,7 +1631,7 @@ static void handleClientMsg(const meowler_ClientToRobot &msg) {
 void setup() {
   Serial.begin(115200);
   delay(800);
-  meowLog(LOG_INFO, "MEOWLER boot");
+  meowLog(LOG_INFO, "MEOWLER boot (no gyro)");
   serialPrintHelp();
 
   setupDrivePins();
@@ -1673,7 +1640,6 @@ void setup() {
   ColorRygPins cpins = {PIN_S2, PIN_S3, PIN_OUT, PIN_LED};
   colorRyg.begin(cpins);
 
-  enableImu3v3();  /* before I2C — BNO shares Wire 21/47 with PCA+VL53 */
   beginI2C();
 
   pcaOk = initPcaOnce();
@@ -1685,10 +1651,6 @@ void setup() {
   if (!tofOk) {
     delay(300);
     tofOk = initTofOnce();
-  }
-  if (!initImu()) {
-    delay(200);
-    initImu();
   }
 
   if (pcaOk) {
@@ -1724,7 +1686,6 @@ void setup() {
   else
     meowLog(LOG_WARN, "PCA MISSING - SDA=21 SCL=47");
   if (!tofOk) meowLog(LOG_WARN, "TOF MISSING - VL53 @0x29 on 21/47");
-  if (!imuOk) meowLog(LOG_WARN, "IMU MISSING");
   meowLogf(LOG_INFO, "COLOR RAW R/G/C=%u/%u/%u", lastRp, lastGp, lastCp);
   serialPrintStatus();
   colorRyg.setLog(false);  /* raw DEC= would break protobuf framing — keep off */
@@ -1769,10 +1730,8 @@ void loop() {
     }
   }
   pollNet();
-  updateImu();   /* before ToF — keep SHTP fed on shared I2C */
   updateTof();
   pollNet();
-  updateImu();
   /* Color pulseIn blocks — throttle hard so drive/TOF stay snappy */
   static uint32_t lastColorPollMs = 0;
   if (!armBusy() && (millis() - lastColorPollMs >= 120)) {

@@ -1039,14 +1039,13 @@
         <span class="meta-chip" id="modeMeta">Connect to begin</span>
       </div>
       <div class="top-actions">
-        <button type="button" class="btn-estop-clear" id="estopClearBtn" disabled title="Clear emergency stop">Clear E-Stop</button>
-        <button type="button" class="btn-estop" id="estopBtn" title="Emergency stop (Ctrl+Enter)">E-Stop</button>
       </div>
     </header>
 
     <div class="alert" id="modeWarn" role="alert"></div>
     <div class="origin-banner" id="originBanner">
       ORIGIN: Arm joints can be restored from the recording. Physical field pose (x/y/heading) <strong>cannot</strong> be verified by software — place the robot on the INITIAL mark before replay.
+      · E-STOP: hold <strong>S</strong>+<strong>O</strong> together (only trigger).
     </div>
 
     <div class="link-row" id="linkRow">
@@ -1062,7 +1061,8 @@
         <input type="checkbox" id="stickyChk" checked />
         <span>Sticky</span>
       </label>
-      <span class="latency" id="latHint" title="UI poll latency">—</span>
+      <span class="latency" id="latHint" title="UI link latency">—</span>
+      <span class="pill off" id="flagWs" title="Browser ↔ panel transport">HTTP</span>
       <div class="hw-flags">
         <span class="pill off" id="status">Offline</span>
         <span class="pill off" id="flagReconnect" title="Sticky auto-reconnect">Hold</span>
@@ -1151,21 +1151,33 @@
       <section class="sec">
         <header>
           <h2>Arm · Belt</h2>
-          <span class="meta">pca ch0–2 · ch4</span>
+          <span class="meta">pca ch0–2 · ch13–15 · ch4</span>
         </header>
         <div class="body split-arm">
           <div>
-            <label class="slider">Base
+            <label class="slider">Base <span class="meta">CH0</span>
               <input id="base" type="range" min="0" max="180" value="90" disabled />
               <span class="val" id="baseVal">90</span>
             </label>
-            <label class="slider">Height
+            <label class="slider">Height <span class="meta">CH1</span>
               <input id="height" type="range" min="0" max="180" value="90" disabled />
               <span class="val" id="heightVal">90</span>
             </label>
-            <label class="slider">Grip
-              <input id="grip" type="range" min="0" max="180" value="90" disabled />
+            <label class="slider">Grip <span class="meta">CH2</span>
+              <input id="grip" type="range" min="0" max="110" value="90" disabled />
               <span class="val" id="gripVal">90</span>
+            </label>
+            <label class="slider">Servo CH13
+              <input id="s13" type="range" min="0" max="180" value="98" disabled />
+              <span class="val" id="s13Val">98</span>
+            </label>
+            <label class="slider">Servo CH14
+              <input id="s14" type="range" min="0" max="180" value="90" disabled />
+              <span class="val" id="s14Val">90</span>
+            </label>
+            <label class="slider">Servo CH15
+              <input id="s15" type="range" min="0" max="180" value="90" disabled />
+              <span class="val" id="s15Val">90</span>
             </label>
             <div class="actions">
               <button class="primary" id="sendBtn" type="button" disabled>Send</button>
@@ -1185,7 +1197,7 @@
               <button class="danger" id="convStopBtn" type="button" disabled>Stop</button>
               <button id="convRevBtn" type="button" disabled>Reverse</button>
             </div>
-            <p class="hint">CMD <strong id="convCmd">0</strong></p>
+            <p class="hint">CMD <strong id="convCmd">0</strong> · latched until Stop (Esc stops drive only)</p>
           </div>
         </div>
       </section>
@@ -1262,7 +1274,6 @@
             <button type="button" id="hwLeftBtn">Left pulse</button>
             <button type="button" id="hwRightBtn">Right pulse</button>
             <button class="danger" type="button" id="hwStopBtn">Stop</button>
-            <button class="estop" type="button" id="hwEstopBtn" style="min-width:auto;min-height:auto;padding:0.42rem 0.65rem;font-size:0.72rem">E-Stop</button>
           </div>
           <p class="hint" id="hwTestHint">Pulses ≤120 speed · ≤800ms · dry-run ON until you arm</p>
         </div>
@@ -1313,9 +1324,15 @@
     let clientNudgeAt = 0;
     let pollFailStreak = 0;
     let wasConnected = false;
+    let ws = null;
+    let wsOpen = false;
+    let wsRetryAt = 0;
+    let wsRetryMs = 400;
+    let lastUiTransport = "http";
+    let recordingLive = false;
 
-    function api(path, opts) {
-      return fetch(path, { headers: { "Content-Type": "application/json" }, ...opts })
+    function api(path, ops) {
+      return fetch(path, { headers: { "Content-Type": "application/json" }, ...ops })
         .then(async (r) => {
           let data = null;
           try { data = await r.json(); } catch (_) { data = { ok: false, error: "bad response" }; }
@@ -1323,12 +1340,77 @@
           return data;
         });
     }
+    function pathToOp(path) {
+      const p = String(path || "").replace(/^\/api\//, "").split("?")[0];
+      return p;
+    }
+    function wsSend(obj) {
+      if (!wsOpen || !ws || ws.readyState !== WebSocket.OPEN) return false;
+      try { ws.send(JSON.stringify(obj)); return true; } catch (_) { return false; }
+    }
     function apiFire(path, body) {
+      const op = pathToOp(path);
+      const payload = Object.assign({ op }, body || {});
+      if (["drive", "arm", "stop", "conveyor", "center", "estop"].includes(op)) {
+        if (wsSend(payload)) return;
+      }
       fetch(path, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body || {}),
       }).catch(() => {});
+    }
+    function setWsPill(on) {
+      const el = $("flagWs");
+      if (!el) return;
+      el.classList.toggle("on", !!on);
+      el.classList.toggle("off", !on);
+      el.textContent = on ? "WS" : "HTTP";
+      el.title = on
+        ? "Persistent WebSocket UI · robot = raw TCP :3333"
+        : "HTTP fallback poll · reconnecting WS…";
+    }
+    function connectWs() {
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      let sock;
+      try { sock = new WebSocket(`${proto}://${location.host}/ws`); }
+      catch (_) { scheduleWsRetry(); return; }
+      ws = sock;
+      sock.onopen = () => {
+        wsOpen = true;
+        wsRetryMs = 400;
+        setWsPill(true);
+        lastUiTransport = "websocket";
+        try { sock.send(JSON.stringify({ op: "sub" })); } catch (_) {}
+      };
+      sock.onmessage = (ev) => {
+        let msg = null;
+        try { msg = JSON.parse(ev.data); } catch (_) { return; }
+        if (!msg) return;
+        if (msg.t === "state" || msg.t === "hello") {
+          if (msg.s) applyState(msg.s);
+          const t1 = performance.now();
+          if (lastPollAt) {
+            const ms = Math.round(t1 - lastPollAt);
+            if ($("latHint")) $("latHint").textContent = `${ms}ms · WS`;
+          }
+          lastPollAt = t1;
+        }
+      };
+      sock.onclose = () => {
+        wsOpen = false;
+        setWsPill(false);
+        scheduleWsRetry();
+      };
+      sock.onerror = () => { try { sock.close(); } catch (_) {} };
+    }
+    function scheduleWsRetry() {
+      const now = performance.now();
+      if (now < wsRetryAt) return;
+      wsRetryAt = now + wsRetryMs;
+      wsRetryMs = Math.min(wsRetryMs * 1.6, 4000);
+      setTimeout(connectWs, wsRetryMs);
     }
 
     function showToast(msg, ms = 4200) {
@@ -1450,7 +1532,7 @@
       setPill("status", on);
       $("disconnectBtn").disabled = !on;
       ["fwdBtn","backBtn","leftBtn","rightBtn","stopBtn","speed","motorTestBtn","zeroBtn",
-        "base","height","grip","sendBtn","centerBtn","openGripBtn","closeGripBtn",
+        "base","height","grip","s13","s14","s15","sendBtn","centerBtn","openGripBtn","closeGripBtn",
         "convSpeed","convFwdBtn","convStopBtn","convRevBtn",
         "recStartBtn","replayBtn","otaBoot0Btn","otaBoot1Btn"
       ].forEach((id) => {
@@ -1544,8 +1626,6 @@
       $("linkKind").textContent = kind.replace("_", " ");
       if ($("dryRunChk")) $("dryRunChk").checked = !!s.dry_run;
       if ($("hwKindHint")) $("hwKindHint").textContent = `link: ${kind}` + (s.dry_run ? " · motors suppressed" : " · motors armed");
-      document.body.classList.toggle("estop-on", mode === "EMERGENCY STOP" || !!s.estop);
-
       const dur = Number(s.record_duration_ms) || 0;
       const durS = (dur / 1000).toFixed(1);
       let meta = "Connect to begin";
@@ -1585,7 +1665,6 @@
         alert.textContent = "";
       }
 
-      $("estopClearBtn").disabled = !s.estop;
       $("replayBar").style.width = Math.round((Number(s.replay_progress) || 0) * 100) + "%";
 
       if (s.recording || s.record_name) {
@@ -1595,68 +1674,85 @@
       }
     }
 
+    function applyState(s) {
+      if (!s) return;
+      pollFailStreak = 0;
+      recordingLive = !!s.recording;
+      if (s.connected !== connected) setEnabled(!!s.connected);
+      paintMode(s);
+      const tofLive = !!s.tof_ok || (Number(s.distance_mm) > 0);
+      const holding = !!(s.sticky_link || s.auto_reconnect || (stickyWanted && s.connected));
+      setPill("flagReconnect", holding);
+      if ($("flagReconnect")) {
+        $("flagReconnect").textContent = s.auto_reconnect ? "Retry" : (holding ? "Hold" : "Off");
+        $("flagReconnect").classList.toggle("pulse", !!s.auto_reconnect);
+        $("flagReconnect").title = s.auto_reconnect
+          ? (`Reconnecting: ${s.reconnect_note || ""}`)
+          : (holding ? "Sticky link armed — auto-reconnect on drop" : "Enable Sticky to hold the link");
+      }
+      if (wasConnected && !s.connected && stickyWanted) {
+        showToast("Link lost — reconnecting…", 2800);
+      }
+      wasConnected = !!s.connected;
+      maybeNudgeReconnect(s);
+      setPill("flagWifi", !!(s.connected && (s.wifi_ok || String(s.mode || "").includes("tcp"))));
+      setPill("flagPca", !!s.pca_ok);
+      setPill("flagTof", tofLive);
+      setPill("flagImu", !!s.imu_ok);
+      if (s.ui_transport === "websocket" || wsOpen) setWsPill(true);
+      paintColor(s);
+      paintTof(s);
+      if (!s.connected) {
+        const offline = s.auto_reconnect
+          ? (`Reconnecting… ${s.reconnect_note || ""}`).trim()
+          : (s.error || "Offline — press Connect");
+        $("logs").textContent = (s.logs || []).join("\n") || offline;
+        paintFace(null);
+        return;
+      }
+      $("enc").textContent = `${s.enc_l ?? 0} / ${s.enc_r ?? 0}`;
+      $("wheel").textContent = `${s.wheel_l_mm ?? 0} / ${s.wheel_r_mm ?? 0}`;
+      if (s.imu_ok) $("imu").textContent = facingDir(s);
+      else { imuRef = null; imuOkStreak = 0; $("imu").textContent = "—"; paintFace(null); }
+      $("leftVal").textContent = s.left ?? 0;
+      $("rightVal").textContent = s.right ?? 0;
+      $("convCmd").textContent = String(s.conveyor ?? 0);
+      /* Don't yank sliders backward while operator is commanding (telem lag) */
+      const armIds = ["base","height","grip","s13","s14","s15"];
+      const armFocused = armIds.some((id) => document.activeElement === $(id));
+      if (!armMod() && !armFocused && performance.now() > armLocalUntil) {
+        for (const id of armIds) {
+          if (s[id] != null && $(id) && $(id + "Val")) {
+            $(id).value = String(s[id]);
+            $(id + "Val").textContent = String(s[id]);
+          }
+        }
+      }
+      if ((performance.now() - lastPollAt) > 280) {
+        const lines = s.logs || [];
+        $("logs").textContent = lines.slice(0, 20).join("\n") || "…";
+        $("logMeta").textContent = (wsOpen ? "WS · " : "HTTP · ") + (lines.length ? lines.length + " entries" : "live");
+        lastPollAt = performance.now();
+      }
+    }
+
     async function poll() {
+      /* When WS is live, HTTP poll is a slow safety net only */
+      if (wsOpen && pollBusy) return;
       if (pollBusy) return;
       pollBusy = true;
       const t0 = performance.now();
       try {
         const s = await api("/api/state");
         if (!s) throw new Error("no state");
-        pollFailStreak = 0;
-        if (s.connected !== connected) setEnabled(!!s.connected);
-        paintMode(s);
-        const tofLive = !!s.tof_ok || (Number(s.distance_mm) > 0);
-        const holding = !!(s.sticky_link || s.auto_reconnect || (stickyWanted && s.connected));
-        setPill("flagReconnect", holding);
-        if ($("flagReconnect")) {
-          $("flagReconnect").textContent = s.auto_reconnect ? "Retry" : (holding ? "Hold" : "Off");
-          $("flagReconnect").classList.toggle("pulse", !!s.auto_reconnect);
-          $("flagReconnect").title = s.auto_reconnect
-            ? (`Reconnecting: ${s.reconnect_note || ""}`)
-            : (holding ? "Sticky link armed — auto-reconnect on drop" : "Enable Sticky to hold the link");
-        }
-        if (wasConnected && !s.connected && stickyWanted) {
-          showToast("Link lost — reconnecting…", 2800);
-        }
-        wasConnected = !!s.connected;
-        maybeNudgeReconnect(s);
-        setPill("flagWifi", !!(s.connected && (s.wifi_ok || String(s.mode || "").includes("tcp"))));
-        setPill("flagPca", !!s.pca_ok);
-        setPill("flagTof", tofLive);
-        setPill("flagImu", !!s.imu_ok);
-        paintColor(s);
-        paintTof(s);
-        if (!s.connected) {
-          const offline = s.auto_reconnect
-            ? (`Reconnecting… ${s.reconnect_note || ""}`).trim()
-            : (s.error || "Offline — press Connect");
-          $("logs").textContent = (s.logs || []).join("\n") || offline;
-          paintFace(null);
-          return;
-        }
-        $("enc").textContent = `${s.enc_l ?? 0} / ${s.enc_r ?? 0}`;
-        $("wheel").textContent = `${s.wheel_l_mm ?? 0} / ${s.wheel_r_mm ?? 0}`;
-        if (s.imu_ok) $("imu").textContent = facingDir(s);
-        else { imuRef = null; imuOkStreak = 0; $("imu").textContent = "—"; paintFace(null); }
-        $("leftVal").textContent = s.left ?? 0;
-        $("rightVal").textContent = s.right ?? 0;
-        $("convCmd").textContent = String(s.conveyor ?? 0);
-        /* Don't yank sliders backward while operator is commanding (telem lag) */
-        const armFocused = document.activeElement === $("base") || document.activeElement === $("height") || document.activeElement === $("grip");
-        if (!armMod() && !armFocused && performance.now() > armLocalUntil) {
-          if (s.base != null) { $("base").value = String(s.base); $("baseVal").textContent = String(s.base); }
-          if (s.height != null) { $("height").value = String(s.height); $("heightVal").textContent = String(s.height); }
-          if (s.grip != null) { $("grip").value = String(s.grip); $("gripVal").textContent = String(s.grip); }
-        }
-        const ms = Math.round(performance.now() - t0);
-        const el = $("latHint");
-        el.textContent = ms + "ms";
-        el.classList.toggle("hot", ms < 40);
-        if ((performance.now() - lastPollAt) > 350) {
-          const lines = s.logs || [];
-          $("logs").textContent = lines.slice(0, 20).join("\n") || "…";
-          $("logMeta").textContent = lines.length ? lines.length + " entries" : "live";
-          lastPollAt = performance.now();
+        applyState(s);
+        if (!wsOpen) {
+          const ms = Math.round(performance.now() - t0);
+          const el = $("latHint");
+          if (el) {
+            el.textContent = ms + "ms · HTTP";
+            el.classList.toggle("hot", ms < 40);
+          }
         }
       } catch (err) {
         pollFailStreak += 1;
@@ -1671,6 +1767,7 @@
             if ($("reconnectNote")) $("reconnectNote").textContent = "Control server unreachable — retrying…";
           }
         }
+        connectWs();
       } finally {
         pollBusy = false;
       }
@@ -1768,8 +1865,10 @@
       if (!connected) return;
       armPending = Object.assign(armPending || {}, partial);
       armLocalUntil = performance.now() + 450;
-      /* Height: flush ASAP (gravity axis). Others coalesce ~16ms. */
-      const delay = (partial.height != null && partial.base == null && partial.grip == null) ? 0 : 16;
+      /* Height ASAP; during recording flush every sample for timeline accuracy */
+      let delay = 16;
+      if (recordingLive) delay = 0;
+      else if (partial.height != null && partial.base == null && partial.grip == null) delay = 0;
       if (!armFlushTimer) armFlushTimer = setTimeout(flushArm, delay);
       else if (delay === 0) {
         clearTimeout(armFlushTimer);
@@ -1807,7 +1906,7 @@
       hold = dir;
       drive(l, r);
       clearInterval(driveTimer);
-      driveTimer = setInterval(() => { if (hold) drive(l, r); }, 45);
+      driveTimer = setInterval(() => { if (hold) drive(l, r); }, recordingLive ? 20 : 30);
     }
 
     function endHold() {
@@ -1890,13 +1989,16 @@
       await poll();
     };
     $("sendBtn").onclick = () => {
-      armPending = { base: Number($("base").value), height: Number($("height").value), grip: Number($("grip").value) };
+      armPending = {
+        base: Number($("base").value), height: Number($("height").value), grip: Number($("grip").value),
+        s13: Number($("s13").value), s14: Number($("s14").value), s15: Number($("s15").value),
+      };
       flushArm();
     };
     $("centerBtn").onclick = () => apiFire("/api/center", {});
     $("openGripBtn").onclick = () => { $("grip").value = 40; $("gripVal").textContent = "40"; armPending = { grip: 40 }; flushArm(); };
-    $("closeGripBtn").onclick = () => { $("grip").value = 140; $("gripVal").textContent = "140"; armPending = { grip: 140 }; flushArm(); };
-    $("stopBtn").onclick = () => { endHold(); apiFire("/api/stop", {}); $("convCmd").textContent = "0"; };
+    $("closeGripBtn").onclick = () => { $("grip").value = 110; $("gripVal").textContent = "110"; armPending = { grip: 110 }; flushArm(); };
+    $("stopBtn").onclick = () => { endHold(); apiFire("/api/stop", {}); };
     $("motorTestBtn").onclick = async () => {
       const ok = await confirmDialog(
         "Run motor test?",
@@ -1915,6 +2017,9 @@
     bindSlider("base", "baseVal");
     bindSlider("height", "heightVal");
     bindSlider("grip", "gripVal");
+    bindSlider("s13", "s13Val");
+    bindSlider("s14", "s14Val");
+    bindSlider("s15", "s15Val");
     bindHold("fwdBtn", "fwd");
     bindHold("backBtn", "back");
     bindHold("leftBtn", "left");
@@ -2036,28 +2141,6 @@
       } catch (_) {}
     }
 
-    $("estopBtn").onclick = async () => {
-      endHold();
-      setLoading($("estopBtn"), true);
-      try {
-        await api("/api/estop", { method: "POST", body: "{}" });
-      } finally {
-        setLoading($("estopBtn"), false);
-        $("estopBtn").disabled = false;
-      }
-      await poll();
-    };
-    $("estopClearBtn").onclick = async () => {
-      const ok = await confirmDialog(
-        "Clear emergency stop?",
-        "Motors will accept commands again. Confirm the field is clear.",
-        { danger: true, okLabel: "Clear E-Stop" }
-      );
-      if (!ok) return;
-      const res = await api("/api/estop/clear", { method: "POST", body: "{}" });
-      if (!res || !res.ok) showToast((res && res.error) || "Clear failed");
-      await poll();
-    };
     $("recStartBtn").onclick = async () => {
       const name = ($("recName").value || "").trim();
       setLoading($("recStartBtn"), true);
@@ -2158,7 +2241,6 @@
     $("hwLeftBtn").onclick = () => hwTest("left");
     $("hwRightBtn").onclick = () => hwTest("right");
     $("hwStopBtn").onclick = () => hwTest("stop");
-    $("hwEstopBtn").onclick = () => hwTest("estop");
     $("dryRunChk").onchange = async () => {
       if ($("dryRunChk").checked) {
         await api("/api/dry_run", { method: "POST", body: JSON.stringify({ enabled: true }) });
@@ -2172,7 +2254,7 @@
     $("armMotorsBtn").onclick = async () => {
       const ok = await confirmDialog(
         "Arm motors? (disable dry-run)",
-        "Motor commands will be sent to the robot.\nField must be clear. E-Stop ready.",
+        "Motor commands will be sent to the robot.\nField must be clear.",
         { danger: true, okLabel: "Arm motors" }
       );
       if (!ok) return;
@@ -2203,12 +2285,40 @@
       await api("/api/replay/stop", { method: "POST", body: "{}" });
       await refreshRecHint();
     };
+    /* E-STOP: only when S and O are pressed at the same time (±80ms). No buttons. */
+    const soChord = { s: 0, o: 0 };
+    function typingTarget(el) {
+      if (!el) return false;
+      const tag = (el.tagName || "").toUpperCase();
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+    }
+    function fireChordEstop() {
+      soChord.s = 0;
+      soChord.o = 0;
+      endHold();
+      keysHeld.clear();
+      stopKeyRepeat();
+      apiFire("/api/estop", {});
+      showToast("E-STOP · S+O", 2200);
+    }
     window.addEventListener("keydown", (ev) => {
-      if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
+      if (typingTarget(ev.target) || $("modalBackdrop").classList.contains("show")) return;
+      const k = (ev.key || "").toLowerCase();
+      if (k !== "s" && k !== "o") return;
+      if (ev.repeat || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      const now = performance.now();
+      soChord[k] = now;
+      const other = k === "s" ? soChord.o : soChord.s;
+      if (other > 0 && Math.abs(now - other) <= 80) {
         ev.preventDefault();
-        $("estopBtn").click();
+        fireChordEstop();
       }
-    });
+    }, true);
+    window.addEventListener("keyup", (ev) => {
+      const k = (ev.key || "").toLowerCase();
+      if (k === "s" || k === "o") soChord[k] = 0;
+    }, true);
+
     $("otaBoot0Btn").onclick = async () => {
       const ok = await confirmDialog("Reboot into ota_0?", "Robot will reboot into partition ota_0.", { danger: true, okLabel: "Reboot OTA0" });
       if (ok) apiFire("/api/ota", { action: 7 });
@@ -2218,7 +2328,16 @@
       if (ok) apiFire("/api/ota", { action: 8 });
     };
 
-    setInterval(poll, 40);
+    connectWs();
+    /* HTTP safety net — back off while WS is healthy (was 250ms → Flask thread storm) */
+    setInterval(() => { poll(); }, 1500);
+    setInterval(() => { if (!wsOpen) connectWs(); }, 2000);
+    /* Keep WS alive so server receive(timeout=20) does not drop the tab */
+    setInterval(() => {
+      if (wsOpen && ws && ws.readyState === 1) {
+        try { ws.send(JSON.stringify({ t: "ping" })); } catch (_) {}
+      }
+    }, 10000);
     poll();
     setInterval(refreshRecHint, 500);
     refreshRpmList();

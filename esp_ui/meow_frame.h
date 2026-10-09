@@ -2,19 +2,34 @@
 #include <Arduino.h>
 #include <string.h>
 #include <WiFi.h>
+#if defined(ARDUINO_ARCH_ESP32)
+#include <lwip/sockets.h>
+#endif
 #include "pb_encode.h"
 #include "pb_decode.h"
 #include "meowler.pb.h"
 
 /* RX holds 4096B OTA chunks. TX (logs/status) stays small so loop stack survives. */
 static const size_t MEOW_MAX_FRAME = 4224;
-static const size_t MEOW_TX_FRAME = 384;
+/* Telemetry worst-case ~271B; leave headroom for Log/OtaStatus */
+static const size_t MEOW_TX_FRAME = 512;
 
+/* Non-blocking TCP TX — NetworkClient::write can sit in select() up to ~10s when the
+ * peer window is full, which freezes pollNet/arm and makes the host report timeouts. */
 inline bool meowWriteFrame(WiFiClient &c, const uint8_t *data, size_t n) {
   if (!c || !c.connected() || n > MEOW_MAX_FRAME) return false;
   uint8_t hdr[4] = {
       (uint8_t)(n & 0xFF), (uint8_t)((n >> 8) & 0xFF),
       (uint8_t)((n >> 16) & 0xFF), (uint8_t)((n >> 24) & 0xFF)};
+#if defined(ARDUINO_ARCH_ESP32)
+  int sock = c.fd();
+  if (sock >= 0) {
+    ssize_t w1 = ::send(sock, hdr, 4, MSG_DONTWAIT);
+    if (w1 != 4) return false;
+    ssize_t w2 = ::send(sock, data, n, MSG_DONTWAIT);
+    return w2 == (ssize_t)n;
+  }
+#endif
   if (c.write(hdr, 4) != 4) return false;
   return c.write(data, n) == n;
 }

@@ -18,6 +18,15 @@ PB_BIND(meowler_Conveyor, meowler_Conveyor, AUTO)
 PB_BIND(meowler_ColorCal, meowler_ColorCal, AUTO)
 
 
+PB_BIND(meowler_PathCtrl, meowler_PathCtrl, AUTO)
+
+
+PB_BIND(meowler_MotorCal, meowler_MotorCal, AUTO)
+
+
+PB_BIND(meowler_DriveDist, meowler_DriveDist, AUTO)
+
+
 PB_BIND(meowler_RecCtrl, meowler_RecCtrl, AUTO)
 
 

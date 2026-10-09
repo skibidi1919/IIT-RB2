@@ -29,7 +29,7 @@ BLOCKED_DURING_REPLAY = frozenset({
 def mode_from_flags(
     *,
     connected: bool,
-    estop: bool,
+    estop: bool = False,
     fault: bool = False,
     error: bool = False,  # deprecated soft flag; ignored for mode (use fault)
     recording: bool,
@@ -39,10 +39,9 @@ def mode_from_flags(
 ) -> OpMode:
     """Soft command `error` strings must not sticky-lock ERROR — only `fault`."""
     del error  # soft errors stay in UI text only
+    del estop  # E-stop latch removed — never sticky-lock the panel
     if not connected:
         return OpMode.DISCONNECTED
-    if estop:
-        return OpMode.ESTOP
     if fault:
         return OpMode.ERROR
     if recording:
@@ -56,15 +55,15 @@ def mode_from_flags(
     return OpMode.MANUAL
 
 
-def allow_manual_motion(*, connected: bool, estop: bool, replaying: bool) -> bool:
-    return connected and not estop and not replaying
+def allow_manual_motion(*, connected: bool, estop: bool = False, replaying: bool) -> bool:
+    del estop
+    return connected and not replaying
 
 
-def allow_record_start(*, connected: bool, estop: bool, recording: bool, replaying: bool) -> str | None:
+def allow_record_start(*, connected: bool, estop: bool = False, recording: bool, replaying: bool) -> str | None:
+    del estop
     if not connected:
         return "not connected"
-    if estop:
-        return "emergency stop active"
     if recording:
         return "already recording"
     if replaying:
@@ -75,15 +74,14 @@ def allow_record_start(*, connected: bool, estop: bool, recording: bool, replayi
 def allow_replay_start(
     *,
     connected: bool,
-    estop: bool,
+    estop: bool = False,
     recording: bool,
     replaying: bool,
     confirm: bool,
 ) -> str | None:
+    del estop
     if not connected:
         return "not connected"
-    if estop:
-        return "emergency stop active"
     if recording:
         return "recording"
     if replaying:

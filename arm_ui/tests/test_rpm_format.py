@@ -45,16 +45,24 @@ def test_filter_drops_motor_test_and_zero():
 
 
 def test_expand_arm_partial_to_absolute():
-    seed = {"base": 90, "height": 90, "grip": 90}
+    seed = {"base": 90, "height": 90, "grip": 90, "s13": 98, "s14": 90, "s15": 90}
     events = [
         {"t_ms": 0, "op": "arm", "base": 10},
         {"t_ms": 50, "op": "arm", "height": 20},
+        {"t_ms": 75, "op": "arm", "s13": 45},
         {"t_ms": 100, "op": "center"},
     ]
     out = expand_arm_events(events, seed)
-    assert out[0]["base"] == 10 and out[0]["height"] == 90
+    assert out[0]["base"] == 10 and out[0]["height"] == 90 and out[0]["s13"] == 98
     assert out[1]["base"] == 10 and out[1]["height"] == 20
-    assert out[2]["base"] == 90 and out[2]["grip"] == 90
+    assert out[2]["s13"] == 45 and out[2]["base"] == 10
+    assert out[3]["base"] == 90 and out[3]["grip"] == 90 and out[3]["s13"] == 98 and out[3]["s15"] == 90
+
+
+def test_pack_unpack_aux_servos():
+    ev = {"t_ms": 12, "op": "arm", "s13": 30, "s14": 60, "s15": 90}
+    blob = pack_event(ev)
+    assert unpack_events(blob, 1) == [ev]
 
 
 def test_validate_drive_clamps():

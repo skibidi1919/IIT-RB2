@@ -110,6 +110,14 @@ def probe_tcp(host: str, port: int = DEFAULT_PORT, timeout: float = 0.35) -> boo
         return False
 
 
+def _probe_timeout_for(host: str, base: float) -> float:
+    """*.222 / SoftAP get a longer SYN wait — ESP can be mid-frame when probed."""
+    h = (host or "").strip()
+    if h.endswith(".222") or h == SOFTAP_HOST or h.endswith(".local"):
+        return max(base, 1.15)
+    return base
+
+
 def _prefer_static_222(hosts: list[str]) -> list[str]:
     """Meowler STA always settles on *.222 — probe that before leftover DHCP ARPs."""
     preferred: list[str] = []
@@ -138,7 +146,7 @@ def canonicalize_host(host: str) -> str:
 def discover(
     port: int = DEFAULT_PORT,
     hosts: Iterable[str] | None = None,
-    timeout: float = 0.45,
+    timeout: float = 0.55,
     max_workers: int = 32,
 ) -> list[dict]:
     """Return open {host, port} hits, preferred order preserved."""
@@ -161,7 +169,9 @@ def discover(
 
     hits: list[dict] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futs = {pool.submit(probe_tcp, h, port, timeout): h for h in cands}
+        futs = {
+            pool.submit(probe_tcp, h, port, _probe_timeout_for(h, timeout)): h for h in cands
+        }
         for fut in concurrent.futures.as_completed(futs):
             h = futs[fut]
             try:

@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
   "flask>=3.0",
+  "flask-sock>=0.7.0",
   "protobuf>=4.0",
   "pyserial>=3.5",
 ]
@@ -28,6 +29,8 @@ py-modules = [
   "robot_log",
   "mock_robot",
   "hardware_ready",
+  "net_discover",
+  "ws_hub",
 ]
 
 [project.optional-dependencies]

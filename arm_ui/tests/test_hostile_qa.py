@@ -222,7 +222,7 @@ def test_disconnect_mid_replay_stops_clean():
         bot.stop()
 
 
-def test_estop_during_movement_blocks_and_zeros():
+def test_hard_stop_zeros_without_latch():
     bot = MockRobot(port=BASE + 6)
     bot.start()
     try:
@@ -232,18 +232,16 @@ def test_estop_during_movement_blocks_and_zeros():
         c.post("/api/drive", json={"left": 200, "right": 200})
         time.sleep(0.08)
         assert c.post("/api/estop", json={}).status_code == 200
-        assert panel._state["estop"] is True
+        assert panel._state["estop"] is False
         deadline = time.monotonic() + 1.5
         while time.monotonic() < deadline and (bot.cmd_l != 0 or bot.cmd_r != 0):
             time.sleep(0.02)
         assert bot.cmd_l == 0 and bot.cmd_r == 0
         assert "stop" in bot.commands
-        assert c.post("/api/drive", json={"left": 10, "right": 10}).status_code == 409
-        # soft error must NOT sticky-lock ERROR after clear
-        c.post("/api/estop/clear", json={})
-        assert panel._state["estop"] is False
+        # No latch — drive accepted immediately
+        assert c.post("/api/drive", json={"left": 10, "right": 10}).status_code == 200
+        assert panel._state["op_mode"] != "EMERGENCY STOP"
         assert panel._state["op_mode"] != "ERROR"
-        assert c.post("/api/drive", json={"left": 1, "right": 1}).status_code == 200
     finally:
         panel.disconnect()
         bot.stop()
@@ -328,19 +326,28 @@ def test_noisy_and_missing_sensor_color():
     assert out["color_stable"] is False or out["color"] == 0
 
 
-def test_delayed_telem_triggers_estop(monkeypatch):
+def test_delayed_telem_warns_without_estop(monkeypatch):
     bot = MockRobot(port=BASE + 9)
     bot.telem_enabled = False
     bot.start()
-    monkeypatch.setattr(panel, "TELEM_TIMEOUT_S", 0.4)
+    monkeypatch.setattr(panel, "TELEM_SOFT_S", 0.4)
+    monkeypatch.setattr(panel, "TELEM_PROBE_S", 10.0)
+    monkeypatch.setattr(panel, "TELEM_DEAD_S", 20.0)
     try:
         panel.connect_tcp("127.0.0.1", BASE + 9)
         assert _wait_connected()
-        # hello set connected; no telem → watchdog
+        # hello set connected; no telem → warning only, never latch E-stop
         deadline = time.monotonic() + 2.5
-        while time.monotonic() < deadline and not panel._state.get("estop"):
+        warned = False
+        while time.monotonic() < deadline:
+            w = panel._state.get("warning") or ""
+            if "telemetry timeout" in w:
+                warned = True
+                break
             time.sleep(0.05)
-        assert panel._state.get("estop") is True
+        assert warned
+        assert panel._state.get("estop") is False
+        assert panel._state.get("op_mode") != "EMERGENCY STOP"
     finally:
         panel.disconnect()
         bot.stop()
