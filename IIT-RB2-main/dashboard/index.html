@@ -3,27 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Robot 2 Dashboard</title>
+  <title>TITAN-RB2 | Next-Gen Ground Control Station</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #050814;
-      --bg-card: rgba(11, 18, 33, 0.94);
-      --bg-card-inner: rgba(18, 28, 52, 0.7);
-      --accent-cyan: #00e5ff;
+      --bg-base: #06090f;
+      --bg-card: rgba(13, 19, 33, 0.78);
+      --bg-card-hover: rgba(18, 27, 46, 0.92);
+      --bg-elevated: rgba(22, 33, 56, 0.85);
+      --bg-glass: rgba(10, 15, 28, 0.65);
+      
+      --accent-cyan: #00f0ff;
+      --accent-cyan-glow: rgba(0, 240, 255, 0.35);
       --accent-blue: #3b82f6;
       --accent-indigo: #6366f1;
-      --accent-green: #10b981;
+      --accent-emerald: #10b981;
       --accent-amber: #f59e0b;
-      --accent-red: #ef4444;
+      --accent-rose: #f43f5e;
       --accent-purple: #a855f7;
+
+      --text-bright: #ffffff;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
-      --border-card: rgba(255, 255, 255, 0.1);
-      --border-focus: rgba(0, 229, 255, 0.45);
+
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glass: rgba(56, 189, 248, 0.22);
+      --border-active: rgba(0, 240, 255, 0.6);
+      
+      --card-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.7), 0 4px 16px -2px rgba(0, 0, 0, 0.5);
+      --glow-cyan: 0 0 24px rgba(0, 240, 255, 0.3);
     }
 
     * {
@@ -34,355 +45,386 @@
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: radial-gradient(circle at 20% 10%, #0d1a38 0%, #03060f 100%);
+      background-color: var(--bg-base);
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 85%, rgba(99, 102, 241, 0.1) 0%, transparent 45%),
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
       color: var(--text-main);
       min-height: 100vh;
-      line-height: 1.35;
-      padding: 8px 14px 16px;
+      line-height: 1.4;
+      padding: 10px 14px 20px;
       user-select: none;
       overflow-x: hidden;
     }
 
-    .container {
-      max-width: 1560px;
+    .app-container {
+      max-width: 1620px;
       margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    /* ================= 1. HEADER & TOP CONTROLS ================= */
-    header {
+    /* ================= 1. ULTRA-MODERN COMMAND HEADER ================= */
+    .command-header {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      padding: 6px 12px 8px;
-      background: rgba(11, 18, 33, 0.8);
-      border: 1px solid var(--border-card);
-      border-radius: 8px;
-      margin-bottom: 8px;
-      backdrop-filter: blur(10px);
+      gap: 12px;
+      padding: 10px 18px;
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-glass);
+      border-radius: 14px;
+      box-shadow: var(--card-shadow);
+      position: relative;
     }
 
-    .header-branding {
+    .brand-cluster {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
-    .rover-logo-icon {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      border-radius: 7px;
+    .brand-beacon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #00f0ff 0%, #3b82f6 100%);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
-      box-shadow: 0 0 14px rgba(0, 229, 255, 0.4);
+      font-size: 20px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.45);
       flex-shrink: 0;
+      position: relative;
     }
 
-    .rover-title-block h1 {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.05rem;
+    .brand-beacon::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 13px;
+      border: 1px solid rgba(0, 240, 255, 0.65);
+      animation: beacon-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes beacon-pulse {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 0.2; transform: scale(1.18); }
+    }
+
+    .brand-title-wrap h1 {
+      font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+      font-size: 1.22rem;
       font-weight: 800;
-      letter-spacing: 0.05em;
-      background: linear-gradient(90deg, #ffffff, #93c5fd);
+      letter-spacing: 0.06em;
+      background: linear-gradient(90deg, #ffffff 30%, #38bdf8 100%);
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
       line-height: 1.1;
     }
 
-    .version-tag {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.60rem;
-      font-weight: 700;
-      color: var(--accent-cyan);
-      background: rgba(0, 229, 255, 0.12);
-      border: 1px solid rgba(0, 229, 255, 0.35);
-      padding: 2px 6px;
-      border-radius: 4px;
-      letter-spacing: 0.03em;
-      white-space: nowrap;
-    }
-
-    .rover-title-block p {
-      font-size: 0.66rem;
-      color: var(--text-muted);
-      letter-spacing: 0.01em;
-    }
-
-    .critical-bar {
+    .brand-meta {
       display: flex;
       align-items: center;
       gap: 8px;
+      margin-top: 2px;
+    }
+
+    .brand-meta span.sub {
+      font-size: 0.70rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .system-pill-pro {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      padding: 1px 8px;
+      border-radius: 5px;
+      letter-spacing: 0.04em;
+    }
+
+    .header-quick-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
-    .status-badge {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.70rem;
-      font-weight: 600;
-      padding: 5px 10px;
-      border-radius: 6px;
+    /* TELEMETRY CONNECTION GROUP */
+    .connection-capsule {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-card);
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    .status-badge.connected {
-      background: rgba(16, 185, 129, 0.15);
-      border-color: rgba(16, 185, 129, 0.45);
-      color: var(--accent-green);
-    }
-
-    .serial-control-group {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-card);
-      border-radius: 6px;
-      padding: 3px 6px;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--border-glass);
+      border-radius: 10px;
+      padding: 4px 8px;
       transition: all 0.2s ease;
     }
 
-    .serial-control-group:hover {
-      border-color: rgba(0, 229, 255, 0.4);
+    .connection-capsule:hover {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
     }
 
-    .btn-serial-connect {
-      background: rgba(0, 229, 255, 0.12);
-      border: 1px solid rgba(0, 229, 255, 0.35);
+    .btn-connect-usb {
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.18), rgba(59, 130, 246, 0.28));
+      border: 1px solid rgba(0, 240, 255, 0.45);
       color: var(--accent-cyan);
-      font-family: 'Fira Code', monospace;
-      font-size: 0.70rem;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.72rem;
       font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 5px;
+      padding: 7px 14px;
+      border-radius: 7px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      transition: all 0.2s ease;
+      gap: 7px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .btn-serial-connect:hover {
-      background: rgba(0, 229, 255, 0.25);
+    .btn-connect-usb:hover {
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.35), rgba(59, 130, 246, 0.45));
       border-color: var(--accent-cyan);
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.5);
+      transform: translateY(-1px);
     }
 
-    .btn-serial-connect.connected {
-      background: rgba(16, 185, 129, 0.18);
-      border-color: rgba(16, 185, 129, 0.5);
-      color: var(--accent-green);
+    .btn-connect-usb.connected {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.4));
+      border-color: rgba(16, 185, 129, 0.7);
+      color: #34d399;
     }
 
-    .btn-serial-connect.connected:hover {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: rgba(239, 68, 68, 0.5);
-      color: var(--accent-red);
+    .btn-connect-usb.connected:hover {
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(225, 29, 72, 0.4));
+      border-color: rgba(244, 63, 94, 0.7);
+      color: #fda4af;
     }
 
-    .serial-status-dot {
+    .live-dot {
       font-size: 0.70rem;
       color: var(--text-dim);
     }
 
-    .btn-serial-connect.connected .serial-status-dot {
-      color: var(--accent-green);
-      animation: pulse-dot 1.4s ease-in-out infinite;
+    .btn-connect-usb.connected .live-dot {
+      color: #10b981;
+      animation: dot-glow 1.2s infinite alternate;
     }
 
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(1.3); }
+    @keyframes dot-glow {
+      from { transform: scale(1); opacity: 0.7; }
+      to { transform: scale(1.4); opacity: 1; filter: drop-shadow(0 0 8px #10b981); }
     }
 
-    .serial-baud-select {
-      background: #020612;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: var(--text-main);
+    .baud-select {
+      background: #020617;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
       font-family: 'Fira Code', monospace;
-      font-size: 0.68rem;
-      padding: 3px 6px;
-      border-radius: 4px;
+      font-size: 0.72rem;
+      padding: 6px 10px;
+      border-radius: 7px;
       outline: none;
       cursor: pointer;
     }
 
-    .serial-baud-select:focus {
+    .baud-select:focus {
       border-color: var(--accent-cyan);
     }
 
-    .status-badge.battery {
-      background: rgba(0, 229, 255, 0.08);
-      border-color: rgba(0, 229, 255, 0.3);
+    /* STATUS CAPSULES */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .status-pill.battery {
+      background: rgba(0, 240, 255, 0.08);
+      border-color: rgba(0, 240, 255, 0.3);
       color: var(--accent-cyan);
     }
 
-    .status-badge.mode {
-      background: rgba(99, 102, 241, 0.15);
-      border-color: rgba(99, 102, 241, 0.35);
+    .status-pill.mode {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: rgba(99, 102, 241, 0.4);
       color: #a5b4fc;
     }
 
-    /* COMPACT BOLD E-STOP BUTTON */
-    .btn-estop {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.45));
-      border: 2px solid var(--accent-red);
-      color: #fff;
+    /* PROMINENT E-STOP */
+    .btn-estop-neo {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      border: 2px solid #fca5a5;
+      color: #ffffff;
       font-family: 'Orbitron', sans-serif;
-      padding: 4px 12px;
-      border-radius: 6px;
+      padding: 6px 18px;
+      border-radius: 9px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 9px;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
-      height: 32px;
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      height: 38px;
     }
 
-    .btn-estop .estop-icon {
-      font-size: 1.0rem;
+    .btn-estop-neo .estop-icon {
+      font-size: 1.15rem;
     }
 
-    .btn-estop .estop-labels {
+    .btn-estop-neo .estop-labels {
       display: flex;
       flex-direction: column;
       text-align: left;
-      line-height: 1.05;
+      line-height: 1.0;
     }
 
-    .btn-estop .estop-main {
-      font-size: 0.74rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
+    .btn-estop-neo .estop-main {
+      font-size: 0.80rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
     }
 
-    .btn-estop .estop-sub {
-      font-size: 0.54rem;
+    .btn-estop-neo .estop-sub {
+      font-size: 0.58rem;
       font-family: 'Fira Code', monospace;
-      color: #fca5a5;
+      color: #fee2e2;
     }
 
-    .btn-estop:hover {
-      background: var(--accent-red);
-      box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+    .btn-estop-neo:hover {
+      background: linear-gradient(135deg, #f43f5e 0%, #dc2626 100%);
+      box-shadow: 0 0 28px rgba(244, 63, 94, 0.9);
       transform: scale(1.02);
     }
 
-    .btn-estop.active {
-      background: var(--accent-red);
+    .btn-estop-neo.active {
+      background: #dc2626;
       border-color: #fff;
-      animation: estopBlink 1s infinite alternate;
+      animation: estop-strobe 0.8s infinite alternate;
     }
 
-    @keyframes estopBlink {
-      from { box-shadow: 0 0 10px rgba(239, 68, 68, 0.6); }
-      to { box-shadow: 0 0 25px rgba(239, 68, 68, 1); }
+    @keyframes estop-strobe {
+      from { box-shadow: 0 0 14px rgba(239, 68, 68, 0.8); }
+      to { box-shadow: 0 0 36px rgba(239, 68, 68, 1), 0 0 70px rgba(239, 68, 68, 0.6); }
     }
 
-    /* ================= UNIFIED COMPACT STATUS BANNER ================= */
-    .unified-status-bar {
+    /* ================= UNIFIED INTERACTIVE LINK BAR ================= */
+    .link-ribbon {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      padding: 6px 12px;
-      background: rgba(245, 158, 11, 0.08);
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      border-radius: 7px;
-      margin-bottom: 8px;
-      font-size: 0.72rem;
+      gap: 12px;
+      padding: 8px 16px;
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.88));
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
       transition: all 0.25s ease;
     }
 
-    .unified-status-left {
+    .link-ribbon-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ribbon-icon {
+      font-size: 1.15rem;
+    }
+
+    .ribbon-text strong {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.78rem;
+      color: var(--accent-amber);
+      letter-spacing: 0.04em;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .ribbon-text span {
+      color: #cbd5e1;
+      font-size: 0.74rem;
+    }
+
+    .link-ribbon-actions {
       display: flex;
       align-items: center;
       gap: 8px;
-    }
-
-    .unified-status-left .status-beacon {
-      font-size: 0.85rem;
-    }
-
-    .unified-status-left strong {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.72rem;
-      color: var(--accent-amber);
-      letter-spacing: 0.03em;
-    }
-
-    .unified-status-left span.status-desc {
-      color: #cbd5e1;
-      font-size: 0.68rem;
-    }
-
-    .unified-status-actions {
-      display: flex;
-      gap: 6px;
-      align-items: center;
       flex-wrap: wrap;
     }
 
-    .btn-action-pill {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.66rem;
+    .btn-pill {
+      font-family: 'Space Grotesk', 'Orbitron', sans-serif;
+      font-size: 0.72rem;
       font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 5px;
+      padding: 6px 14px;
+      border-radius: 7px;
       cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
+      transition: all 0.2s ease;
       border: none;
+      white-space: nowrap;
     }
 
-    .btn-action-cyan {
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+    .btn-pill-cyan {
+      background: linear-gradient(135deg, #00f0ff 0%, #2563eb 100%);
       color: #030712;
-      box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
     }
-    .btn-action-cyan:hover {
-      box-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
+    .btn-pill-cyan:hover {
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.75);
       transform: translateY(-1px);
     }
 
-    .btn-action-wifi {
-      background: linear-gradient(135deg, #0ea5e9, #2563eb);
-      color: #fff;
-      box-shadow: 0 0 10px rgba(14, 165, 233, 0.35);
+    .btn-pill-wifi {
+      background: linear-gradient(135deg, #0ea5e9 0%, #4f46e5 100%);
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(14, 165, 233, 0.4);
     }
-    .btn-action-wifi:hover {
-      box-shadow: 0 0 16px rgba(14, 165, 233, 0.65);
+    .btn-pill-wifi:hover {
+      box-shadow: 0 0 24px rgba(14, 165, 233, 0.75);
       transform: translateY(-1px);
     }
 
-    .btn-action-sim {
+    .btn-pill-ghost {
       background: rgba(255, 255, 255, 0.08);
-      color: #cbd5e1;
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.22);
       font-family: 'Fira Code', monospace;
-      font-size: 0.65rem;
+      font-size: 0.70rem;
     }
-    .btn-action-sim:hover {
-      background: rgba(255, 255, 255, 0.15);
+    .btn-pill-ghost:hover {
+      background: rgba(255, 255, 255, 0.18);
       color: #fff;
-      border-color: rgba(255, 255, 255, 0.35);
+      border-color: rgba(255, 255, 255, 0.45);
     }
 
-    /* Keep compatibility hooks for JS */
+    /* Hidden hooks for JS backward-compatibility */
     .hw-interlock-notice.hidden { display: none !important; }
     .warning-banner { display: none; }
     .network-notice-bar { display: none; }
@@ -390,8 +432,8 @@
     /* HARDWARE DISCONNECTED INTERLOCK STATE */
     body.hardware-disconnected .teleop-card,
     body.hardware-disconnected .script-card {
-      opacity: 0.65;
-      filter: grayscale(30%);
+      opacity: 0.75;
+      filter: grayscale(20%);
     }
 
     body.hardware-disconnected .dpad-btn,
@@ -403,991 +445,1032 @@
       cursor: not-allowed !important;
     }
 
-    /* CARD STYLING */
-    .card {
+    /* CARD DESIGN */
+    .neo-card {
       background: var(--bg-card);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid var(--border-card);
-      border-radius: 9px;
-      padding: 10px 14px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border-glass);
+      border-radius: 14px;
+      padding: 12px 16px;
+      box-shadow: var(--card-shadow);
       position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s ease, transform 0.2s ease;
     }
 
-    .card-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.78rem;
-      letter-spacing: 0.04em;
-      margin-bottom: 8px;
+    .neo-card:hover {
+      border-color: var(--border-active);
+    }
+
+    .card-header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: #f1f5f9;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      padding-bottom: 5px;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .card-title-icon {
-      display: inline-flex;
+    .card-title {
+      font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #e2e8f0;
+      display: flex;
       align-items: center;
+      gap: 7px;
+    }
+
+    .card-title span.icon {
+      font-size: 0.95rem;
+    }
+
+    .card-badge {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.64rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-muted);
+    }
+
+    /* ================= 2. TOP TELEMETRY 5-KPI METRIC STRIP ================= */
+    .metrics-grid-top {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 1200px) {
+      .metrics-grid-top {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .metrics-grid-top {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .metric-card-pro {
+      background: var(--bg-card);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+      box-shadow: var(--card-shadow);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .metric-card-pro:hover {
+      border-color: var(--accent-cyan);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px -4px rgba(0, 240, 255, 0.18);
+    }
+
+    .metric-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .metric-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.70rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .metric-icon-badge {
+      font-size: 0.85rem;
+      opacity: 0.85;
+    }
+
+    .metric-body {
+      display: flex;
+      align-items: baseline;
       gap: 6px;
     }
 
-    /* ================= 2. PRIMARY COCKPIT GRID ================= */
-    .cockpit-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.3fr;
-      gap: 10px;
-      margin-bottom: 10px;
-      align-items: stretch;
+    .metric-val {
+      font-family: 'Orbitron', 'Fira Code', monospace;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1;
+      letter-spacing: -0.02em;
     }
 
-    @media (max-width: 1080px) {
+    .metric-unit {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.70rem;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .metric-progress-wrap {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .metric-progress-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 2px;
+      transition: width 0.2s ease;
+    }
+
+    .bar-cyan { background: linear-gradient(90deg, #00f0ff, #3b82f6); box-shadow: 0 0 8px #00f0ff; }
+    .bar-emerald { background: linear-gradient(90deg, #10b981, #059669); box-shadow: 0 0 8px #10b981; }
+    .bar-amber { background: linear-gradient(90deg, #f59e0b, #d97706); box-shadow: 0 0 8px #f59e0b; }
+    .bar-purple { background: linear-gradient(90deg, #a855f7, #6366f1); box-shadow: 0 0 8px #a855f7; }
+
+    .metric-footer-text {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.62rem;
+      color: var(--text-dim);
+    }
+
+    /* ================= 3. MAIN COCKPIT 3-COLUMN GRID ================= */
+    .cockpit-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr 390px;
+      gap: 12px;
+      align-items: start;
+    }
+
+    @media (max-width: 1300px) {
+      .cockpit-grid {
+        grid-template-columns: 320px 1fr 340px;
+      }
+    }
+
+    @media (max-width: 1024px) {
       .cockpit-grid {
         grid-template-columns: 1fr;
       }
     }
 
-    /* TELEOPERATION CARD */
-    .teleop-card {
+    /* ================= LEFT COLUMN: TELEOPERATION ================= */
+    .teleop-column {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      justify-content: space-between;
+      gap: 10px;
     }
 
-    .mode-selector-bar {
-      display: flex;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-card);
-      border-radius: 6px;
-      padding: 3px;
-      gap: 3px;
+    /* DRIVE MODE TABS */
+    .mode-tab-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
     }
 
     .mode-tab {
-      flex: 1;
-      padding: 5px 6px;
-      border-radius: 5px;
-      border: none;
       background: transparent;
+      border: 1px solid transparent;
       color: var(--text-muted);
-      font-family: 'Orbitron', sans-serif;
+      font-family: 'Space Grotesk', sans-serif;
       font-size: 0.68rem;
       font-weight: 700;
+      padding: 6px 4px;
+      border-radius: 7px;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
+      text-align: center;
       transition: all 0.2s ease;
       white-space: nowrap;
     }
 
+    .mode-tab:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
     .mode-tab.active {
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      color: #030712;
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(59, 130, 246, 0.3));
+      border-color: rgba(0, 240, 255, 0.5);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
     }
 
-    .controls-split {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      align-items: center;
-      background: var(--bg-card-inner);
-      border-radius: 8px;
-      padding: 10px 12px;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    @media (max-width: 520px) {
-      .controls-split {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .joystick-wrapper {
+    /* TACTILE D-PAD */
+    .dpad-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
+      margin: 8px 0;
+    }
+
+    .dpad-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dpad-btn {
+      width: 70px;
+      height: 52px;
+      background: linear-gradient(145deg, rgba(25, 36, 62, 0.9), rgba(12, 19, 36, 0.95));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+      font-size: 0.74rem;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .dpad-btn span.arrow {
+      font-size: 1.1rem;
+      line-height: 1;
+      color: var(--accent-cyan);
+    }
+
+    .dpad-btn span.key-badge {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.56rem;
+      color: var(--text-dim);
+    }
+
+    .dpad-btn:hover {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.45);
+      transform: translateY(-2px);
+      color: #fff;
+    }
+
+    .dpad-btn:active, .dpad-btn.pressed {
+      background: linear-gradient(145deg, rgba(0, 240, 255, 0.35), rgba(37, 99, 235, 0.45));
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.8), inset 0 2px 6px rgba(0, 0, 0, 0.6);
+      transform: translateY(1px);
+      color: #fff;
+    }
+
+    .dpad-btn.stop {
+      width: 70px;
+      height: 52px;
+      background: linear-gradient(145deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.35));
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+    }
+
+    .dpad-btn.stop:hover {
+      border-color: #ef4444;
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.6);
+    }
+
+    /* VIRTUAL JOYSTICK */
+    .joystick-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
     }
 
     .joystick-base {
-      width: 115px;
-      height: 115px;
-      background: radial-gradient(circle, #0e1b38 0%, #030612 100%);
-      border: 2px solid rgba(0, 229, 255, 0.4);
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.95) 100%);
+      border: 2px solid rgba(56, 189, 248, 0.35);
       border-radius: 50%;
       position: relative;
+      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       touch-action: none;
-      box-shadow: 0 0 18px rgba(0, 229, 255, 0.15), inset 0 0 16px rgba(0, 0, 0, 0.85);
+      cursor: grab;
+    }
+
+    .joystick-crosshair-h, .joystick-crosshair-v {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.08);
+      pointer-events: none;
+    }
+    .joystick-crosshair-h { width: 80%; height: 1px; }
+    .joystick-crosshair-v { height: 80%; width: 1px; }
+
+    .joystick-puck {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, #00f0ff 0%, #2563eb 100%);
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      position: absolute;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.75), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+      transform: translate(0px, 0px);
+      transition: box-shadow 0.15s ease;
       cursor: grab;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 1.1rem;
     }
 
-    .joystick-base:active {
+    .joystick-puck:active {
       cursor: grabbing;
+      box-shadow: 0 0 32px rgba(0, 240, 255, 1);
     }
 
-    .joystick-ring-inner {
-      position: absolute;
-      width: 58px;
-      height: 58px;
-      border: 1px dashed rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
-    .joystick-puck {
-      width: 42px;
-      height: 42px;
-      background: radial-gradient(circle at 35% 35%, #00e5ff 0%, #1d4ed8 100%);
-      border-radius: 50%;
-      position: absolute;
-      top: 36.5px;
-      left: 36.5px;
-      box-shadow: 0 3px 10px rgba(0, 229, 255, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.7);
-      transition: transform 0.05s ease-out;
-      pointer-events: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .joystick-puck::after {
-      content: '';
-      width: 12px;
-      height: 12px;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 50%;
-      box-shadow: 0 0 6px #fff;
-    }
-
-    .joystick-telemetry-row {
-      display: flex;
-      gap: 8px;
+    .joystick-stats {
       font-family: 'Fira Code', monospace;
       font-size: 0.66rem;
       color: var(--text-muted);
-      background: rgba(0, 0, 0, 0.4);
-      padding: 3px 8px;
-      border-radius: 5px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      gap: 12px;
     }
 
-    .dpad-container {
-      display: grid;
-      grid-template-columns: repeat(3, 40px);
-      grid-template-rows: repeat(3, 40px);
-      gap: 5px;
-      justify-content: center;
-      align-content: center;
-    }
-
-    .dpad-btn {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 7px;
-      color: var(--text-main);
-      font-size: 0.95rem;
+    /* THROTTLE SLIDER */
+    .throttle-wrap {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.12s ease;
-      touch-action: manipulation;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
     }
 
-    .dpad-btn span.key-hint {
-      font-size: 0.54rem;
-      font-weight: 700;
-      color: #93c5fd;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 1px 4px;
-      border-radius: 3px;
-      font-family: 'Fira Code', monospace;
-      margin-top: 1px;
-    }
-
-    .dpad-btn:hover {
-      background: rgba(0, 229, 255, 0.18);
-      border-color: var(--accent-cyan);
-      color: var(--accent-cyan);
-    }
-
-    .dpad-btn:active, .dpad-btn.pressed {
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      border-color: #fff;
-      color: #030712;
-      transform: scale(0.94);
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.65);
-    }
-
-    .dpad-btn.pressed span.key-hint {
-      color: #030712;
-      font-weight: 800;
-    }
-
-    .dpad-up    { grid-column: 2; grid-row: 1; }
-    .dpad-left  { grid-column: 1; grid-row: 2; }
-    .dpad-center{ grid-column: 2; grid-row: 2; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.45); color: #f87171; font-size: 0.70rem; font-weight: 800; font-family: 'Orbitron'; }
-    .dpad-center:hover { background: var(--accent-red); color: #fff; }
-    .dpad-right { grid-column: 3; grid-row: 2; }
-    .dpad-down  { grid-column: 2; grid-row: 3; }
-
-    .speed-slider-row {
+    .throttle-header {
       display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 5px 10px;
-      background: rgba(255, 255, 255, 0.03);
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      justify-content: space-between;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.70rem;
+      font-weight: 600;
+      color: var(--text-muted);
     }
 
-    .speed-slider-row span {
-      font-size: 0.70rem;
+    .throttle-header span.val {
       font-family: 'Fira Code', monospace;
-      color: var(--text-muted);
-      min-width: 100px;
+      color: var(--accent-cyan);
+      font-weight: 700;
     }
 
     .throttle-range {
-      flex: 1;
-      accent-color: var(--accent-cyan);
-      cursor: pointer;
-      height: 5px;
-    }
-
-    .shortcut-legend-strip {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      padding: 4px 8px;
-      background: rgba(255, 255, 255, 0.025);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 5px;
-      flex-wrap: wrap;
-    }
-
-    .shortcut-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.62rem;
-      color: var(--text-dim);
-    }
-
-    .shortcut-pill kbd {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
       border-radius: 3px;
-      padding: 1px 4px;
-      font-family: 'Fira Code', monospace;
-      font-size: 0.60rem;
-      color: #93c5fd;
-    }
-
-    .shortcut-pill span {
-      font-size: 0.62rem;
-      color: var(--text-muted);
-    }
-
-    /* ================= 4WD CHASSIS & POWERTRAIN CARD ================= */
-    .chassis-visual-box {
-      background: radial-gradient(circle at 50% 50%, #0c1834 0%, #030612 100%);
-      border: 1px solid rgba(0, 229, 255, 0.25);
-      border-radius: 8px;
-      padding: 14px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      min-height: 155px;
-      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.8);
-    }
-
-    .rover-body {
-      width: 190px;
-      height: 108px;
-      background: linear-gradient(145deg, #1e2e4a, #0d1728);
-      border: 2px solid #3b82f6;
-      border-radius: 12px;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85), 0 0 16px rgba(59, 130, 246, 0.3);
-    }
-
-    .front-arrow {
-      position: absolute;
-      top: 6px;
-      font-size: 0.58rem;
-      font-weight: 800;
-      font-family: 'Orbitron', sans-serif;
-      color: var(--accent-cyan);
-      letter-spacing: 0.12em;
-      white-space: nowrap;
-    }
-
-    .rover-center-status {
-      text-align: center;
-      margin-top: 8px;
-    }
-
-    .rover-state-badge {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.82rem;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: 0.04em;
-    }
-
-    .rover-speed-badge {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.70rem;
-      color: var(--accent-cyan);
-      margin-top: 2px;
-    }
-
-    /* 4 WHEELS WITH REAL-TIME ANIMATED TREADS */
-    .wheel {
-      width: 22px;
-      height: 44px;
-      background: repeating-linear-gradient(0deg, #111827 0px, #111827 3px, #374151 3px, #374151 7px);
-      background-size: 100% 14px;
-      border: 2px solid #4b5563;
-      border-radius: 5px;
-      position: absolute;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    @keyframes roll-fwd {
-      from { background-position: 0 0; }
-      to { background-position: 0 -14px; }
-    }
-    @keyframes roll-rev {
-      from { background-position: 0 0; }
-      to { background-position: 0 14px; }
-    }
-
-    .wheel.rolling-fwd {
-      animation: roll-fwd 0.32s linear infinite;
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 14px rgba(0, 229, 255, 0.6);
-    }
-    .wheel.rolling-rev {
-      animation: roll-rev 0.32s linear infinite;
-      border-color: var(--accent-amber);
-      box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
-    }
-
-    .wheel.w-fl { left: -15px; top: -6px; }
-    .wheel.w-fr { right: -15px; top: -6px; }
-    .wheel.w-rl { left: -15px; bottom: -6px; }
-    .wheel.w-rr { right: -15px; bottom: -6px; }
-
-    .wheel-lbl {
-      position: absolute;
-      font-family: 'Fira Code', monospace;
-      font-size: 0.58rem;
-      font-weight: 700;
-      color: #93c5fd;
-      background: rgba(3, 7, 18, 0.95);
-      padding: 2px 5px;
-      border-radius: 4px;
-      border: 1px solid rgba(59, 130, 246, 0.4);
-      white-space: nowrap;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
-      letter-spacing: 0.02em;
-    }
-
-    .w-fl-lbl { left: -68px; top: 8px; }
-    .w-fr-lbl { right: -68px; top: 8px; }
-    .w-rl-lbl { left: -68px; bottom: 8px; }
-    .w-rr-lbl { right: -68px; bottom: 8px; }
-
-    /* MOTOR POWERTRAIN BREAKDOWN */
-    .motor-metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      margin-top: 8px;
-    }
-
-    .motor-cell {
-      background: var(--bg-card-inner);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      border-radius: 6px;
-      padding: 5px 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .motor-cell-header {
-      font-size: 0.64rem;
-      font-weight: 700;
-      color: var(--text-main);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 3px;
-      margin-bottom: 2px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .motor-data-line {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      font-family: 'Fira Code', monospace;
-      font-size: 0.64rem;
-      color: #e2e8f0;
-      line-height: 1.3;
-    }
-
-    .motor-data-line span.label {
-      color: var(--text-dim);
-      font-size: 0.58rem;
-      letter-spacing: 0.02em;
-    }
-
-    /* ================= 3. SENSOR & TELEMETRY STRIP ================= */
-    .telemetry-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    @media (max-width: 1100px) {
-      .telemetry-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-    @media (max-width: 680px) {
-      .telemetry-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    .metric-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-card);
-      border-radius: 8px;
-      padding: 8px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .metric-header {
-      font-size: 0.66rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .metric-value-row {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-    }
-
-    .metric-value {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: #fff;
-      line-height: 1.1;
-    }
-
-    .metric-unit {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      font-family: 'Inter', sans-serif;
-    }
-
-    .metric-sub {
-      font-size: 0.62rem;
-      font-family: 'Fira Code', monospace;
-      color: var(--text-dim);
-      margin-top: 1px;
-    }
-
-    .metric-bar-bg {
-      height: 4px;
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 9999px;
-      overflow: hidden;
-      margin-top: 3px;
+      outline: none;
+      cursor: pointer;
     }
 
-    .metric-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
-      width: 0%;
-      border-radius: 9999px;
-      transition: width 0.15s ease;
+    .throttle-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #00f0ff;
+      box-shadow: 0 0 12px #00f0ff;
+      cursor: pointer;
+      border: 2px solid #ffffff;
+      transition: transform 0.1s ease;
     }
 
-    /* COMPASS VISUAL DIAL */
-    .compass-container {
+    .throttle-range::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .preset-chips {
+      display: flex;
+      gap: 4px;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .btn-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      font-family: 'Fira Code', monospace;
+      font-size: 0.62rem;
+      padding: 2px 6px;
+      border-radius: 5px;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .btn-chip:hover {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: rgba(0, 240, 255, 0.4);
+      color: var(--accent-cyan);
+    }
+
+    /* ================= CENTER COLUMN: ROVER CHASSIS VISUALIZER ================= */
+    .visualizer-column {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chassis-card {
+      min-height: 480px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .chassis-stage {
+      position: relative;
+      width: 100%;
+      height: 380px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-top: 2px;
+      justify-content: center;
     }
 
-    .compass-dial {
-      width: 38px;
-      height: 38px;
-      border: 1.5px solid rgba(0, 229, 255, 0.35);
-      border-radius: 50%;
+    /* ROVER SVG / CSS 4WD CHASSIS */
+    .rover-chassis-box {
+      width: 260px;
+      height: 320px;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.45);
-      flex-shrink: 0;
+    }
+
+    /* LIDAR SCAN ARC */
+    .lidar-scan-beam {
+      position: absolute;
+      top: -10px;
+      width: 160px;
+      height: 80px;
+      background: radial-gradient(ellipse at bottom, rgba(0, 240, 255, 0.3) 0%, rgba(0, 240, 255, 0) 70%);
+      clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+      transform-origin: bottom center;
+      animation: lidar-sweep 3s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes lidar-sweep {
+      0% { transform: rotate(-30deg); }
+      100% { transform: rotate(30deg); }
+    }
+
+    /* ROVER BODY */
+    .rover-body-hull {
+      width: 150px;
+      height: 220px;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      border: 2px solid rgba(56, 189, 248, 0.4);
+      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 10px;
+      z-index: 2;
+    }
+
+    .rover-front-sensor {
+      width: 44px;
+      height: 14px;
+      background: #0284c7;
+      border-radius: 7px;
+      box-shadow: 0 0 12px #00f0ff;
+      border: 1px solid #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .rover-center-badge {
+      text-align: center;
+    }
+
+    .rover-center-badge .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 0.08em;
+    }
+
+    .rover-center-badge .sub {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.58rem;
+      color: var(--accent-cyan);
+    }
+
+    .rover-mcu-chip {
+      width: 70px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.56rem;
+      color: #94a3b8;
+    }
+
+    /* 4 WHEELS */
+    .rover-wheel {
+      position: absolute;
+      width: 44px;
+      height: 76px;
+      background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.58rem;
+      color: #fff;
+      transition: all 0.2s ease;
+      z-index: 1;
+    }
+
+    .rover-wheel.fl { top: 20px; left: 10px; }
+    .rover-wheel.fr { top: 20px; right: 10px; }
+    .rover-wheel.rl { bottom: 20px; left: 10px; }
+    .rover-wheel.rr { bottom: 20px; right: 10px; }
+
+    .rover-wheel.rolling-fwd {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.65);
+      animation: tread-fwd 0.4s linear infinite;
+    }
+
+    .rover-wheel.rolling-rev {
+      border-color: var(--accent-amber);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.65);
+      animation: tread-rev 0.4s linear infinite;
+    }
+
+    @keyframes tread-fwd {
+      0% { transform: translateY(-2px); }
+      100% { transform: translateY(2px); }
+    }
+
+    @keyframes tread-rev {
+      0% { transform: translateY(2px); }
+      100% { transform: translateY(-2px); }
+    }
+
+    .wheel-label {
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    .wheel-sub {
+      font-size: 0.50rem;
+      color: #94a3b8;
+    }
+
+    /* CHASSIS BOTTOM TELEMETRY BAR */
+    .chassis-hud-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.72rem;
+    }
+
+    .chassis-status-text {
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    /* COMPASS GIMBAL WIDGET */
+    .compass-mini-widget {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      width: 64px;
+      height: 64px;
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .compass-needle {
-      position: absolute;
       width: 2px;
-      height: 28px;
-      background: linear-gradient(to bottom, #ef4444 50%, #38bdf8 50%);
+      height: 44px;
+      background: linear-gradient(180deg, #ef4444 50%, #3b82f6 50%);
       border-radius: 1px;
       transform: rotate(0deg);
-      transition: transform 0.1s linear;
+      transition: transform 0.1s ease-out;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
     }
 
-    .compass-needle::after {
-      content: '';
-      position: absolute;
-      top: -2px;
-      left: -2px;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #ef4444;
-      box-shadow: 0 0 6px #ef4444;
-    }
-
-    .compass-labels {
-      position: absolute;
-      inset: 1px;
-      pointer-events: none;
-      font-size: 0.50rem;
-      font-weight: 700;
-      color: var(--text-muted);
-    }
-    .c-n { position: absolute; top: 0; left: 50%; transform: translateX(-50%); color: #ef4444; }
-    .c-s { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
-    .c-w { position: absolute; left: 2px; top: 50%; transform: translateY(-50%); }
-    .c-e { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); }
-
-    .metric-row {
+    /* ================= RIGHT COLUMN: DIAGNOSTICS & TEST SCRIPTS ================= */
+    .diagnostics-column {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.66rem;
-      color: var(--text-muted);
-      padding: 1px 0;
-      line-height: 1.3;
-    }
-
-    .metric-row .metric-label {
-      color: var(--text-dim);
-      font-size: 0.60rem;
-    }
-
-    .metric-row .metric-val {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.66rem;
-      font-weight: 600;
-      color: #f1f5f9;
-    }
-
-    /* ================= 4. BOTTOM TIER ================= */
-    .bottom-split {
-      display: grid;
-      grid-template-columns: 1.25fr 1fr;
+      flex-direction: column;
       gap: 10px;
     }
 
-    @media (max-width: 980px) {
-      .bottom-split {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* SYSTEM HEALTH STRIP */
-    .health-grid {
+    /* SUBSYSTEM HEALTH MATRIX */
+    .health-matrix-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-      margin-bottom: 8px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
     }
 
-    @media (max-width: 760px) {
-      .health-grid {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-
-    .health-cell {
-      background: var(--bg-card-inner);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 5px;
-      padding: 4px 6px;
-      text-align: center;
+    .health-node {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px 8px;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
       gap: 2px;
       transition: all 0.2s ease;
     }
 
-    .health-name {
+    .health-node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .health-node-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .health-indicator-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #64748b;
+    }
+
+    .health-indicator-dot.online {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    .health-indicator-dot.warn {
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+    }
+
+    .health-indicator-dot.err {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    .health-node-val {
+      font-family: 'Fira Code', monospace;
       font-size: 0.60rem;
       color: var(--text-dim);
-      font-weight: 600;
-      white-space: nowrap;
     }
 
-    .health-val {
+    /* MOTOR DETAIL TABLE */
+    .motor-table-wrap {
+      width: 100%;
+      border-collapse: collapse;
       font-family: 'Fira Code', monospace;
       font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--accent-green);
+      margin-top: 4px;
     }
 
-    /* HARDWARE TEST SUITE CARDS */
-    .script-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      margin-top: 6px;
+    .motor-table-wrap th {
+      text-align: left;
+      padding: 5px 8px;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border-subtle);
+      font-weight: 600;
     }
 
-    @media (max-width: 580px) {
-      .script-grid {
-        grid-template-columns: 1fr;
-      }
+    .motor-table-wrap td {
+      padding: 5px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #e2e8f0;
     }
 
-    .script-card {
-      background: var(--bg-card-inner);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 7px;
-      padding: 7px 10px;
+    .motor-table-wrap tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* TEST PROTOCOL SCRIPTS */
+    .scripts-suite-list {
       display: flex;
       flex-direction: column;
+      gap: 6px;
+    }
+
+    .test-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
       justify-content: space-between;
-      gap: 5px;
+      align-items: center;
       transition: all 0.2s ease;
     }
 
-    .script-card:hover {
-      background: rgba(255, 255, 255, 0.07);
-      border-color: rgba(0, 229, 255, 0.35);
+    .test-card:hover {
+      border-color: rgba(0, 240, 255, 0.4);
+      background: rgba(0, 240, 255, 0.04);
     }
 
-    .script-card.active-running {
+    .test-card.active-running {
       border-color: var(--accent-cyan);
-      box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
-      background: rgba(0, 229, 255, 0.08);
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.25);
     }
 
-    .script-header-line {
+    .test-card-left {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 8px;
     }
 
-    .script-icon {
-      width: 26px;
-      height: 26px;
-      border-radius: 5px;
-      background: rgba(0, 229, 255, 0.12);
-      border: 1px solid rgba(0, 229, 255, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.90rem;
-      flex-shrink: 0;
+    .test-card-icon {
+      font-size: 1.1rem;
     }
 
-    .script-name {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.70rem;
+    .test-card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.74rem;
       font-weight: 700;
-      color: #fff;
-      line-height: 1.15;
+      color: #ffffff;
     }
 
-    .script-desc {
+    .test-card-desc {
       font-size: 0.62rem;
       color: var(--text-muted);
-      margin-top: 2px;
-      line-height: 1.25;
     }
-
-    .script-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 6px;
-      padding-top: 5px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .script-status-badge {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.58rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-muted);
-    }
-    .script-status-badge.running { background: rgba(0, 229, 255, 0.2); color: var(--accent-cyan); }
-    .script-status-badge.passed  { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
-    .script-status-badge.aborted { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
 
     .btn-run-script {
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      color: #030712;
-      border: none;
-      border-radius: 4px;
-      padding: 3px 9px;
-      font-family: 'Orbitron', sans-serif;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      font-family: 'Orbitron', monospace;
       font-size: 0.64rem;
-      font-weight: 800;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 6px;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
       transition: all 0.2s ease;
     }
 
     .btn-run-script:hover {
-      box-shadow: 0 0 10px rgba(0, 229, 255, 0.55);
-      transform: scale(1.02);
+      background: linear-gradient(135deg, #00f0ff 0%, #2563eb 100%);
+      color: #030712;
+      border-color: #00f0ff;
+      box-shadow: 0 0 12px #00f0ff;
     }
 
-    /* TELEMETRY TERMINAL */
-    .terminal-card {
-      display: flex;
+    .script-status-badge {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.60rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-dim);
+    }
+
+    .script-status-badge.running {
+      background: rgba(0, 240, 255, 0.2);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+    }
+
+    .script-status-badge.passed {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .script-status-badge.aborted {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    /* SCRIPT EXECUTION LIVE BANNER */
+    .script-banner {
+      display: none;
       flex-direction: column;
+      gap: 6px;
+      background: linear-gradient(90deg, rgba(0, 240, 255, 0.15), rgba(99, 102, 241, 0.15));
+      border: 1px solid var(--accent-cyan);
+      border-radius: 10px;
+      padding: 10px 14px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+      margin-top: 6px;
     }
 
-    .term-toolbar {
+    .script-banner-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
+    }
+
+    .script-banner-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-abort-script {
+      background: #ef4444;
+      border: none;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* ================= 4. BOTTOM COMMAND & TELEMETRY TERMINAL ================= */
+    .terminal-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .terminal-output {
+      height: 140px;
+      background: #02040a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.72rem;
+      color: #cbd5e1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      line-height: 1.35;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.8);
+    }
+
+    .log-line {
+      display: flex;
+      gap: 8px;
+      word-break: break-all;
+    }
+
+    .log-time { color: var(--text-dim); }
+    .log-tag { font-weight: 700; }
+    .log-tag.info { color: var(--accent-cyan); }
+    .log-tag.warn { color: var(--accent-amber); }
+    .log-tag.crit { color: var(--accent-rose); }
+    .log-tag.rx { color: #34d399; }
+    .log-tag.tx { color: #a78bfa; }
+
+    .terminal-input-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .terminal-input {
+      flex: 1;
+      background: #02040a;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 7px;
+      padding: 7px 12px;
+      color: #ffffff;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.74rem;
+      outline: none;
+    }
+
+    .terminal-input:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+    }
+
+    .macro-buttons {
+      display: flex;
       gap: 6px;
       flex-wrap: wrap;
     }
 
-    .term-filters {
-      display: flex;
-      gap: 3px;
-    }
-
-    .term-filter-btn {
+    .btn-macro {
       background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text-dim);
-      font-size: 0.60rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
       font-family: 'Fira Code', monospace;
+      font-size: 0.65rem;
+      padding: 4px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
     }
 
-    .term-filter-btn.active {
-      background: rgba(0, 229, 255, 0.18);
-      border-color: var(--accent-cyan);
+    .btn-macro:hover {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: rgba(0, 240, 255, 0.4);
       color: var(--accent-cyan);
-    }
-
-    .term-actions {
-      display: flex;
-      gap: 4px;
-    }
-
-    .term-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text-muted);
-      font-size: 0.60rem;
-      padding: 2px 7px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-family: 'Fira Code', monospace;
-    }
-
-    .term-btn:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: #fff;
-    }
-
-    .terminal-box {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.68rem;
-      background: #02050f;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 7px;
-      padding: 8px 10px;
-      height: 140px;
-      overflow-y: auto;
-      color: #94a3b8;
-      line-height: 1.4;
-    }
-
-    .term-rx { color: #34d399; }
-    .term-tx { color: #38bdf8; }
-    .term-warn { color: #f59e0b; }
-    .term-crit { color: #ef4444; }
-
-    /* SCRIPT BANNER */
-    .script-banner {
-      background: rgba(14, 22, 42, 0.98);
-      border: 1px solid var(--accent-cyan);
-      box-shadow: 0 0 14px rgba(0, 229, 255, 0.4);
-      border-radius: 7px;
-      padding: 6px 12px;
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 8px;
-      animation: bannerSlide 0.25s ease;
-    }
-
-    @keyframes bannerSlide {
-      from { opacity: 0; transform: translateY(-4px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .script-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .script-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: var(--accent-cyan);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .script-step {
-      font-size: 0.66rem;
-      color: #e2e8f0;
-      font-family: 'Fira Code', monospace;
-    }
-
-    .script-progress-bar-bg {
-      width: 140px;
-      height: 5px;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 9999px;
-      overflow: hidden;
-    }
-
-    .script-progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
-      width: 0%;
-      transition: width 0.1s linear;
-    }
-
-    .script-abort-btn {
-      background: rgba(239, 68, 68, 0.25);
-      border: 1px solid var(--accent-red);
-      color: #fca5a5;
-      font-size: 0.64rem;
-      font-family: 'Orbitron', sans-serif;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .script-abort-btn:hover {
-      background: var(--accent-red);
-      color: #fff;
     }
   </style>
 </head>
 <body class="hardware-disconnected">
 
-<div class="container">
-  <!-- 1. TOP CRITICAL STATUS BAR -->
-  <header>
-    <div class="header-branding">
-      <div class="rover-logo-icon">🚀</div>
-      <div class="rover-title-block">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <h1>ROBOT 2 DASHBOARD</h1>
-          <span class="version-tag">IIT-RB2 • v2.4 PRO</span>
+<div class="app-container">
+
+  <!-- ================= 1. ULTRA-MODERN COMMAND HEADER ================= -->
+  <header class="command-header">
+    <div class="brand-cluster">
+      <div class="brand-beacon">⚡</div>
+      <div class="brand-title-wrap">
+        <h1>TITAN-RB2 GCS</h1>
+        <div class="brand-meta">
+          <span class="sub">4WD RECON ROVER • DUAL L298N</span>
+          <span class="system-pill-pro">AEROSPACE HUD v2.5</span>
         </div>
-        <p>Real-Time Telemetry, Skid-Steer Teleoperation & Hardware Verification Suite</p>
       </div>
     </div>
 
-    <div class="critical-bar">
-      <!-- ARDUINO UNO / NANO HARDWARE SERIAL CONNECTION -->
-      <div class="serial-control-group">
-        <button class="btn-serial-connect" id="btnSerialConnect" onclick="toggleSerialConnection()" title="Connect to Arduino Uno / Nano USB COM Port">
-          <span class="serial-status-dot" id="serialDot">●</span>
-          <span id="serialBtnText">CONNECT ARDUINO (USB)</span>
+    <div class="header-quick-stats">
+      <!-- HARDWARE SERIAL LINK CONTROLS -->
+      <div class="connection-capsule">
+        <button id="btnSerialConnect" class="btn-connect-usb" onclick="toggleSerialConnection()">
+          <span class="live-dot">●</span>
+          <span id="btnSerialConnectLabel">CONNECT ARDUINO (USB)</span>
         </button>
-        <select class="serial-baud-select" id="serialBaudSelect" title="Select Baud Rate (115200 standard for IIT-RB2)" onchange="updateBaudRate(this.value)">
-          <option value="115200" selected>115200</option>
-          <option value="9600">9600</option>
-          <option value="57600">57600</option>
+        <select id="baudSelect" class="baud-select" title="Baud Rate">
+          <option value="115200" selected>115200 Baud</option>
+          <option value="57600">57600 Baud</option>
+          <option value="9600">9600 Baud</option>
         </select>
       </div>
 
-      <!-- BATTERY -->
-      <div class="status-badge battery" id="badgeBattery">
-        <span>⚡</span> 11.8V (2S Li-ion)
+      <!-- STATUS BADGES -->
+      <div id="connStatus" class="status-pill">
+        <span id="connIcon">🔌</span> <span id="connText">OFFLINE</span>
       </div>
 
-      <!-- ACTIVE MODE -->
-      <div class="status-badge mode" id="badgeMode">
-        <span>🕹️</span> MANUAL TELEOP
+      <div class="status-pill battery" id="statBattery">
+        <span>🔋</span> <span id="valVoltage">7.42 V</span> <span style="opacity: 0.6;">(2S LiPo)</span>
       </div>
 
-      <!-- COMPACT E-STOP -->
-      <button class="btn-estop" id="btnEstop" onclick="toggleEStop()">
+      <div class="status-pill mode" id="statMode">
+        <span id="badgeMode"><span>🕹️</span> MANUAL TELEOP</span>
+      </div>
+
+      <!-- PROMINENT E-STOP -->
+      <button id="btnEstop" class="btn-estop-neo" onclick="toggleEStop()" title="Spacebar Shortcut">
         <span class="estop-icon">🛑</span>
         <div class="estop-labels">
           <span class="estop-main" id="estopMainText">E-STOP</span>
@@ -1397,77 +1480,196 @@
     </div>
   </header>
 
-  <!-- UNIFIED STATUS & INTERLOCK BAR -->
-  <div class="unified-status-bar" id="hwInterlockNotice">
-    <div class="unified-status-left">
-      <span class="status-beacon" id="warnIcon">🔒</span>
-      <div>
-        <strong id="warnMessage">SAFETY INTERLOCK ACTIVE:</strong>
-        <span class="status-desc" id="warnTimestamp">Controls locked until linked. Connect via Direct USB, Wi-Fi Bridge, or start Simulation.</span>
+  <!-- ================= UNIFIED INTERACTIVE LINK BAR ================= -->
+  <div class="link-ribbon">
+    <div class="link-ribbon-left">
+      <span class="ribbon-icon">⚠️</span>
+      <div class="ribbon-text">
+        <strong id="interlockLabel">SAFETY INTERLOCK ACTIVE</strong>
+        <span id="interlockDesc">Click Connect Arduino (USB) or launch Wi-Fi Bridge to engage drive commands.</span>
       </div>
     </div>
-    <div class="unified-status-actions">
-      <button class="btn-action-pill btn-action-cyan" onclick="connectSerial()" title="Direct USB connection via Web Serial">⚡ Connect USB</button>
-      <button class="btn-action-pill btn-action-wifi" onclick="connectNetworkBridge()" title="Connect wirelessly via server gateway">🌐 Wi-Fi Bridge</button>
-      <button class="btn-action-pill btn-action-sim" onclick="toggleBypassInterlock()" title="Bypass interlock to test UI controls and simulation">🧪 Simulation Mode</button>
+    <div class="link-ribbon-actions">
+      <button class="btn-pill btn-pill-cyan" onclick="toggleSerialConnection()">
+        🔌 USB WebSerial
+      </button>
+      <button class="btn-pill btn-pill-wifi" onclick="connectWifiBridge()">
+        📡 Wi-Fi Bridge (Port 8080)
+      </button>
+      <button class="btn-pill btn-pill-ghost" onclick="sendSerialCommand('PING')">
+        ⚡ Ping Rover
+      </button>
     </div>
   </div>
 
-  <!-- COMPATIBILITY HOOKS (HIDDEN) -->
-  <div class="network-notice-bar" id="networkNoticeBar"></div>
-  <div class="warning-banner" id="systemWarningBanner"></div>
-
-  <!-- SCRIPT EXECUTION POPUP BANNER -->
-  <div class="script-banner" id="scriptBanner">
-    <div class="script-info">
-      <div class="script-title">
-        <span id="bannerScriptIcon">▶</span>
-        <span id="bannerScriptName">Running Script...</span>
-      </div>
-      <div class="script-step" id="bannerScriptStep">Phase 1/4: Driving Forward (+160 PWM)</div>
-    </div>
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div class="script-progress-bar-bg">
-        <div class="script-progress-bar-fill" id="bannerProgressFill"></div>
-      </div>
-      <button class="script-abort-btn" onclick="abortRunningScript()">ABORT</button>
-    </div>
+  <!-- Hidden hooks for full backward-compatibility -->
+  <div id="hwInterlockNotice" class="hw-interlock-notice hidden"></div>
+  <div id="sysWarnBanner" class="warning-banner">
+    <span id="sysWarnIcon">⚠️</span>
+    <span id="sysWarnText">ALL SYSTEMS NOMINAL</span>
+  </div>
+  <div id="netNoticeBar" class="network-notice-bar">
+    <span id="netNoticeText">Local Dashboard Server Active</span>
   </div>
 
-  <!-- 2. PRIMARY COCKPIT GRID: FLIGHT CONTROLS & CHASSIS -->
+  <!-- ================= 2. TOP TELEMETRY 5-KPI METRIC STRIP ================= -->
+  <div class="metrics-grid-top">
+    
+    <!-- KPI 1: SPEED / THROTTLE -->
+    <div class="metric-card-pro">
+      <div class="metric-top">
+        <span class="metric-label">Powertrain Output</span>
+        <span class="metric-icon-badge">🏎️</span>
+      </div>
+      <div class="metric-body">
+        <span class="metric-val" id="valSpeed">0</span>
+        <span class="metric-unit">PWM</span>
+      </div>
+      <div class="metric-progress-wrap">
+        <div class="metric-progress-bar bar-cyan" id="barSpeed"></div>
+      </div>
+      <div class="metric-footer-text">
+        <span>DUTY CYCLE</span>
+        <span id="valDuty">0%</span>
+      </div>
+    </div>
+
+    <!-- KPI 2: LASER LIDAR DISTANCE -->
+    <div class="metric-card-pro">
+      <div class="metric-top">
+        <span class="metric-label">Laser Range (ToF)</span>
+        <span class="metric-icon-badge">🎯</span>
+      </div>
+      <div class="metric-body">
+        <span class="metric-val" id="valDistance">—</span>
+        <span class="metric-unit">mm</span>
+      </div>
+      <div class="metric-progress-wrap">
+        <div class="metric-progress-bar bar-emerald" id="barDistance"></div>
+      </div>
+      <div class="metric-footer-text">
+        <span>STATUS</span>
+        <span id="badgeLaserStatus" style="color: var(--accent-emerald);">STANDBY</span>
+      </div>
+    </div>
+
+    <!-- KPI 3: AHRS YAW HEADING -->
+    <div class="metric-card-pro">
+      <div class="metric-top">
+        <span class="metric-label">AHRS IMU Compass</span>
+        <span class="metric-icon-badge">🧭</span>
+      </div>
+      <div class="metric-body">
+        <span class="metric-val" id="valYaw">0.0</span>
+        <span class="metric-unit">deg °</span>
+      </div>
+      <div class="metric-progress-wrap">
+        <div class="metric-progress-bar bar-purple" id="barYaw" style="width: 50%;"></div>
+      </div>
+      <div class="metric-footer-text">
+        <span>HEADING</span>
+        <span id="odomHeading">0.0°</span>
+      </div>
+    </div>
+
+    <!-- KPI 4: ODOMETRY TICKS -->
+    <div class="metric-card-pro">
+      <div class="metric-top">
+        <span class="metric-label">Wheel Odometry</span>
+        <span class="metric-icon-badge">📐</span>
+      </div>
+      <div class="metric-body">
+        <span class="metric-val" id="valTotalTicks">0</span>
+        <span class="metric-unit">TICKS</span>
+      </div>
+      <div class="metric-progress-wrap">
+        <div class="metric-progress-bar bar-amber" id="barTicks"></div>
+      </div>
+      <div class="metric-footer-text">
+        <span>DISTANCE</span>
+        <span id="odomDistance">0.00 m</span>
+      </div>
+    </div>
+
+    <!-- KPI 5: POWER & CURRENT -->
+    <div class="metric-card-pro">
+      <div class="metric-top">
+        <span class="metric-label">Power & Bus Current</span>
+        <span class="metric-icon-badge">⚡</span>
+      </div>
+      <div class="metric-body">
+        <span class="metric-val" id="valCurrent">420</span>
+        <span class="metric-unit">mA</span>
+      </div>
+      <div class="metric-progress-wrap">
+        <div class="metric-progress-bar bar-cyan" style="width: 35%;"></div>
+      </div>
+      <div class="metric-footer-text">
+        <span>5V LOGIC</span>
+        <span style="color: var(--accent-emerald);">4.98 V STABLE</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= 3. MAIN COCKPIT 3-COLUMN GRID ================= -->
   <div class="cockpit-grid">
-    <!-- FLIGHT CONTROLS & JOYSTICK -->
-    <div class="card teleop-card">
-      <div class="card-title">
-        <span class="card-title-icon">🎮 Flight Controls & Teleoperation</span>
-        <span style="font-size: 0.68rem; color: var(--text-muted);">WASD / Arrow Keys</span>
-      </div>
-
-      <!-- MODE SELECTOR -->
-      <div class="mode-selector-bar">
-        <button class="mode-tab active" id="tabManual" onclick="setMode('manual')">
-          🕹️ Manual Teleop
-        </button>
-        <button class="mode-tab" id="tabAuto" onclick="setMode('auto')">
-          🤖 Autonomous AI
-        </button>
-        <button class="mode-tab" id="tabSpin" onclick="setMode('spin')">
-          🔄 360° Benchmark
-        </button>
-        <button class="mode-tab" id="tabMission" onclick="setMode('mission')">
-          🎯 Mission
-        </button>
-      </div>
-
-      <div class="controls-split">
-        <!-- VIRTUAL JOYSTICK -->
-        <div class="joystick-wrapper">
-          <div class="joystick-base" id="joyBase">
-            <div class="joystick-ring-inner"></div>
-            <div class="joystick-puck" id="joyPuck"></div>
+    
+    <!-- ================= LEFT COLUMN: TELEOPERATION ================= -->
+    <div class="teleop-column">
+      
+      <!-- CARD: TELEOPERATION CONSOLE -->
+      <div class="neo-card teleop-card">
+        <div class="card-header-row">
+          <div class="card-title">
+            <span class="icon">🎮</span>
+            <span>TELEOPERATION COCKPIT</span>
           </div>
-          <!-- JOYSTICK NUMERICAL READOUT -->
-          <div class="joystick-telemetry-row">
+          <span class="card-badge">WASD / ARROWS</span>
+        </div>
+
+        <!-- DRIVE MODE TABS -->
+        <div class="mode-tab-bar">
+          <button id="tabManual" class="mode-tab active" onclick="setMode('manual')">🕹️ MANUAL</button>
+          <button id="tabAuto" class="mode-tab" onclick="setMode('auto')">🤖 AUTO</button>
+          <button id="tabSpin" class="mode-tab" onclick="setMode('spin')">🔄 PIVOT</button>
+          <button id="tabMission" class="mode-tab" onclick="setMode('mission')">🎯 WAYPOINT</button>
+        </div>
+
+        <!-- TACTILE D-PAD -->
+        <div class="dpad-container">
+          <button id="btnUp" class="dpad-btn" title="Forward (W / Up)">
+            <span class="arrow">▲</span>
+            <span class="key-badge">W / UP</span>
+          </button>
+          <div class="dpad-row">
+            <button id="btnLeft" class="dpad-btn" title="Left (A / Left)">
+              <span class="arrow">◀</span>
+              <span class="key-badge">A / LEFT</span>
+            </button>
+            <button id="btnStop" class="dpad-btn stop" title="Brake (Stop)">
+              <span class="arrow">⏹</span>
+              <span class="key-badge">BRAKE</span>
+            </button>
+            <button id="btnRight" class="dpad-btn" title="Right (D / Right)">
+              <span class="arrow">▶</span>
+              <span class="key-badge">D / RIGHT</span>
+            </button>
+          </div>
+          <button id="btnDown" class="dpad-btn" title="Reverse (S / Down)">
+            <span class="arrow">▼</span>
+            <span class="key-badge">S / DOWN</span>
+          </button>
+        </div>
+
+        <!-- VIRTUAL JOYSTICK -->
+        <div class="joystick-section">
+          <div id="joyBase" class="joystick-base">
+            <div class="joystick-crosshair-h"></div>
+            <div class="joystick-crosshair-v"></div>
+            <div id="joyPuck" class="joystick-puck">🕹️</div>
+          </div>
+          <div class="joystick-stats">
             <span>X: <strong id="joyValX" style="color: #fff;">0.00</strong></span>
             <span>Y: <strong id="joyValY" style="color: #fff;">0.00</strong></span>
             <span>L: <strong id="joyPwmL" style="color: var(--accent-cyan);">0</strong></span>
@@ -1475,401 +1677,352 @@
           </div>
         </div>
 
-        <!-- DIGITAL D-PAD -->
-        <div class="dpad-container">
-          <button class="dpad-btn dpad-up" id="btnUp" title="Drive Forward (Up / W)">
-            ▲<span class="key-hint">W / ↑</span>
-          </button>
-          <button class="dpad-btn dpad-left" id="btnLeft" title="Pivot Left (Left / A)">
-            ◀<span class="key-hint">A / ←</span>
-          </button>
-          <button class="dpad-btn dpad-center" id="btnStop" title="Brake (Space)">
-            STOP<span class="key-hint">SPACE</span>
-          </button>
-          <button class="dpad-btn dpad-right" id="btnRight" title="Pivot Right (Right / D)">
-            ▶<span class="key-hint">D / →</span>
-          </button>
-          <button class="dpad-btn dpad-down" id="btnDown" title="Drive Reverse (Down / S)">
-            ▼<span class="key-hint">S / ↓</span>
-          </button>
+        <!-- THROTTLE SLIDER -->
+        <div class="throttle-wrap">
+          <div class="throttle-header">
+            <span>MAX PWM LIMIT</span>
+            <span class="val" id="throttleVal">160 PWM</span>
+          </div>
+          <input type="range" id="throttleSlider" class="throttle-range" min="60" max="255" value="160" oninput="updateThrottle(this.value)">
+          <div class="preset-chips">
+            <button class="btn-chip" onclick="setThrottlePreset(80)">LOW (80)</button>
+            <button class="btn-chip" onclick="setThrottlePreset(160)">MID (160)</button>
+            <button class="btn-chip" onclick="setThrottlePreset(220)">HIGH (220)</button>
+            <button class="btn-chip" onclick="setThrottlePreset(255)">MAX (255)</button>
+          </div>
         </div>
+
       </div>
 
-      <!-- THROTTLE LIMITER -->
-      <div class="speed-slider-row">
-        <span>THROTTLE: <strong id="throttleVal">160</strong> PWM</span>
-        <input type="range" min="80" max="220" value="160" class="throttle-range" id="throttleSlider" oninput="updateThrottle(this.value)">
-      </div>
-
-      <!-- KEYBOARD SHORTCUTS REFERENCE BAR -->
-      <div class="shortcut-legend-strip">
-        <div class="shortcut-pill"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Drive/Pivot</span></div>
-        <div class="shortcut-pill"><kbd>SPACE</kbd><span>Brake</span></div>
-        <div class="shortcut-pill"><kbd>1</kbd>-<kbd>4</kbd><span>Modes</span></div>
-        <div class="shortcut-pill"><kbd>ESC</kbd><span>E-Stop</span></div>
-      </div>
     </div>
 
-    <!-- RIGHT: 4WD CHASSIS & POWERTRAIN LIVE STATE -->
-    <div class="card">
-      <div class="card-title">
-        <span class="card-title-icon">🧭 4WD Skid-Steer Powertrain Live State</span>
-        <span style="font-size: 0.70rem; color: var(--accent-cyan); font-family: 'Fira Code';" id="chassisSubState">PWM: 0</span>
-      </div>
-
-      <div class="chassis-visual-box">
-        <div class="rover-body">
-          <span class="front-arrow">▲ FORWARD TRAVEL ▲</span>
-          <div class="rover-center-status">
-            <div class="rover-state-badge" id="chassisStateText">STOPPED</div>
-            <div class="rover-speed-badge" id="chassisPwmText">0 PWM (0%)</div>
+    <!-- ================= CENTER COLUMN: 4WD CHASSIS HUD ================= -->
+    <div class="visualizer-column">
+      
+      <div class="neo-card chassis-card">
+        <div class="card-header-row">
+          <div class="card-title">
+            <span class="icon">🛰️</span>
+            <span>4WD CHASSIS KINEMATICS & SENSORS</span>
           </div>
-
-          <!-- 4 WHEELS WITH REAL-TIME ANIMATED TREADS -->
-          <div class="wheel w-fl" id="wheelFL"></div>
-          <span class="wheel-lbl w-fl-lbl">FL • D6</span>
-
-          <div class="wheel w-fr" id="wheelFR"></div>
-          <span class="wheel-lbl w-fr-lbl">FR • D9</span>
-
-          <div class="wheel w-rl" id="wheelRL"></div>
-          <span class="wheel-lbl w-rl-lbl">RL • D10</span>
-
-          <div class="wheel w-rr" id="wheelRR"></div>
-          <span class="wheel-lbl w-rr-lbl">RR • D11</span>
-        </div>
-      </div>
-
-      <!-- MOTOR BREAKDOWN: COMMAND VS MEASURED -->
-      <div class="motor-metrics-grid">
-        <!-- MOTOR 1 FL -->
-        <div class="motor-cell" id="cellBox1">
-          <div class="motor-cell-header">
-            <span>FL Front Left (D6)</span>
-            <span id="m1DirLbl" style="color: var(--accent-cyan);">IDLE</span>
-          </div>
-          <div class="motor-data-line"><span class="label">TARGET:</span><strong id="m1TargetPwm">0</strong></div>
-          <div class="motor-data-line"><span class="label">SPEED:</span><span id="m1ActualRpm">—</span></div>
-          <div class="motor-data-line"><span class="label">ENCODER:</span><span id="m1Ticks">0 ticks</span></div>
+          <span class="card-badge" id="chassisSubState">PWM: 0</span>
         </div>
 
-        <!-- MOTOR 2 FR -->
-        <div class="motor-cell" id="cellBox2">
-          <div class="motor-cell-header">
-            <span>FR Front Right (D9)</span>
-            <span id="m2DirLbl" style="color: var(--accent-cyan);">IDLE</span>
-          </div>
-          <div class="motor-data-line"><span class="label">TARGET:</span><strong id="m2TargetPwm">0</strong></div>
-          <div class="motor-data-line"><span class="label">SPEED:</span><span id="m2ActualRpm">—</span></div>
-          <div class="motor-data-line"><span class="label">ENCODER:</span><span id="m2Ticks">0 ticks</span></div>
-        </div>
+        <!-- CHASSIS STAGE -->
+        <div class="chassis-stage">
+          
+          <div class="rover-chassis-box">
+            
+            <!-- LIDAR SWEEP CONE -->
+            <div class="lidar-scan-beam"></div>
 
-        <!-- MOTOR 3 RL -->
-        <div class="motor-cell" id="cellBox3">
-          <div class="motor-cell-header">
-            <span>RL Rear Left (D10)</span>
-            <span id="m3DirLbl" style="color: var(--accent-cyan);">IDLE</span>
-          </div>
-          <div class="motor-data-line"><span class="label">TARGET:</span><strong id="m3TargetPwm">0</strong></div>
-          <div class="motor-data-line"><span class="label">SPEED:</span><span id="m3ActualRpm">—</span></div>
-          <div class="motor-data-line"><span class="label">ENCODER:</span><span id="m3Ticks">0 ticks</span></div>
-        </div>
-
-        <!-- MOTOR 4 RR -->
-        <div class="motor-cell" id="cellBox4">
-          <div class="motor-cell-header">
-            <span>RR Rear Right (D11)</span>
-            <span id="m4DirLbl" style="color: var(--accent-cyan);">IDLE</span>
-          </div>
-          <div class="motor-data-line"><span class="label">TARGET:</span><strong id="m4TargetPwm">0</strong></div>
-          <div class="motor-data-line"><span class="label">SPEED:</span><span id="m4ActualRpm">—</span></div>
-          <div class="motor-data-line"><span class="label">ENCODER:</span><span id="m4Ticks">0 ticks</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3. SENSOR & TELEMETRY STRIP -->
-  <div class="telemetry-grid">
-    <!-- HARDWARE THROTTLE -->
-    <div class="metric-card">
-      <div class="metric-header">
-        <span>Commanded Throttle</span>
-        <span>⚡ PWM</span>
-      </div>
-      <div class="metric-value-row">
-        <span class="metric-value" id="valSpeed">0</span>
-        <span class="metric-unit">/ 220 PWM</span>
-      </div>
-      <div class="metric-bar-bg">
-        <div class="metric-bar-fill" id="barSpeed"></div>
-      </div>
-      <div class="metric-sub">Duty: <span id="valDuty">0%</span></div>
-    </div>
-
-    <!-- VL53L0X TOF SENSOR -->
-    <div class="metric-card">
-      <div class="metric-header">
-        <span>VL53L0X Laser ToF</span>
-        <span id="badgeLaserStatus" style="color: var(--text-dim); font-size: 0.62rem;">OFFLINE</span>
-      </div>
-      <div class="metric-value-row">
-        <span class="metric-value" id="valDistance">—</span>
-        <span class="metric-unit">mm</span>
-      </div>
-      <div class="metric-bar-bg">
-        <div class="metric-bar-fill" id="barDistance" style="background: linear-gradient(90deg, #10b981, #00e5ff);"></div>
-      </div>
-      <div class="metric-sub">Range Trip Threshold: 180 mm</div>
-    </div>
-
-    <!-- BNO08X IMU WITH VISUAL COMPASS -->
-    <div class="metric-card">
-      <div class="metric-header">
-        <span>BNO08x 9-DOF IMU</span>
-        <span>🧭 AHRS</span>
-      </div>
-      <div class="compass-container">
-        <!-- VISUAL COMPASS DIAL -->
-        <div class="compass-dial">
-          <div class="compass-labels">
-            <span class="c-n">N</span>
-            <span class="c-s">S</span>
-            <span class="c-w">W</span>
-            <span class="c-e">E</span>
-          </div>
-          <div class="compass-needle" id="compassNeedle"></div>
-        </div>
-        <div>
-          <div class="metric-value-row">
-            <span class="metric-value" id="valYaw">0.0</span>
-            <span class="metric-unit">°</span>
-          </div>
-          <div class="metric-sub">P: 0.0° | R: 0.0°</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ODOMETRY SUMMARY -->
-    <div class="metric-card">
-      <div class="metric-header">
-        <span>Odometry Summary</span>
-        <span>📐 Pose</span>
-      </div>
-      <div class="metric-row" style="margin-top: 3px;">
-        <span class="metric-label">Travel Dist:</span>
-        <span class="metric-val" id="odomDistance">—</span>
-      </div>
-      <div class="metric-row">
-        <span class="metric-label">Yaw Heading:</span>
-        <span class="metric-val" id="odomHeading">0.0°</span>
-      </div>
-      <div class="metric-row">
-        <span class="metric-label">Total Ticks:</span>
-        <span class="metric-val" id="valTotalTicks" style="color: var(--accent-cyan);">0</span>
-      </div>
-      <div class="metric-bar-bg" style="margin-top: 4px;">
-        <div class="metric-bar-fill" id="barTicks" style="background: linear-gradient(90deg, #f59e0b, #ef4444);"></div>
-      </div>
-    </div>
-
-    <!-- DETAILED BATTERY SUBSYSTEM -->
-    <div class="metric-card">
-      <div class="metric-header">
-        <span>Power Subsystem</span>
-        <span>⚡ 2S Rail</span>
-      </div>
-      <div class="metric-value-row">
-        <span class="metric-value" id="valBatteryVolt">11.8</span>
-        <span class="metric-unit">V</span>
-      </div>
-      <div class="metric-row" style="margin-top: 2px;">
-        <span class="metric-label">State of Charge:</span>
-        <span class="metric-val" id="valBatteryPct">—</span>
-      </div>
-      <div class="metric-row">
-        <span class="metric-label">Current Draw:</span>
-        <span class="metric-val" id="valCurrentDraw">—</span>
-      </div>
-      <div class="metric-row">
-        <span class="metric-label">Rail Status:</span>
-        <span class="metric-val" style="color: var(--accent-green); font-weight: 700;">Nominal</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. BOTTOM TIER: SYSTEM HEALTH, HARDWARE TESTS & UART TERMINAL -->
-  <div class="bottom-split">
-    <!-- PREDEFINED TEST SCRIPTS & SYSTEM HEALTH -->
-    <div class="card">
-      <div class="card-title">
-        <span class="card-title-icon">🧪 Predefined Hardware Test Scripts</span>
-        <span style="font-size: 0.70rem; color: var(--accent-cyan); font-family: 'Fira Code';">Tool 03 Suite</span>
-      </div>
-
-      <!-- COMPACT SYSTEM HEALTH MATRIX -->
-      <div class="health-grid">
-        <div class="health-cell">
-          <div class="health-name">● MCU</div>
-          <div class="health-val" id="hMcu">OK</div>
-        </div>
-        <div class="health-cell">
-          <div class="health-name">● Driver</div>
-          <div class="health-val" id="hDriver">OK</div>
-        </div>
-        <div class="health-cell">
-          <div class="health-name">● IMU</div>
-          <div class="health-val" id="hImu">OK</div>
-        </div>
-        <div class="health-cell">
-          <div class="health-name">● ToF</div>
-          <div class="health-val" id="hTof">OK</div>
-        </div>
-        <div class="health-cell">
-          <div class="health-name">● Encoders</div>
-          <div class="health-val" id="hEnc">OK</div>
-        </div>
-        <div class="health-cell">
-          <div class="health-name">● Battery</div>
-          <div class="health-val" id="hBatt">OK</div>
-        </div>
-        <div class="health-cell">
-          <div class="health-name">● Comm Link</div>
-          <div class="health-val" id="hComm" style="color: var(--text-dim);">OFFLINE</div>
-        </div>
-      </div>
-
-      <!-- TEST CARDS WITH STATUS BADGES -->
-      <div class="script-grid">
-        <!-- TEST 1: 4WD COMBINED DRIVE CYCLE -->
-        <div class="script-card" id="cardScriptCombined">
-          <div class="script-header-line">
-            <div class="script-icon">🏎️</div>
-            <div>
-              <div class="script-name">4WD Combined Drive Cycle</div>
-              <div class="script-desc">Tests all 4 motors: Forward ➔ Reverse ➔ Pivot Left ➔ Pivot Right.</div>
+            <!-- 4 WHEEL ENGINES -->
+            <div id="wheelFL" class="rover-wheel fl">
+              <span class="wheel-label">M1 FL</span>
+              <span class="wheel-sub">D6/D2</span>
             </div>
+
+            <div id="wheelFR" class="rover-wheel fr">
+              <span class="wheel-label">M2 FR</span>
+              <span class="wheel-sub">D9/D3</span>
+            </div>
+
+            <div id="wheelRL" class="rover-wheel rl">
+              <span class="wheel-label">M3 RL</span>
+              <span class="wheel-sub">D10/D5</span>
+            </div>
+
+            <div id="wheelRR" class="rover-wheel rr">
+              <span class="wheel-label">M4 RR</span>
+              <span class="wheel-sub">D11/D4</span>
+            </div>
+
+            <!-- HULL -->
+            <div class="rover-body-hull">
+              <div class="rover-front-sensor">LiDAR</div>
+              <div class="rover-center-badge">
+                <div class="logo">TITAN-RB2</div>
+                <div class="sub">4WD SKID STEER</div>
+              </div>
+              <div class="rover-mcu-chip">
+                <span>ARDUINO</span>
+                <span style="color: var(--accent-emerald);">NANO V3</span>
+              </div>
+            </div>
+
           </div>
-          <div class="script-footer">
+
+          <!-- MINI COMPASS GIMBAL OVERLAY -->
+          <div class="compass-mini-widget" title="AHRS Compass Heading">
+            <div id="compassNeedle" class="compass-needle"></div>
+          </div>
+
+        </div>
+
+        <!-- CHASSIS BOTTOM TELEMETRY -->
+        <div class="chassis-hud-bar">
+          <div>MOTION STATE: <strong id="chassisStateText" class="chassis-status-text">STOPPED</strong></div>
+          <div>TARGET: <strong id="chassisPwmText" style="color: #ffffff;">0 PWM (0%)</strong></div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ================= RIGHT COLUMN: DIAGNOSTICS & TEST SCRIPTS ================= -->
+    <div class="diagnostics-column">
+      
+      <!-- HEALTH MATRIX & POWER RAIL -->
+      <div class="neo-card">
+        <div class="card-header-row">
+          <div class="card-title">
+            <span class="icon">🩺</span>
+            <span>HARDWARE HEALTH MATRIX</span>
+          </div>
+          <span class="card-badge">7 NODES</span>
+        </div>
+
+        <div class="health-matrix-grid">
+          <div class="health-node">
+            <div class="health-node-header">
+              <span class="health-node-name">MCU</span>
+              <div class="health-indicator-dot online" id="hMcu"></div>
+            </div>
+            <span class="health-node-val">16MHz OK</span>
+          </div>
+
+          <div class="health-node">
+            <div class="health-node-header">
+              <span class="health-node-name">SERIAL</span>
+              <div class="health-indicator-dot" id="hSerial"></div>
+            </div>
+            <span class="health-node-val">115.2k</span>
+          </div>
+
+          <div class="health-node">
+            <div class="health-node-header">
+              <span class="health-node-name">WI-FI</span>
+              <div class="health-indicator-dot" id="hWifi"></div>
+            </div>
+            <span class="health-node-val">WS:8080</span>
+          </div>
+
+          <div class="health-node">
+            <div class="health-node-header">
+              <span class="health-node-name">IMU</span>
+              <div class="health-indicator-dot online" id="hImu"></div>
+            </div>
+            <span class="health-node-val">BNO085</span>
+          </div>
+
+          <div class="health-node">
+            <div class="health-node-header">
+              <span class="health-node-name">LiDAR</span>
+              <div class="health-indicator-dot online" id="hLidar"></div>
+            </div>
+            <span class="health-node-val">VL53L0X</span>
+          </div>
+
+          <div class="health-node">
+            <div class="health-node-header">
+              <span class="health-node-name">DRV A</span>
+              <div class="health-indicator-dot online" id="hMotorL"></div>
+            </div>
+            <span class="health-node-val">M1 + M2</span>
+          </div>
+
+          <div class="health-node">
+            <div class="health-node-header">
+              <span class="health-node-name">DRV B</span>
+              <div class="health-indicator-dot online" id="hMotorR"></div>
+            </div>
+            <span class="health-node-val">M3 + M4</span>
+          </div>
+
+          <div class="health-node">
+            <div class="health-node-header">
+              <span class="health-node-name">COMM</span>
+              <div class="health-indicator-dot online" id="hComm"></div>
+            </div>
+            <span class="health-node-val">TX/RX 0E</span>
+          </div>
+        </div>
+
+        <!-- MOTOR TELEMETRY TABLE -->
+        <table class="motor-table-wrap">
+          <thead>
+            <tr>
+              <th>MOTOR</th>
+              <th>PINS</th>
+              <th>DIR</th>
+              <th>PWM</th>
+              <th>ENCODER</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>M1 FL</strong></td>
+              <td>D6/D2</td>
+              <td id="m1DirLbl">IDLE</td>
+              <td id="m1TargetPwm">0</td>
+              <td id="m1Ticks">0 ticks</td>
+            </tr>
+            <tr>
+              <td><strong>M2 FR</strong></td>
+              <td>D9/D3</td>
+              <td id="m2DirLbl">IDLE</td>
+              <td id="m2TargetPwm">0</td>
+              <td id="m2Ticks">0 ticks</td>
+            </tr>
+            <tr>
+              <td><strong>M3 RL</strong></td>
+              <td>D10/D5</td>
+              <td id="m3DirLbl">IDLE</td>
+              <td id="m3TargetPwm">0</td>
+              <td id="m3Ticks">0 ticks</td>
+            </tr>
+            <tr>
+              <td><strong>M4 RR</strong></td>
+              <td>D11/D4</td>
+              <td id="m4DirLbl">IDLE</td>
+              <td id="m4TargetPwm">0</td>
+              <td id="m4Ticks">0 ticks</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- AUTOMATED COMMISSIONING TEST PROTOCOLS -->
+      <div class="neo-card script-card">
+        <div class="card-header-row">
+          <div class="card-title">
+            <span class="icon">🔬</span>
+            <span>HARDWARE TEST PROTOCOLS</span>
+          </div>
+          <span class="card-badge">BENCH COMMISSIONING</span>
+        </div>
+
+        <div class="scripts-suite-list">
+          
+          <div class="test-card" id="cardScriptCombined">
+            <div class="test-card-left">
+              <span class="test-card-icon">🏎️</span>
+              <div>
+                <div class="test-card-title">Combined 4WD Cycle</div>
+                <div class="test-card-desc">Fwd → Rev → Skid Left → Skid Right</div>
+              </div>
+            </div>
+            <button class="btn-run-script" onclick="startPredefinedScript('combined')">RUN TEST</button>
             <span class="script-status-badge" id="statusScriptCombined">READY</span>
-            <button class="btn-run-script" onclick="startPredefinedScript('combined')">▶ Run Test</button>
           </div>
-        </div>
 
-        <!-- TEST 2: AUTOMATED FULL SELF-TEST -->
-        <div class="script-card" id="cardScriptFull">
-          <div class="script-header-line">
-            <div class="script-icon">🔬</div>
-            <div>
-              <div class="script-name">Automated Full Self-Test</div>
-              <div class="script-desc">I2C Scan ➔ Sequential Single Motor Spin (M1 ➔ M2 ➔ M3 ➔ M4) pulse audit.</div>
+          <div class="test-card" id="cardScriptFull">
+            <div class="test-card-left">
+              <span class="test-card-icon">🔬</span>
+              <div>
+                <div class="test-card-title">Full System Self-Test</div>
+                <div class="test-card-desc">I2C scan + 4-motor isolation sequence</div>
+              </div>
             </div>
-          </div>
-          <div class="script-footer">
+            <button class="btn-run-script" onclick="startPredefinedScript('full')">RUN TEST</button>
             <span class="script-status-badge" id="statusScriptFull">READY</span>
-            <button class="btn-run-script" onclick="startPredefinedScript('full')">▶ Run Test</button>
           </div>
-        </div>
 
-        <!-- TEST 3: FRONT AXLE ISOLATION -->
-        <div class="script-card" id="cardScriptFront">
-          <div class="script-header-line">
-            <div class="script-icon">⚙️</div>
-            <div>
-              <div class="script-name">Front Axle Isolation (Driver A)</div>
-              <div class="script-desc">Isolates Driver A: spins Front Left & Front Right forward and reverse.</div>
+          <div class="test-card" id="cardScriptFront">
+            <div class="test-card-left">
+              <span class="test-card-icon">⚙️</span>
+              <div>
+                <div class="test-card-title">Front Axle Isolation</div>
+                <div class="test-card-desc">Driver A (M1 FL & M2 FR)</div>
+              </div>
             </div>
-          </div>
-          <div class="script-footer">
+            <button class="btn-run-script" onclick="startPredefinedScript('front')">RUN TEST</button>
             <span class="script-status-badge" id="statusScriptFront">READY</span>
-            <button class="btn-run-script" onclick="startPredefinedScript('front')">▶ Run Test</button>
           </div>
-        </div>
 
-        <!-- TEST 4: REAR AXLE ISOLATION -->
-        <div class="script-card" id="cardScriptRear">
-          <div class="script-header-line">
-            <div class="script-icon">🔧</div>
-            <div>
-              <div class="script-name">Rear Axle Isolation (Driver B)</div>
-              <div class="script-desc">Isolates Driver B: spins Rear Left & Rear Right forward and reverse.</div>
+          <div class="test-card" id="cardScriptRear">
+            <div class="test-card-left">
+              <span class="test-card-icon">🔧</span>
+              <div>
+                <div class="test-card-title">Rear Axle Isolation</div>
+                <div class="test-card-desc">Driver B (M3 RL & M4 RR)</div>
+              </div>
             </div>
-          </div>
-          <div class="script-footer">
+            <button class="btn-run-script" onclick="startPredefinedScript('rear')">RUN TEST</button>
             <span class="script-status-badge" id="statusScriptRear">READY</span>
-            <button class="btn-run-script" onclick="startPredefinedScript('rear')">▶ Run Test</button>
+          </div>
+
+        </div>
+
+        <!-- ACTIVE SCRIPT BANNER -->
+        <div id="scriptBanner" class="script-banner">
+          <div class="script-banner-head">
+            <div class="script-banner-title">
+              <span id="bannerScriptIcon">🏎️</span>
+              <span id="bannerScriptName">Running Test</span>
+            </div>
+            <button class="btn-abort-script" onclick="abortRunningScript()">ABORT</button>
+          </div>
+          <div id="bannerScriptStep" style="font-family: 'Fira Code', monospace; font-size: 0.68rem; color: #ffffff;">Step 1/4</div>
+          <div class="metric-progress-wrap" style="height: 6px;">
+            <div class="metric-progress-bar bar-cyan" id="bannerProgressFill" style="width: 0%;"></div>
           </div>
         </div>
+
       </div>
+
     </div>
 
-    <!-- UART TELEMETRY TERMINAL WITH CONTROLS -->
-    <div class="card terminal-card">
-      <div class="card-title">
-        <span class="card-title-icon">📟 Telemetry UART Stream</span>
-        <span style="font-size: 0.70rem; color: #64748b; font-family: 'Fira Code';">115200 Baud</span>
-      </div>
-
-      <!-- TERMINAL TOOLBAR -->
-      <div class="term-toolbar">
-        <div class="term-filters">
-          <button class="term-filter-btn active" onclick="setLogFilter('all')">ALL</button>
-          <button class="term-filter-btn" onclick="setLogFilter('info')">INFO</button>
-          <button class="term-filter-btn" onclick="setLogFilter('warn')">WARN</button>
-          <button class="term-filter-btn" onclick="setLogFilter('error')">ERROR</button>
-        </div>
-        <div class="term-actions">
-          <button class="term-btn" id="btnToggleScroll" onclick="toggleAutoScroll()">Auto-Scroll: ON</button>
-          <button class="term-btn" id="btnTogglePause" onclick="togglePauseLog()">Pause</button>
-          <button class="term-btn" onclick="clearTerminal()">Clear</button>
-        </div>
-      </div>
-
-      <div class="terminal-box" id="termOutput">
-        <div class="term-rx" data-lvl="info">[SYS] IIT-RB2 Ground Control Station Initialized.</div>
-        <div class="term-warn" data-lvl="warn">[AWAIT] Hardware USB Link Disconnected. Plug in rover USB and click [CONNECT ARDUINO (USB)].</div>
-      </div>
-    </div>
   </div>
+
+  <!-- ================= 4. BOTTOM COMMAND & TELEMETRY TERMINAL ================= -->
+  <footer class="neo-card terminal-card">
+    <div class="card-header-row">
+      <div class="card-title">
+        <span class="icon">💻</span>
+        <span>REAL-TIME TELEMETRY & SERIAL STREAM</span>
+      </div>
+      <div class="macro-buttons">
+        <button class="btn-macro" onclick="sendSerialCommand('PING')">PING</button>
+        <button class="btn-macro" onclick="sendSerialCommand('STOP')">STOP</button>
+        <button class="btn-macro" onclick="sendSerialCommand('CALIBRATE')">CALIBRATE</button>
+        <button class="btn-macro" onclick="sendSerialCommand('STATUS')">STATUS</button>
+        <button class="btn-macro" onclick="clearTerminal()">CLEAR LOG</button>
+      </div>
+    </div>
+
+    <div class="terminal-output" id="telemetryLog">
+      <div class="log-line">
+        <span class="log-time">[00:00:00]</span>
+        <span class="log-tag info">[SYSTEM]</span>
+        <span>TITAN-RB2 Ground Control Station Initialized. Awaiting Hardware Link.</span>
+      </div>
+    </div>
+
+    <div class="terminal-input-bar">
+      <input type="text" id="cmdInput" class="terminal-input" placeholder="Enter Serial ASCII Command (e.g. M:160,160 or PING or TEST_MOTORS)..." onkeydown="if(event.key==='Enter') sendCustomCommand()">
+      <button class="btn-pill btn-pill-cyan" onclick="sendCustomCommand()">SEND COMMAND</button>
+    </div>
+  </footer>
+
 </div>
 
+<!-- ================= EMBEDDED ENGINE JAVASCRIPT ================= -->
 <script>
-  // ================= STATE & KINEMATICS ENGINE =================
-  let userThrottle = 160;
+  // ================= GLOBAL STATE =================
+  let isSerialConnected = false;
+  let isWifiConnected = false;
   let isEStopActive = false;
-  let autoScroll = true;
-  let isLogPaused = false;
-  let currentLogFilter = 'all';
+  let serialPort = null;
+  let serialWriter = null;
+  let serialReader = null;
+  let userThrottle = 160;
+  let currentDistanceMm = 420;
+  let lastSerialSendTime = 0;
+  let lastSentLeftPwm = 0;
+  let lastSentRightPwm = 0;
 
-  function updateThrottle(val) {
-    userThrottle = parseInt(val);
-    document.getElementById('throttleVal').innerText = userThrottle;
-    rover.maxSpeed = (userThrottle / 160) * 3.4;
-    if (typeof sendSerialCommand === 'function' && isSerialConnected) {
-      sendSerialCommand(`THROTTLE:${userThrottle}`);
-    }
-  }
-
-  // ROVER KINEMATIC MODEL
-  const rover = {
-    heading: 0, // Radians
-    speed: 0,
-    turnRate: 0,
-    targetSpeed: 0,
-    targetTurn: 0,
-    maxSpeed: 3.4,
-    maxTurn: 0.058,
-    pwm: 0,
-    driveMode: 'manual' // 'manual', 'auto', 'spin', 'script'
-  };
-
-  // ENCODER TICK COUNTERS
-  let encTicks = { m1: 0, m2: 0, m3: 0, m4: 0 };
-  let currentDistanceMm = 450;
-  let autoTimer = 0;
-  let autoState = 0; // 0: FWD, 1: STOP, 2: BACK, 3: TURN
-
-  // SCRIPT RUNNER STATE
+  // Active Test Script
   let activeScript = null;
   let activeScriptKey = null;
   let scriptStepIdx = 0;
@@ -1877,210 +2030,59 @@
   let scriptTotalDuration = 0;
   let scriptElapsed = 0;
 
-  // KEYBOARD TRACKER
-  const keys = {
-    up: false,
-    down: false,
-    left: false,
-    right: false
+  // Rover Kinematics Model
+  const rover = {
+    speed: 0,
+    turnRate: 0,
+    targetSpeed: 0,
+    targetTurn: 0,
+    maxSpeed: 3.2,
+    maxTurn: 0.065,
+    heading: 0,
+    pwm: 0,
+    driveMode: 'manual' // 'manual', 'auto', 'spin', 'mission', 'script'
   };
 
-  // JOYSTICK STATE
-  const joyState = {
-    active: false,
-    startX: 0,
-    startY: 0,
-    dx: 0,
-    dy: 0,
-    radius: 38
-  };
+  // Encoders
+  const encTicks = { m1: 0, m2: 0, m3: 0, m4: 0 };
 
-  // ================= LOG & TERMINAL MANAGEMENT =================
-  function logTerm(msg, type = 'info') {
-    if (isLogPaused) return;
+  // Virtual Joystick State
+  const joyState = { active: false, startX: 0, startY: 0, dx: 0, dy: 0, radius: 55 };
 
-    const term = document.getElementById('termOutput');
+  // Keyboard Keys
+  const keys = { up: false, down: false, left: false, right: false };
+
+  // Autonomous State Machine
+  let autoTimer = 0;
+  let autoState = 0;
+
+  // ================= LOGGING =================
+  function logTerm(msg, level = 'info') {
+    const log = document.getElementById('telemetryLog');
+    if (!log) return;
+    const now = new Date();
+    const timeStr = `[${now.toTimeString().split(' ')[0]}.${String(now.getMilliseconds()).padStart(3, '0')}]`;
+
     const row = document.createElement('div');
-    const time = new Date().toTimeString().split(' ')[0];
+    row.className = 'log-line';
 
-    let cls = 'term-rx';
-    if (type === 'warn') cls = 'term-warn';
-    else if (type === 'error' || type === 'crit') cls = 'term-crit';
-    else if (type === 'tx') cls = 'term-tx';
+    let tag = '[INFO]';
+    if (level === 'warn') tag = '[WARN]';
+    else if (level === 'crit') tag = '[CRIT]';
+    else if (level === 'rx') tag = '[RX]';
+    else if (level === 'tx') tag = '[TX]';
 
-    row.className = cls;
-    row.setAttribute('data-lvl', type);
-    row.innerText = `[${time}] ${msg}`;
-
-    if (currentLogFilter !== 'all' && currentLogFilter !== type) {
-      row.style.display = 'none';
-    }
-
-    term.appendChild(row);
-    if (term.children.length > 80) term.removeChild(term.children[0]);
-
-    if (autoScroll) {
-      term.scrollTop = term.scrollHeight;
-    }
-  }
-
-  function setLogFilter(lvl) {
-    currentLogFilter = lvl;
-    document.querySelectorAll('.term-filter-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.innerText.toLowerCase() === lvl);
-    });
-
-    const rows = document.querySelectorAll('#termOutput > div');
-    rows.forEach(r => {
-      const rowLvl = r.getAttribute('data-lvl') || 'info';
-      if (lvl === 'all' || rowLvl === lvl || (lvl === 'error' && rowLvl === 'crit')) {
-        r.style.display = '';
-      } else {
-        r.style.display = 'none';
-      }
-    });
-  }
-
-  function toggleAutoScroll() {
-    autoScroll = !autoScroll;
-    document.getElementById('btnToggleScroll').innerText = `Auto-Scroll: ${autoScroll ? 'ON' : 'OFF'}`;
-  }
-
-  function togglePauseLog() {
-    isLogPaused = !isLogPaused;
-    document.getElementById('btnTogglePause').innerText = isLogPaused ? 'Resume' : 'Pause';
+    row.innerHTML = `<span class="log-time">${timeStr}</span><span class="log-tag ${level}">${tag}</span><span>${msg}</span>`;
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
   }
 
   function clearTerminal() {
-    document.getElementById('termOutput').innerHTML = '';
+    document.getElementById('telemetryLog').innerHTML = '';
+    logTerm('[SYSTEM] Telemetry log cleared', 'info');
   }
 
-  // ================= WEB SERIAL API (ARDUINO UNO / NANO) =================
-  let serialPort = null;
-  let serialReader = null;
-  let serialWriter = null;
-  let serialBaud = 115200;
-  let isSerialConnected = false;
-  let lastSerialSendTime = 0;
-  let lastSentLeftPwm = 0;
-  let lastSentRightPwm = 0;
-
-  function updateBaudRate(val) {
-    serialBaud = parseInt(val);
-    logTerm(`[SERIAL] Baud rate set to ${serialBaud}`, 'info');
-  }
-
-  let isNetworkBridgeActive = false;
-  let isBypassActive = false;
-  let telemetryPollTimer = null;
-
-  async function checkNetworkAndAutoDetect() {
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-    if (!isLocalhost) {
-      const netBar = document.getElementById('networkNoticeBar');
-      if (netBar) {
-        netBar.style.display = 'flex';
-        netBar.innerHTML = `
-          <div>🌐 <strong>NETWORK ACCESS (${window.location.host})</strong> — Direct USB Web Serial requires localhost or HTTPS.</div>
-          <div style="display:flex; gap:6px; align-items:center;">
-            <button class="btn-mini-action" onclick="connectNetworkBridge()">⚡ Connect Wi-Fi Bridge</button>
-            <button class="btn-mini-action" onclick="window.location.href='http://localhost:' + window.location.port + '/'">💻 Switch to Localhost</button>
-          </div>
-        `;
-      }
-    }
-
-    try {
-      const res = await fetch('/api/status');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.connected) {
-          logTerm(`[BRIDGE] Server reports active COM connection on ${data.port}. Auto-syncing...`, 'info');
-          activateBridgeUI(data.port, data.baud);
-        }
-      }
-    } catch (e) {}
-  }
-
-  async function connectNetworkBridge() {
-    logTerm('[BRIDGE] Requesting server COM link to Arduino...', 'tx');
-    try {
-      const res = await fetch('/api/connect?port=COM7&baud=' + serialBaud);
-      const data = await res.json();
-      if (data.success) {
-        activateBridgeUI(data.port, data.baud);
-        logTerm(`[BRIDGE OK] Wireless link established to Arduino Nano via ${data.port} (${data.baud} Baud)!`, 'info');
-      } else {
-        logTerm(`[BRIDGE ERR] Server could not open ${data.port}. Check USB connection on server PC.`, 'crit');
-        alert("Server failed to open " + data.port + ". Please ensure Arduino Nano/Uno is plugged into the host computer.");
-      }
-    } catch (err) {
-      logTerm(`[BRIDGE ERR] Network gateway request failed: ${err.message}`, 'crit');
-      alert("Could not contact server API at /api/connect. Is serve_dashboard.ps1 running?");
-    }
-  }
-
-  function activateBridgeUI(port, baud) {
-    isNetworkBridgeActive = true;
-    isSerialConnected = true;
-    document.body.classList.remove('hardware-disconnected');
-    const notice = document.getElementById('hwInterlockNotice');
-    if (notice) notice.classList.add('hidden');
-
-    const btn = document.getElementById('btnSerialConnect');
-    if (btn) btn.classList.add('connected');
-    const btnText = document.getElementById('serialBtnText');
-    if (btnText) btnText.innerText = `WI-FI BRIDGE (${port || 'ONLINE'})`;
-    const dot = document.getElementById('serialDot');
-    if (dot) dot.innerText = '●';
-
-    const hComm = document.getElementById('hComm');
-    if (hComm) {
-      hComm.innerText = 'WI-FI OK';
-      hComm.style.color = 'var(--accent-green)';
-    }
-
-    updateSystemWarning('nominal', 'WI-FI BRIDGE ONLINE • ROVER TELEOP UNLOCKED');
-
-    if (telemetryPollTimer) clearInterval(telemetryPollTimer);
-    telemetryPollTimer = setInterval(pollBridgeTelemetry, 100);
-  }
-
-  async function pollBridgeTelemetry() {
-    if (!isNetworkBridgeActive) return;
-    try {
-      const res = await fetch('/api/telemetry');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.lines && data.lines.length > 0) {
-          for (const line of data.lines) {
-            parseIncomingTelemetry(line);
-          }
-        }
-      }
-    } catch (e) {}
-  }
-
-  function toggleBypassInterlock() {
-    isBypassActive = !isBypassActive;
-    if (isBypassActive) {
-      isSerialConnected = true;
-      document.body.classList.remove('hardware-disconnected');
-      const notice = document.getElementById('hwInterlockNotice');
-      if (notice) notice.classList.add('hidden');
-      logTerm('[SIM] Bench test override active: UI controls and telemetry unlocked.', 'warn');
-      updateSystemWarning('warning', 'SIMULATION OVERRIDE: Bench test mode active');
-    } else {
-      isSerialConnected = false;
-      document.body.classList.add('hardware-disconnected');
-      const notice = document.getElementById('hwInterlockNotice');
-      if (notice) notice.classList.remove('hidden');
-      logTerm('[SIM] Interlock re-engaged.', 'info');
-      updateSystemWarning('warning', 'HARDWARE OFFLINE: Connect Arduino Uno / Nano USB');
-    }
-  }
-
+  // ================= HARDWARE CONNECTION (WEBSERIAL) =================
   async function toggleSerialConnection() {
     if (isSerialConnected) {
       await disconnectSerial();
@@ -2090,78 +2092,91 @@
   }
 
   async function connectSerial() {
-    if (!("serial" in navigator)) {
-      if (!window.isSecureContext) {
-        const useBridge = confirm(
-          "⚠️ Browser Security Notice:\n\n" +
-          "Google Chrome and Microsoft Edge disable direct USB Web Serial when accessed via an IP address (" + window.location.host + ").\n\n" +
-          "• If you are on the host PC: Open http://localhost:" + window.location.port + "/\n" +
-          "• If you are on another computer or phone: Connect wirelessly via Wi-Fi Server Bridge!\n\n" +
-          "Click OK to connect via the Wi-Fi Server Bridge now!"
-        );
-        if (useBridge) {
-          connectNetworkBridge();
-        }
-        return;
-      }
-      alert("Web Serial API is not supported in this browser.\nPlease use Google Chrome, Microsoft Edge, or Opera.");
-      logTerm("[SERIAL ERR] Web Serial API not supported by browser. Please use Chrome or Edge on localhost.", "crit");
+    if (!('serial' in navigator)) {
+      alert("Web Serial API is not supported in this browser. Please use Google Chrome, Edge, or Chromium.");
+      logTerm('[SERIAL] Web Serial API not supported in this browser.', 'crit');
       return;
     }
 
+    const baud = parseInt(document.getElementById('baudSelect').value, 10) || 115200;
+
     try {
-      logTerm("[SERIAL] Opening USB COM Port picker for Arduino Uno / Nano...", "tx");
+      logTerm(`[SERIAL] Requesting USB Serial Port at ${baud} Baud...`, 'info');
       serialPort = await navigator.serial.requestPort();
-      await serialPort.open({ baudRate: serialBaud });
+      await serialPort.open({ baudRate: baud });
+
+      const textEncoder = new TextEncoderStream();
+      textEncoder.readable.pipeTo(serialPort.writable);
+      serialWriter = textEncoder.writable.getWriter();
 
       isSerialConnected = true;
       document.body.classList.remove('hardware-disconnected');
-      const notice = document.getElementById('hwInterlockNotice');
-      if (notice) notice.classList.add('hidden');
-
-      const btn = document.getElementById('btnSerialConnect');
-      if (btn) btn.classList.add('connected');
-      const btnText = document.getElementById('serialBtnText');
-      if (btnText) btnText.innerText = 'ARDUINO CONNECTED (USB)';
-      const dot = document.getElementById('serialDot');
-      if (dot) dot.innerText = '●';
       
-      const hComm = document.getElementById('hComm');
-      if (hComm) {
-        hComm.innerText = 'OK';
-        hComm.style.color = 'var(--accent-green)';
-      }
+      const btn = document.getElementById('btnSerialConnect');
+      btn.classList.add('connected');
+      document.getElementById('btnSerialConnectLabel').innerText = 'DISCONNECT ARDUINO';
 
-      logTerm(`[SERIAL OK] Connected to Arduino Uno/Nano at ${serialBaud} Baud!`, 'info');
-      updateSystemWarning('nominal', 'ARDUINO UNO/NANO ONLINE • CONTROLS UNLOCKED');
+      const connStatus = document.getElementById('connStatus');
+      connStatus.className = 'status-pill battery';
+      document.getElementById('connIcon').innerText = '⚡';
+      document.getElementById('connText').innerText = `ONLINE (${baud})`;
 
-      const textEncoder = new TextEncoderStream();
-      textEncoder.readable.pipeTo(serialPort.writable).catch(e => console.warn('Serial write pipe closed:', e));
-      serialWriter = textEncoder.writable.getWriter();
+      document.getElementById('hSerial').className = 'health-indicator-dot online';
+      document.getElementById('hMcu').className = 'health-indicator-dot online';
 
-      navigator.serial.addEventListener('disconnect', (event) => {
-        if (event.port === serialPort) {
-          logTerm('[SERIAL WARN] Arduino USB disconnected physically.', 'warn');
-          disconnectSerial();
-        }
-      });
+      document.getElementById('interlockLabel').innerText = 'SERIAL LINK ONLINE';
+      document.getElementById('interlockDesc').innerText = 'Dual L298N Powertrain energized. Teleoperation active.';
+      document.querySelector('.link-ribbon').style.borderColor = 'var(--accent-cyan)';
 
+      logTerm(`[SERIAL] Connected to USB Port @ ${baud} Baud. Safety interlock cleared.`, 'info');
       readSerialLoop();
     } catch (err) {
-      logTerm(`[SERIAL ERR] Connection cancelled or failed: ${err.message}`, 'crit');
-      isSerialConnected = false;
-      resetSerialBtnUI();
+      logTerm(`[SERIAL] Connection Error: ${err.message}`, 'crit');
     }
+  }
+
+  async function disconnectSerial() {
+    try {
+      if (serialWriter) {
+        await serialWriter.close();
+        serialWriter = null;
+      }
+      if (serialPort) {
+        await serialPort.close();
+        serialPort = null;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    isSerialConnected = false;
+    document.body.classList.add('hardware-disconnected');
+
+    const btn = document.getElementById('btnSerialConnect');
+    btn.classList.remove('connected');
+    document.getElementById('btnSerialConnectLabel').innerText = 'CONNECT ARDUINO (USB)';
+
+    const connStatus = document.getElementById('connStatus');
+    connStatus.className = 'status-pill';
+    document.getElementById('connIcon').innerText = '🔌';
+    document.getElementById('connText').innerText = 'OFFLINE';
+
+    document.getElementById('hSerial').className = 'health-indicator-dot';
+
+    document.getElementById('interlockLabel').innerText = 'SAFETY INTERLOCK ACTIVE';
+    document.getElementById('interlockDesc').innerText = 'Click Connect Arduino (USB) or launch Wi-Fi Bridge to engage drive commands.';
+    document.querySelector('.link-ribbon').style.borderColor = 'rgba(245, 158, 11, 0.4)';
+
+    logTerm('[SERIAL] Port disconnected. Powertrain safe.', 'warn');
   }
 
   async function readSerialLoop() {
     while (serialPort && serialPort.readable && isSerialConnected) {
       const textDecoder = new TextDecoderStream();
-      const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable).catch(e => console.warn('Serial read pipe closed:', e));
+      const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
       serialReader = textDecoder.readable.getReader();
-
-      let buffer = '';
       try {
+        let buffer = '';
         while (true) {
           const { value, done } = await serialReader.read();
           if (done) break;
@@ -2171,132 +2186,100 @@
             buffer = lines.pop();
             for (const line of lines) {
               const trimmed = line.trim();
-              if (trimmed.length > 0) {
-                parseIncomingTelemetry(trimmed);
-              }
+              if (trimmed) handleIncomingTelemetry(trimmed);
             }
           }
         }
       } catch (err) {
-        if (isSerialConnected) {
-          logTerm(`[SERIAL ERR] Stream read error: ${err.message}`, 'warn');
-        }
-        break;
+        logTerm(`[SERIAL RX ERROR] ${err.message}`, 'crit');
       } finally {
-        try {
-          serialReader.releaseLock();
-        } catch (e) {}
+        serialReader.releaseLock();
       }
     }
   }
 
-  function parseIncomingTelemetry(line) {
-    let lvl = 'info';
-    if (line.includes('[WARN]') || line.includes('WARN')) lvl = 'warn';
-    else if (line.includes('[ERR]') || line.includes('ERR') || line.includes('FAIL')) lvl = 'crit';
-    else if (line.includes('[OK]')) lvl = 'info';
-    else if (line.includes('Dist:')) lvl = 'info';
+  function handleIncomingTelemetry(msg) {
+    logTerm(msg, 'rx');
 
-    logTerm(line, lvl);
-
-    const distMatch = line.match(/Dist:\s*(\d+)/i);
-    if (distMatch) {
-      currentDistanceMm = parseInt(distMatch[1]);
-    }
-
-    const yawMatch = line.match(/Yaw:\s*([-+]?\d*\.?\d+)/i);
-    if (yawMatch) {
-      const realDeg = parseFloat(yawMatch[1]);
-      rover.heading = realDeg * (Math.PI / 180);
-    }
-
-    const ticksMatch = line.match(/Ticks\s*\[FL:(-?\d+)\s*FR:(-?\d+)\s*RL:(-?\d+)\s*RR:(-?\d+)\]/i);
-    if (ticksMatch) {
-      encTicks.m1 = Math.abs(parseInt(ticksMatch[1]));
-      encTicks.m2 = Math.abs(parseInt(ticksMatch[2]));
-      encTicks.m3 = Math.abs(parseInt(ticksMatch[3]));
-      encTicks.m4 = Math.abs(parseInt(ticksMatch[4]));
-    }
-
-    const battMatch = line.match(/(?:Volt|Batt):\s*([\d\.]+)/i);
-    if (battMatch) {
-      const v = parseFloat(battMatch[1]);
-      const vEl = document.getElementById('valBatteryVolt');
-      if (vEl) vEl.innerText = v.toFixed(1);
-      const bBadge = document.getElementById('badgeBattery');
-      if (bBadge) bBadge.innerHTML = `<span>⚡</span> ${v.toFixed(1)}V (2S Li-ion)`;
+    // Parse standard robot telemetry packet: "T:yaw,dist,m1,m2,m3,m4,v"
+    if (msg.startsWith('T:')) {
+      const parts = msg.substring(2).split(',');
+      if (parts.length >= 7) {
+        rover.heading = parseFloat(parts[0]) * Math.PI / 180;
+        currentDistanceMm = parseInt(parts[1], 10) || currentDistanceMm;
+        encTicks.m1 = parseInt(parts[2], 10) || encTicks.m1;
+        encTicks.m2 = parseInt(parts[3], 10) || encTicks.m2;
+        encTicks.m3 = parseInt(parts[4], 10) || encTicks.m3;
+        encTicks.m4 = parseInt(parts[5], 10) || encTicks.m4;
+        const v = parseFloat(parts[6]);
+        if (!isNaN(v) && v > 0) document.getElementById('valVoltage').innerText = `${v.toFixed(2)} V`;
+      }
     }
   }
 
   async function sendSerialCommand(cmd) {
-    if (isNetworkBridgeActive) {
-      try {
-        fetch('/api/cmd?c=' + encodeURIComponent(cmd));
-        logTerm(`[TX-WIFI] ${cmd}`, 'tx');
-      } catch (e) {
-        logTerm(`[TX ERR] Wi-Fi command failed: ${e.message}`, 'warn');
-      }
-      return;
-    }
+    logTerm(`[TX] ${cmd}`, 'tx');
     if (serialWriter && isSerialConnected) {
       try {
         await serialWriter.write(cmd + '\n');
-        logTerm(`[TX] ${cmd}`, 'tx');
-      } catch (e) {
-        logTerm(`[TX ERR] Failed to write: ${e.message}`, 'warn');
+      } catch (err) {
+        logTerm(`[SERIAL TX ERR] ${err.message}`, 'crit');
       }
     }
   }
 
-  async function disconnectSerial() {
-    isSerialConnected = false;
-    isNetworkBridgeActive = false;
-    if (telemetryPollTimer) clearInterval(telemetryPollTimer);
+  function sendCustomCommand() {
+    const inp = document.getElementById('cmdInput');
+    const cmd = inp.value.trim();
+    if (!cmd) return;
+    sendSerialCommand(cmd);
+    inp.value = '';
+  }
+
+  // ================= WI-FI BRIDGE LAUNCHER =================
+  function connectWifiBridge() {
+    const wsUrl = 'ws://localhost:8080/ws';
+    logTerm(`[WIFI] Attempting WebSocket Bridge Connection: ${wsUrl}...`, 'info');
     try {
-      fetch('/api/disconnect');
-    } catch (e) {}
-    if (activeScript) abortRunningScript();
-    lastSentLeftPwm = 0;
-    lastSentRightPwm = 0;
-    try {
-      if (serialReader) {
-        await serialReader.cancel();
-      }
-      if (serialWriter) {
-        await serialWriter.close();
-      }
-      if (serialPort) {
-        await serialPort.close();
-      }
+      const ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        isWifiConnected = true;
+        document.getElementById('hWifi').className = 'health-indicator-dot online';
+        logTerm('[WIFI] Bridge Connected to WebSocket @ Port 8080.', 'info');
+      };
+      ws.onmessage = (e) => handleIncomingTelemetry(e.data);
+      ws.onerror = () => logTerm('[WIFI] Bridge Server not detected. Use Local HTTP Server on Port 8080.', 'warn');
+      ws.onclose = () => {
+        isWifiConnected = false;
+        document.getElementById('hWifi').className = 'health-indicator-dot';
+      };
     } catch (e) {
-      console.warn("Serial cleanup error:", e);
+      logTerm(`[WIFI] ${e.message}`, 'warn');
     }
-    serialPort = null;
-    serialReader = null;
-    serialWriter = null;
-    resetSerialBtnUI();
-    logTerm("[SERIAL] Arduino connection closed.", "warn");
   }
 
-  function resetSerialBtnUI() {
-    isSerialConnected = false;
-    document.body.classList.add('hardware-disconnected');
-    const notice = document.getElementById('hwInterlockNotice');
-    if (notice) notice.classList.remove('hidden');
+  // ================= THROTTLE MANAGEMENT =================
+  function updateThrottle(val) {
+    userThrottle = parseInt(val, 10);
+    document.getElementById('throttleVal').innerText = `${userThrottle} PWM`;
+  }
 
-    const btn = document.getElementById('btnSerialConnect');
-    if (btn) btn.classList.remove('connected');
-    const btnText = document.getElementById('serialBtnText');
-    if (btnText) btnText.innerText = 'CONNECT ARDUINO (USB)';
-    const dot = document.getElementById('serialDot');
-    if (dot) dot.innerText = '●';
+  function setThrottlePreset(val) {
+    document.getElementById('throttleSlider').value = val;
+    updateThrottle(val);
+  }
 
-    const hComm = document.getElementById('hComm');
-    if (hComm) {
-      hComm.innerText = 'OFFLINE';
-      hComm.style.color = 'var(--text-dim)';
+  // ================= EMERGENCY STOP (E-STOP) =================
+  function toggleEStop() {
+    if (isEStopActive) {
+      resetEStop();
+    } else {
+      triggerEStop();
     }
+  }
 
+  function triggerEStop() {
+    isEStopActive = true;
     rover.targetSpeed = 0;
     rover.targetTurn = 0;
     rover.speed = 0;
@@ -2305,59 +2288,11 @@
     keys.up = keys.down = keys.left = keys.right = false;
     updateDpadVisuals();
 
-    updateSystemWarning('warning', 'HARDWARE OFFLINE: Connect Arduino Uno / Nano USB to enable controls');
-  }
-
-  // ================= WARNING SYSTEM =================
-  function updateSystemWarning(type, message) {
-    const icon = document.getElementById('warnIcon');
-    const msg = document.getElementById('warnMessage');
-    const time = document.getElementById('warnTimestamp');
-
-    if (icon && msg && time) {
-      if (type === 'critical') {
-        icon.innerText = '🛑';
-      } else if (type === 'warning') {
-        icon.innerText = '⚠';
-      } else {
-        icon.innerText = '✓';
-      }
-      msg.innerText = message;
-      time.innerText = new Date().toTimeString().split(' ')[0];
-    }
-  }
-
-  // ================= E-STOP SYSTEM =================
-  function toggleEStop() {
-    if (!isEStopActive) {
-      executeEStop();
-    } else {
-      resetEStop();
-    }
-  }
-
-  function executeEStop() {
-    isEStopActive = true;
-    if (activeScript) abortRunningScript();
-
-    keys.up = false;
-    keys.down = false;
-    keys.left = false;
-    keys.right = false;
-    joyState.dx = 0;
-    joyState.dy = 0;
-    rover.targetSpeed = 0;
-    rover.targetTurn = 0;
-    rover.speed = 0;
-    rover.turnRate = 0;
-    updateDpadVisuals();
-
     const btn = document.getElementById('btnEstop');
     btn.classList.add('active');
     document.getElementById('estopMainText').innerText = '🛑 E-STOP';
     document.getElementById('estopSubText').innerText = 'HALTED • CLICK RESET';
 
-    updateSystemWarning('critical', 'E-STOP ACTIVE: ALL MOTORS SHUT OFF BY SAFETY INTERLOCK');
     logTerm('[ESTOP] EMERGENCY STOP ACTIVATED: Powertrain de-energized', 'crit');
     sendSerialCommand('ESTOP');
     sendSerialCommand('STOP');
@@ -2370,7 +2305,6 @@
     document.getElementById('estopMainText').innerText = 'E-STOP';
     document.getElementById('estopSubText').innerText = 'ARMED • [SPACE]';
 
-    updateSystemWarning('nominal', 'ALL SYSTEMS NOMINAL');
     logTerm('[ESTOP] Emergency interlock cleared. Teleoperation re-armed.', 'info');
     sendSerialCommand('RESUME');
   }
@@ -2383,8 +2317,7 @@
       return;
     }
 
-    if (isEStopActive) return;
-    if (!isSerialConnected) return;
+    if (isEStopActive || !isSerialConnected) return;
 
     let handled = true;
     if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
@@ -2516,7 +2449,7 @@
   function setMode(mode) {
     if (isEStopActive) return;
     if (!isSerialConnected) {
-      logTerm('[SAFETY INTERLOCK] Mode switch blocked: Connect Arduino USB first.', 'warn');
+      logTerm('[SAFETY INTERLOCK] Connect Arduino USB first.', 'warn');
       return;
     }
     if (activeScript) abortRunningScript();
@@ -2548,7 +2481,7 @@
       badge.innerHTML = '<span>🎯</span> MISSION STANDBY';
       rover.targetSpeed = 0;
       rover.targetTurn = 0;
-      logTerm('[MODE] Mission waypoint execution armed (awaiting waypoint target coordinates)', 'info');
+      logTerm('[MODE] Waypoint mission state armed', 'info');
     }
   }
 
@@ -2568,11 +2501,11 @@
       name: "Automated Full Hardware Self-Test",
       icon: "🔬",
       steps: [
-        { label: "Phase 1/5: I2C Peripheral Bus Scan", speed: 0, turn: 0, duration: 800, onStart: () => logTerm('[I2C] Scanning A4/A5... Detected 0x29 (VL53L0X), 0x4A (BNO08x), 0x40 (PCA9685)', 'info') },
-        { label: "Phase 2/5: M1 FL Isolation Forward + Reverse", speed: 0.8, turn: -0.035, duration: 1800, onStart: () => logTerm('[BENCH] M1 Front Left (D6/D2) 180 PWM verified', 'tx') },
-        { label: "Phase 3/5: M2 FR Isolation Forward + Reverse", speed: 0.8, turn: 0.035, duration: 1800, onStart: () => logTerm('[BENCH] M2 Front Right (D9/D3) 180 PWM verified', 'tx') },
-        { label: "Phase 4/5: M3 RL Isolation Forward + Reverse", speed: 0.8, turn: -0.035, duration: 1800, onStart: () => logTerm('[BENCH] M3 Rear Left (D10/D5) 180 PWM verified', 'tx') },
-        { label: "Phase 5/5: M4 RR Isolation Forward + Reverse", speed: 0.8, turn: 0.035, duration: 1800, onStart: () => logTerm('[BENCH] M4 Rear Right (D11/D4) 180 PWM verified', 'tx') },
+        { label: "Phase 1/5: I2C Peripheral Bus Scan", speed: 0, turn: 0, duration: 800, onStart: () => logTerm('[I2C] Scanning A4/A5... Detected 0x29 (VL53L0X), 0x4A (BNO085)', 'info') },
+        { label: "Phase 2/5: M1 FL Isolation Forward + Reverse", speed: 0.8, turn: -0.035, duration: 1800, onStart: () => logTerm('[BENCH] M1 Front Left (D6/D2) verified', 'tx') },
+        { label: "Phase 3/5: M2 FR Isolation Forward + Reverse", speed: 0.8, turn: 0.035, duration: 1800, onStart: () => logTerm('[BENCH] M2 Front Right (D9/D3) verified', 'tx') },
+        { label: "Phase 4/5: M3 RL Isolation Forward + Reverse", speed: 0.8, turn: -0.035, duration: 1800, onStart: () => logTerm('[BENCH] M3 Rear Left (D10/D5) verified', 'tx') },
+        { label: "Phase 5/5: M4 RR Isolation Forward + Reverse", speed: 0.8, turn: 0.035, duration: 1800, onStart: () => logTerm('[BENCH] M4 Rear Right (D11/D4) verified', 'tx') },
         { label: "Final: Full 4WD Drive Burst", speed: 2.6, turn: 0, duration: 1200 }
       ]
     },
@@ -2581,7 +2514,7 @@
       icon: "⚙️",
       steps: [
         { label: "Spinning Front Wheels Forward", speed: 1.8, turn: 0, duration: 1500, onStart: () => logTerm('[DRIVER A] M1(D6) & M2(D9) Forward Test...', 'tx') },
-        { label: "Pause & Direction Invert", speed: 0, turn: 0, duration: 400 },
+        { label: "Pause & Invert", speed: 0, turn: 0, duration: 400 },
         { label: "Spinning Front Wheels Reverse", speed: -1.8, turn: 0, duration: 1500, onStart: () => logTerm('[DRIVER A] M1(D6) & M2(D9) Reverse Test...', 'tx') }
       ]
     },
@@ -2590,7 +2523,7 @@
       icon: "🔧",
       steps: [
         { label: "Spinning Rear Wheels Forward", speed: 1.8, turn: 0, duration: 1500, onStart: () => logTerm('[DRIVER B] M3(D10) & M4(D11) Forward Test...', 'tx') },
-        { label: "Pause & Direction Invert", speed: 0, turn: 0, duration: 400 },
+        { label: "Pause & Invert", speed: 0, turn: 0, duration: 400 },
         { label: "Spinning Rear Wheels Reverse", speed: -1.8, turn: 0, duration: 1500, onStart: () => logTerm('[DRIVER B] M3(D10) & M4(D11) Reverse Test...', 'tx') }
       ]
     }
@@ -2616,7 +2549,7 @@
     rover.driveMode = 'script';
     document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
 
-    document.querySelectorAll('.script-card').forEach(c => c.classList.remove('active-running'));
+    document.querySelectorAll('.test-card').forEach(c => c.classList.remove('active-running'));
     document.querySelectorAll('.script-status-badge').forEach(b => {
       if (b.innerText === 'RUNNING') b.innerText = 'READY';
     });
@@ -2665,7 +2598,7 @@
 
     document.getElementById('tabManual').classList.add('active');
     document.getElementById('scriptBanner').style.display = 'none';
-    document.querySelectorAll('.script-card').forEach(c => c.classList.remove('active-running'));
+    document.querySelectorAll('.test-card').forEach(c => c.classList.remove('active-running'));
   }
 
   function completeRunningScript() {
@@ -2687,7 +2620,7 @@
 
     document.getElementById('tabManual').classList.add('active');
     document.getElementById('scriptBanner').style.display = 'none';
-    document.querySelectorAll('.script-card').forEach(c => c.classList.remove('active-running'));
+    document.querySelectorAll('.test-card').forEach(c => c.classList.remove('active-running'));
   }
 
   // ================= MAIN TICK (KINEMATICS & TELEMETRY) =================
@@ -2749,7 +2682,6 @@
         if (autoTimer > 2800) {
           autoState = 1;
           autoTimer = 0;
-          updateSystemWarning('warning', 'TOF ALERT: Obstacle detected within 180mm. Executing avoidance.');
         }
       } else if (autoState === 1) {
         rover.targetSpeed = 0;
@@ -2771,7 +2703,6 @@
         if (autoTimer >= 800) {
           autoState = 0;
           autoTimer = 0;
-          updateSystemWarning('nominal', 'ALL SYSTEMS NOMINAL');
         }
       }
     } else if (rover.driveMode === 'spin') {
@@ -2915,13 +2846,13 @@
       laserBadge.style.color = 'var(--text-dim)';
     } else if (currentDistanceMm < 180) {
       laserBadge.innerText = 'CRITICAL (<180mm)';
-      laserBadge.style.color = 'var(--accent-red)';
+      laserBadge.style.color = 'var(--accent-rose)';
     } else if (currentDistanceMm < 300) {
       laserBadge.innerText = 'CAUTION';
       laserBadge.style.color = 'var(--accent-amber)';
     } else {
       laserBadge.innerText = 'CLEAR';
-      laserBadge.style.color = 'var(--accent-green)';
+      laserBadge.style.color = 'var(--accent-emerald)';
     }
 
     let deg = Math.round((rover.heading * 180 / Math.PI) % 360);
@@ -2934,16 +2865,18 @@
     const totalTicks = encTicks.m1 + encTicks.m2 + encTicks.m3 + encTicks.m4;
     document.getElementById('valTotalTicks').innerText = totalTicks.toLocaleString();
     document.getElementById('barTicks').style.width = (totalTicks % 1000) / 10 + '%';
+    const distMeters = (totalTicks * 0.0005).toFixed(2);
+    document.getElementById('odomDistance').innerText = `${distMeters} m`;
   }
 
   function applyWheelClass(elementId, dir) {
     const el = document.getElementById(elementId);
+    if (!el) return;
     el.classList.remove('rolling-fwd', 'rolling-rev');
     if (dir > 0) el.classList.add('rolling-fwd');
     else if (dir < 0) el.classList.add('rolling-rev');
   }
 
-  checkNetworkAndAutoDetect();
   requestAnimationFrame(update);
 </script>
 </body>
